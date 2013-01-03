@@ -1,6 +1,7 @@
 #include <vdpau/vdpau.h>
 #include <vdpau/vdpau_x11.h>
 #include <stdio.h>
+#include <assert.h>
 
 static
 const char *
@@ -375,7 +376,10 @@ fakeVdpPresentationQueueCreate(VdpDevice device,
                                VdpPresentationQueueTarget presentation_queue_target,
                                VdpPresentationQueue *presentation_queue)
 {
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    assert (presentation_queue_target == 1);
+    *presentation_queue = 1;
+    return VDP_STATUS_OK;
+    //return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
 static
@@ -406,7 +410,10 @@ VdpStatus
 fakeVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue,
                                 VdpTime *current_time)
 {
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    *current_time = (uint64_t)tv.tv_sec * 1000000000LL + (uint64_t)tv.tv_usec * 1000LL;
+    return VDP_STATUS_OK;
 }
 
 static
@@ -593,7 +600,8 @@ VdpStatus
 fakeVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
                                         VdpPresentationQueueTarget *target)
 {
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    *target = 1;
+    return VDP_STATUS_OK;
 }
 
 // =========================
