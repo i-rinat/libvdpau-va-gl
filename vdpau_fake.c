@@ -3,6 +3,14 @@
 #include <stdio.h>
 #include <assert.h>
 
+#ifndef NDEBUG
+    #define TRACE(str, ...)  printf("[VDPFAKE] " str "\n", __VA_ARGS__)
+    #define TRACE1(str)  printf("[VDPFAKE] " str "\n")
+#else
+    #define TRACE(str, ...)
+    #define TRACE1(str)
+#endif
+
 static
 const char *
 fakeVdpGetErrorString(VdpStatus status)
@@ -184,7 +192,8 @@ VdpStatus
 fakeVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
                            uint32_t height, VdpOutputSurface *surface)
 {
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE1("fakeVdpOutputSurfaceCreate");
+    return VDP_STATUS_OK;
 }
 
 static
@@ -285,7 +294,9 @@ fakeVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
                         VdpVideoMixerParameter const *parameters,
                         void const *const *parameter_values, VdpVideoMixer *mixer)
 {
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    //return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE1("fakeVdpVideoMixerCreate");
+    return VDP_STATUS_OK;
 }
 
 static
@@ -360,7 +371,8 @@ fakeVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
                         VdpRect const *destination_rect, VdpRect const *destination_video_rect,
                         uint32_t layer_count, VdpLayer const *layers)
 {
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE1("fakeVdpVideoMixerRender");
+    return VDP_STATUS_OK;
 }
 
 static
@@ -376,6 +388,7 @@ fakeVdpPresentationQueueCreate(VdpDevice device,
                                VdpPresentationQueueTarget presentation_queue_target,
                                VdpPresentationQueue *presentation_queue)
 {
+    TRACE1("fakeVdpPresentationQueueCreate");
     assert (presentation_queue_target == 1);
     *presentation_queue = 1;
     return VDP_STATUS_OK;
@@ -410,6 +423,7 @@ VdpStatus
 fakeVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue,
                                 VdpTime *current_time)
 {
+    TRACE1("fakeVdpPresentationQueueGetTime");
     struct timeval tv;
     gettimeofday(&tv, NULL);
     *current_time = (uint64_t)tv.tv_sec * 1000000000LL + (uint64_t)tv.tv_usec * 1000LL;
@@ -422,7 +436,8 @@ fakeVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
                                 uint32_t clip_width, uint32_t clip_height,
                                 VdpTime earliest_presentation_time)
 {
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE1("fakeVdpPresentationQueueDisplay");
+    return VDP_STATUS_OK;
 }
 
 static
@@ -432,7 +447,8 @@ fakeVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_
                                               VdpTime *first_presentation_time)
 
 {
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE1("fakeVdpPresentationQueueBlockUntilSurfaceIdle");
+    return VDP_STATUS_OK;
 }
 
 static
@@ -442,7 +458,9 @@ fakeVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_que
                                            VdpPresentationQueueStatus *status,
                                            VdpTime *first_presentation_time)
 {
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    *status = VDP_PRESENTATION_QUEUE_STATUS_VISIBLE;
+    TRACE1("fakeVdpPresentationQueueQuerySurfaceStatus");
+    return VDP_STATUS_OK;
 }
 
 static
@@ -469,7 +487,9 @@ VdpStatus
 fakeVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t width,
                           uint32_t height, VdpVideoSurface *surface)
 {
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    //return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE1("fakeVdpVideoSurfaceCreate");
+    return VDP_STATUS_OK;
 }
 
 static
@@ -500,7 +520,8 @@ VdpStatus
 fakeVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_ycbcr_format,
                                 void const *const *source_data, uint32_t const *source_pitches)
 {
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE("fakeVdpVideoSurfacePutBitsYCbCr, %d, %d, %p", surface, source_ycbcr_format, *source_data);
+    return VDP_STATUS_OK;
 }
 
 static
@@ -600,6 +621,7 @@ VdpStatus
 fakeVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
                                         VdpPresentationQueueTarget *target)
 {
+    TRACE("fakeVdpPresentationQueueTargetCreateX11, %d, %d", device, drawable);
     *target = 1;
     return VDP_STATUS_OK;
 }
