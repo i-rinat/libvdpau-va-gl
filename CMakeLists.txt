@@ -1,6 +1,6 @@
 project (fake-vdpau)
-
 cmake_minimum_required (VERSION 2.6)
+add_definitions(-std=c99 -Wall)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(VDPAU vdpau REQUIRED)
