@@ -2,6 +2,10 @@
 #include <vdpau/vdpau_x11.h>
 #include <stdio.h>
 #include <assert.h>
+#include <glib.h>
+#include <stdlib.h>
+#include "reverse-constant.h"
+#include "handle-storage.h"
 
 #ifndef NDEBUG
     #define TRACE(str, ...)  printf("[VDPFAKE] " str "\n", __VA_ARGS__)
@@ -487,7 +491,6 @@ VdpStatus
 fakeVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t width,
                           uint32_t height, VdpVideoSurface *surface)
 {
-    //return VDP_STATUS_NO_IMPLEMENTATION;
     TRACE1("fakeVdpVideoSurfaceCreate");
     return VDP_STATUS_OK;
 }
@@ -631,6 +634,7 @@ static
 VdpStatus
 fakeVdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_pointer)
 {
+    TRACE("fakeVdpGetProcAddress, %s", reverse_func_id(function_id));
     switch (function_id) {
     case VDP_FUNC_ID_GET_ERROR_STRING:
         *function_pointer = &fakeVdpGetErrorString;
@@ -824,7 +828,6 @@ fakeVdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_p
         break;
     } // switch
 
-    printf("vdpau_fake: function %d requested, %p sent\n", function_id, *function_pointer);
     if (NULL == *function_pointer)
         return VDP_STATUS_INVALID_FUNC_ID;
     return VDP_STATUS_OK;
@@ -835,6 +838,21 @@ vdp_imp_device_create_x11(Display *display, int screen, VdpDevice *device,
                           VdpGetProcAddress **get_proc_address)
 {
     printf("Hello from libvdpau_fake!\n");
+    if (NULL == display)
+        return VDP_STATUS_INVALID_POINTER;
+    VdpDeviceData *deviceData = (VdpDeviceData *)malloc(sizeof(VdpDeviceData));
+    if (NULL == deviceData)
+        return VDP_STATUS_ERROR;
+    g_ptr_array_add(vdpDeviceHandles, deviceData);
+    *device = vdpDeviceHandles->len - 1; // handle is index
     *get_proc_address = &fakeVdpGetProcAddress;
     return VDP_STATUS_OK;
+}
+
+void __fake_init(void) __attribute__((constructor));
+
+void
+__fake_init(void)
+{
+    initialize_handle_arrays();
 }
