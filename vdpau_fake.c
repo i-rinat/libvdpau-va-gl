@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <glib.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include "reverse-constant.h"
 #include "handle-storage.h"
 
@@ -298,8 +299,9 @@ fakeVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
                         VdpVideoMixerParameter const *parameters,
                         void const *const *parameter_values, VdpVideoMixer *mixer)
 {
-    //return VDP_STATUS_NO_IMPLEMENTATION;
-    TRACE1("fakeVdpVideoMixerCreate");
+    TRACE("fakeVdpVideoMixerCreate feature_count=%d, parameter_count=%d",
+        feature_count, parameter_count);
+
     return VDP_STATUS_OK;
 }
 
@@ -309,7 +311,12 @@ fakeVdpVideoMixerSetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
                                    VdpVideoMixerFeature const *features,
                                    VdpBool const *feature_enables)
 {
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE("fakeVdpVideoMixerSetFeatureEnables mixer=%d, feature_count=%d", mixer, feature_count);
+    for (uint32_t k = 0; k < feature_count; k ++) {
+        TRACE("   feature %d %s (%s)", features[k], feature_enables[k] ? "enabled" : "disabled",
+            reverse_video_mixer_feature(features[k]));
+    }
+    return VDP_STATUS_OK;
 }
 
 static
@@ -376,7 +383,7 @@ fakeVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
                         uint32_t layer_count, VdpLayer const *layers)
 {
     TRACE1("fakeVdpVideoMixerRender");
-    return VDP_STATUS_OK;
+    return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
 static
@@ -392,11 +399,24 @@ fakeVdpPresentationQueueCreate(VdpDevice device,
                                VdpPresentationQueueTarget presentation_queue_target,
                                VdpPresentationQueue *presentation_queue)
 {
-    TRACE1("fakeVdpPresentationQueueCreate");
-    assert (presentation_queue_target == 1);
-    *presentation_queue = 1;
+    TRACE("fakeVdpPresentationQueueCreate device=%d, presentation_queue_target=%d",
+        device, presentation_queue_target);
+    VdpPresentationQueueData *data =
+        (VdpPresentationQueueData *)calloc(1, sizeof(VdpPresentationQueueData));
+    if (NULL == data)
+        return VDP_STATUS_RESOURCES;
+    if (!handlestorage_valid(device, HANDLE_TYPE_DEVICE))
+        return VDP_STATUS_INVALID_HANDLE;
+    if (!handlestorage_valid(presentation_queue_target, HANDLE_TYPE_PRESENTATION_QUEUE_TARGET))
+        return VDP_STATUS_INVALID_HANDLE;
+
+    data->type = HANDLE_TYPE_PRESENTATION_QUEUE;
+    data->device = device;
+    data->presentationQueueTarget = presentation_queue_target;
+
+    *presentation_queue = handlestorage_add(data);
+
     return VDP_STATUS_OK;
-    //return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
 static
@@ -427,7 +447,7 @@ VdpStatus
 fakeVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue,
                                 VdpTime *current_time)
 {
-    TRACE1("fakeVdpPresentationQueueGetTime");
+    TRACE("fakeVdpPresentationQueueGetTime presentation_queue=%d", presentation_queue);
     struct timeval tv;
     gettimeofday(&tv, NULL);
     *current_time = (uint64_t)tv.tv_sec * 1000000000LL + (uint64_t)tv.tv_usec * 1000LL;
@@ -624,8 +644,23 @@ VdpStatus
 fakeVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
                                         VdpPresentationQueueTarget *target)
 {
-    TRACE("fakeVdpPresentationQueueTargetCreateX11, %d, %d", device, drawable);
-    *target = 1;
+    TRACE("fakeVdpPresentationQueueTargetCreateX11, device=%d, drawable=%u", device,
+        ((unsigned int)drawable));
+
+    VdpPresentationQueueTargetData *data =
+        (VdpPresentationQueueTargetData *)malloc(sizeof(VdpPresentationQueueTargetData));
+    if (NULL == data)
+        return VDP_STATUS_ERROR;
+
+    if (!handlestorage_valid(device, HANDLE_TYPE_DEVICE))
+        return VDP_STATUS_INVALID_HANDLE;
+
+    data->type = HANDLE_TYPE_PRESENTATION_QUEUE_TARGET;
+    data->device = device;
+    data->drawable = drawable;
+
+    *target = handlestorage_add(data);
+
     return VDP_STATUS_OK;
 }
 
@@ -634,7 +669,7 @@ static
 VdpStatus
 fakeVdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_pointer)
 {
-    TRACE("fakeVdpGetProcAddress, %s", reverse_func_id(function_id));
+    TRACE("fakeVdpGetProcAddress, device=%d, function_id=%s", device, reverse_func_id(function_id));
     switch (function_id) {
     case VDP_FUNC_ID_GET_ERROR_STRING:
         *function_pointer = &fakeVdpGetErrorString;
@@ -837,22 +872,31 @@ VdpStatus
 vdp_imp_device_create_x11(Display *display, int screen, VdpDevice *device,
                           VdpGetProcAddress **get_proc_address)
 {
-    printf("Hello from libvdpau_fake!\n");
+    TRACE("vdp_imp_device_create_x11 display=%p, screen=%d", display, screen);
     if (NULL == display)
         return VDP_STATUS_INVALID_POINTER;
-    VdpDeviceData *deviceData = (VdpDeviceData *)malloc(sizeof(VdpDeviceData));
-    if (NULL == deviceData)
-        return VDP_STATUS_ERROR;
-    g_ptr_array_add(vdpDeviceHandles, deviceData);
-    *device = vdpDeviceHandles->len - 1; // handle is index
+    VdpDeviceData *data = (VdpDeviceData *)malloc(sizeof(VdpDeviceData));
+    if (NULL == data)
+        return VDP_STATUS_RESOURCES;
+
+    data->type = HANDLE_TYPE_DEVICE;
+    data->display = display;
+    data->screen = screen;
+
+    *device = handlestorage_add(data);
     *get_proc_address = &fakeVdpGetProcAddress;
+
     return VDP_STATUS_OK;
 }
 
-void __fake_init(void) __attribute__((constructor));
+static
+void
+__fake_init(void) __attribute__((constructor));
 
+static
 void
 __fake_init(void)
 {
-    initialize_handle_arrays();
+    handlestorage_initialize();
+    TRACE1("library initialized");
 }
