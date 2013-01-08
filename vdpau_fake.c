@@ -230,6 +230,7 @@ VdpStatus
 fakeVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *source_data,
                                   uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
+    TRACE1("fakeVdpVideoMixerQueryParameterSupport stub");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -257,6 +258,7 @@ VdpStatus
 fakeVdpVideoMixerQueryFeatureSupport(VdpDevice device, VdpVideoMixerFeature feature,
                                      VdpBool *is_supported)
 {
+    TRACE1("fakeVdpVideoMixerQueryFeatureSupport stub");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -273,6 +275,7 @@ VdpStatus
 fakeVdpVideoMixerQueryAttributeSupport(VdpDevice device, VdpVideoMixerAttribute attribute,
                                        VdpBool *is_supported)
 {
+    TRACE1("fakeVdpVideoMixerQueryAttributeSupport stub");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -289,6 +292,7 @@ VdpStatus
 fakeVdpVideoMixerQueryAttributeValueRange(VdpDevice device, VdpVideoMixerAttribute attribute,
                                           void *min_value, void *max_value)
 {
+    TRACE1("fakeVdpVideoMixerQueryAttributeValueRange stub");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -299,7 +303,7 @@ fakeVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
                         VdpVideoMixerParameter const *parameters,
                         void const *const *parameter_values, VdpVideoMixer *mixer)
 {
-    TRACE("fakeVdpVideoMixerCreate feature_count=%d, parameter_count=%d",
+    TRACE("fakeVdpVideoMixerCreate stub feature_count=%d, parameter_count=%d",
         feature_count, parameter_count);
 
     return VDP_STATUS_OK;
@@ -325,6 +329,12 @@ fakeVdpVideoMixerSetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_coun
                                     VdpVideoMixerAttribute const *attributes,
                                     void const *const *attribute_values)
 {
+    TRACE("fakeVdpVideoMixerSetAttributeValues stub mixer=%d, attribute_count=%d",
+        mixer, attribute_count);
+    for (uint32_t k = 0; k < attribute_count; k ++) {
+        TRACE("   attribute %d (%s)", attributes[k], reverse_video_mixer_attributes(attributes[k]));
+    }
+
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -333,6 +343,7 @@ VdpStatus
 fakeVdpVideoMixerGetFeatureSupport(VdpVideoMixer mixer, uint32_t feature_count,
                                    VdpVideoMixerFeature const *features, VdpBool *feature_supports)
 {
+    TRACE1("fakeVdpVideoMixerGetFeatureSupport stub");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -341,6 +352,7 @@ VdpStatus
 fakeVdpVideoMixerGetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
                                    VdpVideoMixerFeature const *features, VdpBool *feature_enables)
 {
+    TRACE1("fakeVdpVideoMixerGetFeatureEnables stub");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -350,6 +362,7 @@ fakeVdpVideoMixerGetParameterValues(VdpVideoMixer mixer, uint32_t parameter_coun
                                     VdpVideoMixerParameter const *parameters,
                                     void *const *parameter_values)
 {
+    TRACE1("fakeVdpVideoMixerGetParameterValues stub");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -359,6 +372,7 @@ fakeVdpVideoMixerGetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_coun
                                     VdpVideoMixerAttribute const *attributes,
                                     void *const *attribute_values)
 {
+    TRACE1("fakeVdpVideoMixerGetAttributeValues stub");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -366,6 +380,7 @@ static
 VdpStatus
 fakeVdpVideoMixerDestroy(VdpVideoMixer mixer)
 {
+    TRACE1("fakeVdpVideoMixerDestroy stub");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -605,6 +620,7 @@ static
 VdpStatus
 fakeVdpGenerateCSCMatrix(VdpProcamp *procamp, VdpColorStandard standard, VdpCSCMatrix *csc_matrix)
 {
+    TRACE1("fakeVdpGenerateCSCMatrix not implemented");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
