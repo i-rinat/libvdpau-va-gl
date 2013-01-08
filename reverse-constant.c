@@ -2,7 +2,7 @@
 #include <vdpau/vdpau.h>
 
 const char *
-reverse_func_id(int func_id)
+reverse_func_id(VdpFuncId func_id)
 {
     switch (func_id) {
     case VDP_FUNC_ID_GET_ERROR_STRING:
@@ -135,7 +135,7 @@ reverse_func_id(int func_id)
 }
 
 const char *
-reverse_video_mixer_feature(int mixer_feature)
+reverse_video_mixer_feature(VdpVideoMixerFeature mixer_feature)
 {
     switch (mixer_feature) {
     case VDP_VIDEO_MIXER_FEATURE_DEINTERLACE_TEMPORAL:
@@ -170,5 +170,28 @@ reverse_video_mixer_feature(int mixer_feature)
         return "VDP_VIDEO_MIXER_FEATURE_HIGH_QUALITY_SCALING_L9";
     default:
         return "Unknown video mixer feature";
+    }
+}
+
+const char *
+reverse_video_mixer_attributes(VdpVideoMixerAttribute attr)
+{
+    switch (attr) {
+    case VDP_VIDEO_MIXER_ATTRIBUTE_BACKGROUND_COLOR:
+        return "VDP_VIDEO_MIXER_ATTRIBUTE_BACKGROUND_COLOR";
+    case VDP_VIDEO_MIXER_ATTRIBUTE_CSC_MATRIX:
+        return "VDP_VIDEO_MIXER_ATTRIBUTE_CSC_MATRIX";
+    case VDP_VIDEO_MIXER_ATTRIBUTE_NOISE_REDUCTION_LEVEL:
+        return "VDP_VIDEO_MIXER_ATTRIBUTE_NOISE_REDUCTION_LEVEL";
+    case VDP_VIDEO_MIXER_ATTRIBUTE_SHARPNESS_LEVEL:
+        return "VDP_VIDEO_MIXER_ATTRIBUTE_SHARPNESS_LEVEL";
+    case VDP_VIDEO_MIXER_ATTRIBUTE_LUMA_KEY_MIN_LUMA:
+        return "VDP_VIDEO_MIXER_ATTRIBUTE_LUMA_KEY_MIN_LUMA";
+    case VDP_VIDEO_MIXER_ATTRIBUTE_LUMA_KEY_MAX_LUMA:
+        return "VDP_VIDEO_MIXER_ATTRIBUTE_LUMA_KEY_MAX_LUMA";
+    case VDP_VIDEO_MIXER_ATTRIBUTE_SKIP_CHROMA_DEINTERLACE:
+        return "VDP_VIDEO_MIXER_ATTRIBUTE_SKIP_CHROMA_DEINTERLACE";
+    default:
+        return "Unknown video mixer attribute";
     }
 }
