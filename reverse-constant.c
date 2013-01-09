@@ -195,3 +195,22 @@ reverse_video_mixer_attributes(VdpVideoMixerAttribute attr)
         return "Unknown video mixer attribute";
     }
 }
+
+const char *
+reverse_rgba_format(VdpRGBAFormat rgba_format)
+{
+    switch (rgba_format) {
+    case VDP_RGBA_FORMAT_B8G8R8A8:
+        return "VDP_RGBA_FORMAT_B8G8R8A8";
+    case VDP_RGBA_FORMAT_R8G8B8A8:
+        return "VDP_RGBA_FORMAT_R8G8B8A8";
+    case VDP_RGBA_FORMAT_R10G10B10A2:
+        return "VDP_RGBA_FORMAT_R10G10B10A2";
+    case VDP_RGBA_FORMAT_B10G10R10A2:
+        return "VDP_RGBA_FORMAT_B10G10R10A2";
+    case VDP_RGBA_FORMAT_A8:
+        return "VDP_RGBA_FORMAT_A8";
+    default:
+        return "Unknown RGBA format";
+    }
+}
