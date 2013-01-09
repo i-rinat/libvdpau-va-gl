@@ -224,7 +224,34 @@ VdpStatus
 fakeVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
                            uint32_t height, VdpOutputSurface *surface)
 {
-    TRACE1("{zilch} VdpOutputSurfaceCreate");
+    TRACE("{part} VdpOutputSurfaceCreate device=%d, rgba_format=%s, width=%d, height=%d",
+        device, reverse_rgba_format(rgba_format), width, height);
+    if (! handlestorage_valid(device, HANDLE_TYPE_DEVICE))
+        return VDP_STATUS_INVALID_HANDLE;
+
+    if (width > 4096 || height > 4096)
+        return VDP_STATUS_INVALID_SIZE;
+
+    VdpOutputSurfaceData *data = (VdpOutputSurfaceData *)calloc(1, sizeof(VdpOutputSurfaceData));
+    if (NULL == data)
+        return VDP_STATUS_RESOURCES;
+
+    uint32_t const stride = (width % 4 == 0) ? width : (width & 0x3) + 4;
+
+    data->type = HANDLE_TYPE_OUTPUT_SURFACE;
+    data->device = device;
+    data->width = width;
+    data->stride = stride;
+    data->height = height;
+    data->buf = malloc(stride * height * rgba_format_storage_size(rgba_format));
+
+    if (NULL == data->buf) {
+        free(data);
+        return VDP_STATUS_RESOURCES;
+    }
+
+    *surface = handlestorage_add(data);
+
     return VDP_STATUS_OK;
 }
 
@@ -588,7 +615,31 @@ VdpStatus
 fakeVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t width,
                           uint32_t height, VdpVideoSurface *surface)
 {
-    TRACE1("{zilch} VdpVideoSurfaceCreate");
+    TRACE("{part} VdpVideoSurfaceCreate, device=%d, chroma_type=%s, width=%d, height=%d",
+        device, reverse_chroma_type(chroma_type), width, height);
+
+    if (! handlestorage_valid(device, HANDLE_TYPE_DEVICE))
+        return VDP_STATUS_INVALID_HANDLE;
+
+    VdpVideoSurfaceData *data = (VdpVideoSurfaceData *)calloc(1, sizeof(VdpVideoSurfaceData));
+    if (NULL == data)
+        return VDP_STATUS_RESOURCES;
+
+    uint32_t const stride = (width % 4 == 0) ? width : (width & 0x3) + 4;
+
+    data->type = HANDLE_TYPE_VIDEO_SURFACE;
+    data->width = width;
+    data->stride = stride;
+    data->height = height;
+    //TODO: find valid storage size for chroma_type
+    data->buf = malloc(stride * height * 4);
+    if (NULL == data->buf) {
+        free(data);
+        return VDP_STATUS_RESOURCES;
+    }
+
+    *surface = handlestorage_add(data);
+
     return VDP_STATUS_OK;
 }
 
