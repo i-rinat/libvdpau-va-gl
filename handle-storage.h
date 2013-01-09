@@ -10,6 +10,7 @@ typedef uint32_t    HandleType;
 #define HANDLE_TYPE_DEVICE                      (HandleType)1
 #define HANDLE_TYPE_PRESENTATION_QUEUE_TARGET   (HandleType)2
 #define HANDLE_TYPE_PRESENTATION_QUEUE          (HandleType)3
+#define HANDLE_TYPE_VIDEO_MIXER                 (HandleType)4
 
 typedef struct {
     HandleType type;
@@ -32,6 +33,11 @@ typedef struct {
     int device;
     int presentationQueueTarget;
 } VdpPresentationQueueData;
+
+typedef struct {
+    HandleType type;
+    VdpDevice device;
+} VdpVideoMixerData;
 
 
 void handlestorage_initialize(void);
