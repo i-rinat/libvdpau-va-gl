@@ -894,6 +894,7 @@ fakeVdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_p
     return VDP_STATUS_OK;
 }
 
+__attribute__ ((visibility("default")))
 VdpStatus
 vdp_imp_device_create_x11(Display *display, int screen, VdpDevice *device,
                           VdpGetProcAddress **get_proc_address)
