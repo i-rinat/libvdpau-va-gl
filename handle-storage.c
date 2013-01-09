@@ -21,10 +21,16 @@ handlestorage_add(void *data)
 int
 handlestorage_valid(int handle, HandleType type)
 {
-    if (handle < 1 || handle >= vdpHandles->len)
-        return 0;
-    if (HANDLE_TYPE_ANY == type)
-        return 1;
+    // return false if index is invalid
+    if (handle < 1 || handle >= vdpHandles->len) return 0;
+
+    // return false if entry was deleted
+    if (NULL == g_ptr_array_index(vdpHandles, handle)) return 0;
+
+    // otherwise return true if called want any handle
+    if (HANDLE_TYPE_ANY == type) return 1;
+
+    // else check handle type
     HandleType elementType = ((VdpGenericHandle *)g_ptr_array_index(vdpHandles, handle))->type;
     if (elementType == type)
         return 1;
