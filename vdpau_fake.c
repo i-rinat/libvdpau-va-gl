@@ -616,8 +616,17 @@ fakeVdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
                                       VdpBool *is_supported, uint32_t *max_width,
                                       uint32_t *max_height)
 {
-    TRACE1("{zilch} VdpBitmapSurfaceQueryCapabilities");
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE("{part} VdpBitmapSurfaceQueryCapabilities device=%d", device);
+    if (! handlestorage_valid(device, HANDLE_TYPE_DEVICE))
+        return VDP_STATUS_INVALID_HANDLE;
+
+    printf("      format %s\n", reverse_rgba_format(surface_rgba_format));
+
+    *is_supported = 1;
+    *max_width = 2048;
+    *max_height = 2048;
+
+    return VDP_STATUS_OK;
 }
 
 static
@@ -709,7 +718,7 @@ static
 VdpStatus
 fakeVdpPreemptionCallbackRegister(VdpDevice device, VdpPreemptionCallback callback, void *context)
 {
-    TRACE1("{zilch} VdpPreemptionCallbackRegister");
+    TRACE("{zilch} VdpPreemptionCallbackRegister callback=%p", callback);
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
