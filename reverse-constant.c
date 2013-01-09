@@ -229,3 +229,24 @@ reverse_chroma_type(VdpChromaType chroma_type)
         return "Unknown chroma type";
     }
 }
+
+const char *
+reverse_ycbcr_format(VdpYCbCrFormat ycbcr_format)
+{
+    switch (ycbcr_format) {
+    case VDP_YCBCR_FORMAT_NV12:
+        return "VDP_YCBCR_FORMAT_NV12";
+    case VDP_YCBCR_FORMAT_YV12:
+        return "VDP_YCBCR_FORMAT_YV12";
+    case VDP_YCBCR_FORMAT_UYVY:
+        return "VDP_YCBCR_FORMAT_UYVY";
+    case VDP_YCBCR_FORMAT_YUYV:
+        return "VDP_YCBCR_FORMAT_YUYV";
+    case VDP_YCBCR_FORMAT_Y8U8V8A8:
+        return "VDP_YCBCR_FORMAT_Y8U8V8A8";
+    case VDP_YCBCR_FORMAT_V8U8Y8A8:
+        return "VDP_YCBCR_FORMAT_V8U8Y8A8";
+    default:
+        return "Unknown YCbCr format";
+    }
+}
