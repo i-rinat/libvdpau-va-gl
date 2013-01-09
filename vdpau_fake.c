@@ -16,6 +16,8 @@
     #define TRACE1(str)
 #endif
 
+char const *implemetation_description_string = "VAAPI/software backend for VDPAU";
+
 static
 uint32_t
 rgba_format_storage_size(VdpRGBAFormat rgba_format)
@@ -126,8 +128,9 @@ static
 VdpStatus
 fakeVdpGetApiVersion(uint32_t *api_version)
 {
-    TRACE1("{zilch} VdpGetApiVersion");
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE1("{full} VdpGetApiVersion");
+    *api_version = VDPAU_VERSION;
+    return VDP_STATUS_OK;
 }
 
 static
@@ -744,8 +747,9 @@ static
 VdpStatus
 fakeVdpGetInformationString(char const **information_string)
 {
-    TRACE1("{zilch} VdpGetInformationString");
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE1("{full} VdpGetInformationString");
+    *information_string = implemetation_description_string;
+    return VDP_STATUS_OK;
 }
 
 static
