@@ -323,6 +323,18 @@ fakeVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
     TRACE("{part} VdpVideoMixerCreate feature_count=%d, parameter_count=%d",
         feature_count, parameter_count);
 
+    if (!handlestorage_valid(device, HANDLE_TYPE_DEVICE))
+        return VDP_STATUS_INVALID_HANDLE;
+
+    VdpVideoMixerData *data = (VdpVideoMixerData *)calloc(1, sizeof(VdpVideoMixerData));
+    if (NULL == data)
+        return VDP_STATUS_RESOURCES;
+
+    data->type = HANDLE_TYPE_VIDEO_MIXER;
+    data->device = device;
+
+    *mixer = handlestorage_add(data);
+
     return VDP_STATUS_OK;
 }
 
