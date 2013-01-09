@@ -214,3 +214,18 @@ reverse_rgba_format(VdpRGBAFormat rgba_format)
         return "Unknown RGBA format";
     }
 }
+
+const char *
+reverse_chroma_type(VdpChromaType chroma_type)
+{
+    switch (chroma_type) {
+    case VDP_CHROMA_TYPE_420:
+        return "VDP_CHROMA_TYPE_420";
+    case VDP_CHROMA_TYPE_422:
+        return "VDP_CHROMA_TYPE_422";
+    case VDP_CHROMA_TYPE_444:
+        return "VDP_CHROMA_TYPE_444";
+    default:
+        return "Unknown chroma type";
+    }
+}
