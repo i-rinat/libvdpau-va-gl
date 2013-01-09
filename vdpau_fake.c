@@ -109,6 +109,7 @@ static
 VdpStatus
 fakeVdpGetApiVersion(uint32_t *api_version)
 {
+    TRACE1("{zilch} VdpGetApiVersion");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -118,6 +119,7 @@ fakeVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, Vdp
                                 uint32_t *max_level, uint32_t *max_macroblocks,
                                 uint32_t *max_width, uint32_t *max_height)
 {
+    TRACE1("{zilch} VdpDecoderQueryCapabilities");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -126,6 +128,7 @@ VdpStatus
 fakeVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width, uint32_t height,
                      uint32_t max_references, VdpDecoder *decoder)
 {
+    TRACE1("{zilch} VdpDecoderCreate");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -133,6 +136,7 @@ static
 VdpStatus
 fakeVdpDecoderDestroy(VdpDecoder decoder)
 {
+    TRACE1("{zilch} VdpDecoderDestroy");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -141,6 +145,7 @@ VdpStatus
 fakeVdpDecoderGetParameters(VdpDecoder decoder, VdpDecoderProfile *profile,
                             uint32_t *width, uint32_t *height)
 {
+    TRACE1("{zilch} VdpDecoderGetParameters");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -150,6 +155,7 @@ fakeVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                      VdpPictureInfo const *picture_info, uint32_t bitstream_buffer_count,
                      VdpBitstreamBuffer const *bitstream_buffers)
 {
+    TRACE1("{zilch} VdpDecoderRender");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -159,6 +165,7 @@ fakeVdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
                                       VdpBool *is_supported, uint32_t *max_width,
                                       uint32_t *max_height)
 {
+    TRACE1("{zilch} VdpOutputSurfaceQueryCapabilities");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -168,6 +175,7 @@ fakeVdpOutputSurfaceQueryGetPutBitsNativeCapabilities(VdpDevice device,
                                                       VdpRGBAFormat surface_rgba_format,
                                                       VdpBool *is_supported)
 {
+    TRACE1("{zilch} VdpOutputSurfaceQueryGetPutBitsNativeCapabilities");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -179,6 +187,7 @@ fakeVdpOutputSurfaceQueryPutBitsIndexedCapabilities(VdpDevice device,
                                                     VdpColorTableFormat color_table_format,
                                                     VdpBool *is_supported)
 {
+    TRACE1("{zilch} VdpOutputSurfaceQueryPutBitsIndexedCapabilities");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -189,6 +198,7 @@ fakeVdpOutputSurfaceQueryPutBitsYCbCrCapabilities(VdpDevice device,
                                                   VdpYCbCrFormat bits_ycbcr_format,
                                                   VdpBool *is_supported)
 {
+    TRACE1("{zilch} VdpOutputSurfaceQueryPutBitsYCbCrCapabilities");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -197,7 +207,7 @@ VdpStatus
 fakeVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
                            uint32_t height, VdpOutputSurface *surface)
 {
-    TRACE1("fakeVdpOutputSurfaceCreate");
+    TRACE1("{zilch} VdpOutputSurfaceCreate");
     return VDP_STATUS_OK;
 }
 
@@ -205,6 +215,7 @@ static
 VdpStatus
 fakeVdpOutputSurfaceDestroy(VdpOutputSurface surface)
 {
+    TRACE1("{zilch} VdpOutputSurfaceDestroy");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -213,6 +224,7 @@ VdpStatus
 fakeVdpOutputSurfaceGetParameters(VdpOutputSurface surface, VdpRGBAFormat *rgba_format,
                                   uint32_t *width, uint32_t *height)
 {
+    TRACE1("{zilch} VdpOutputSurfaceGetParameters");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -222,6 +234,7 @@ fakeVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
                                   void *const *destination_data,
                                   uint32_t const *destination_pitches)
 {
+    TRACE1("{zilch} VdpOutputSurfaceGetBitsNative");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -230,7 +243,7 @@ VdpStatus
 fakeVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *source_data,
                                   uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
-    TRACE1("fakeVdpVideoMixerQueryParameterSupport stub");
+    TRACE1("{zilch} VdpVideoMixerQueryParameterSupport");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -241,6 +254,7 @@ fakeVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
                                    VdpRect const *destination_rect,
                                    VdpColorTableFormat color_table_format, void const *color_table)
 {
+    TRACE1("{zilch} VdpOutputSurfacePutBitsIndexed");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -250,6 +264,7 @@ fakeVdpOutputSurfacePutBitsYCbCr(VdpOutputSurface surface, VdpYCbCrFormat source
                                  void const *const *source_data, uint32_t const *source_pitches,
                                  VdpRect const *destination_rect, VdpCSCMatrix const *csc_matrix)
 {
+    TRACE1("{zilch} VdpOutputSurfacePutBitsYCbCr");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -258,7 +273,7 @@ VdpStatus
 fakeVdpVideoMixerQueryFeatureSupport(VdpDevice device, VdpVideoMixerFeature feature,
                                      VdpBool *is_supported)
 {
-    TRACE1("fakeVdpVideoMixerQueryFeatureSupport stub");
+    TRACE1("{zilch} VdpVideoMixerQueryFeatureSupport");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -267,6 +282,7 @@ VdpStatus
 fakeVdpVideoMixerQueryParameterSupport(VdpDevice device, VdpVideoMixerParameter parameter,
                                        VdpBool *is_supported)
 {
+    TRACE1("{zilch} VdpVideoMixerQueryParameterSupport");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -275,7 +291,7 @@ VdpStatus
 fakeVdpVideoMixerQueryAttributeSupport(VdpDevice device, VdpVideoMixerAttribute attribute,
                                        VdpBool *is_supported)
 {
-    TRACE1("fakeVdpVideoMixerQueryAttributeSupport stub");
+    TRACE1("{zilch} VdpVideoMixerQueryAttributeSupport");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -284,6 +300,7 @@ VdpStatus
 fakeVdpVideoMixerQueryParameterValueRange(VdpDevice device, VdpVideoMixerParameter parameter,
                                           void *min_value, void *max_value)
 {
+    TRACE1("{zilch} VdpVideoMixerQueryParameterValueRange");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -292,7 +309,7 @@ VdpStatus
 fakeVdpVideoMixerQueryAttributeValueRange(VdpDevice device, VdpVideoMixerAttribute attribute,
                                           void *min_value, void *max_value)
 {
-    TRACE1("fakeVdpVideoMixerQueryAttributeValueRange stub");
+    TRACE1("{zilch} VdpVideoMixerQueryAttributeValueRange");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -303,7 +320,7 @@ fakeVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
                         VdpVideoMixerParameter const *parameters,
                         void const *const *parameter_values, VdpVideoMixer *mixer)
 {
-    TRACE("fakeVdpVideoMixerCreate stub feature_count=%d, parameter_count=%d",
+    TRACE("{part} VdpVideoMixerCreate feature_count=%d, parameter_count=%d",
         feature_count, parameter_count);
 
     return VDP_STATUS_OK;
@@ -315,7 +332,7 @@ fakeVdpVideoMixerSetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
                                    VdpVideoMixerFeature const *features,
                                    VdpBool const *feature_enables)
 {
-    TRACE("fakeVdpVideoMixerSetFeatureEnables mixer=%d, feature_count=%d", mixer, feature_count);
+    TRACE("{part} VdpVideoMixerSetFeatureEnables mixer=%d, feature_count=%d", mixer, feature_count);
     for (uint32_t k = 0; k < feature_count; k ++) {
         TRACE("   feature %d %s (%s)", features[k], feature_enables[k] ? "enabled" : "disabled",
             reverse_video_mixer_feature(features[k]));
@@ -329,7 +346,7 @@ fakeVdpVideoMixerSetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_coun
                                     VdpVideoMixerAttribute const *attributes,
                                     void const *const *attribute_values)
 {
-    TRACE("fakeVdpVideoMixerSetAttributeValues stub mixer=%d, attribute_count=%d",
+    TRACE("{part} VdpVideoMixerSetAttributeValues mixer=%d, attribute_count=%d",
         mixer, attribute_count);
     for (uint32_t k = 0; k < attribute_count; k ++) {
         TRACE("   attribute %d (%s)", attributes[k], reverse_video_mixer_attributes(attributes[k]));
@@ -353,7 +370,7 @@ VdpStatus
 fakeVdpVideoMixerGetFeatureSupport(VdpVideoMixer mixer, uint32_t feature_count,
                                    VdpVideoMixerFeature const *features, VdpBool *feature_supports)
 {
-    TRACE1("fakeVdpVideoMixerGetFeatureSupport stub");
+    TRACE1("{zilch} VdpVideoMixerGetFeatureSupport");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -362,7 +379,7 @@ VdpStatus
 fakeVdpVideoMixerGetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
                                    VdpVideoMixerFeature const *features, VdpBool *feature_enables)
 {
-    TRACE1("fakeVdpVideoMixerGetFeatureEnables stub");
+    TRACE1("{zilch} VdpVideoMixerGetFeatureEnables");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -372,7 +389,7 @@ fakeVdpVideoMixerGetParameterValues(VdpVideoMixer mixer, uint32_t parameter_coun
                                     VdpVideoMixerParameter const *parameters,
                                     void *const *parameter_values)
 {
-    TRACE1("fakeVdpVideoMixerGetParameterValues stub");
+    TRACE1("{zilch} VdpVideoMixerGetParameterValues");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -382,7 +399,7 @@ fakeVdpVideoMixerGetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_coun
                                     VdpVideoMixerAttribute const *attributes,
                                     void *const *attribute_values)
 {
-    TRACE1("fakeVdpVideoMixerGetAttributeValues stub");
+    TRACE1("{zilch} VdpVideoMixerGetAttributeValues");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -390,7 +407,7 @@ static
 VdpStatus
 fakeVdpVideoMixerDestroy(VdpVideoMixer mixer)
 {
-    TRACE1("fakeVdpVideoMixerDestroy stub");
+    TRACE1("{zilch} VdpVideoMixerDestroy");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -407,7 +424,7 @@ fakeVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
                         VdpRect const *destination_rect, VdpRect const *destination_video_rect,
                         uint32_t layer_count, VdpLayer const *layers)
 {
-    TRACE1("fakeVdpVideoMixerRender");
+    TRACE1("{zilch} VdpVideoMixerRender");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -415,6 +432,7 @@ static
 VdpStatus
 fakeVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_target)
 {
+    TRACE1("{zilch} VdpPresentationQueueTargetDestroy");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -424,7 +442,7 @@ fakeVdpPresentationQueueCreate(VdpDevice device,
                                VdpPresentationQueueTarget presentation_queue_target,
                                VdpPresentationQueue *presentation_queue)
 {
-    TRACE("fakeVdpPresentationQueueCreate device=%d, presentation_queue_target=%d",
+    TRACE("{part} VdpPresentationQueueCreate device=%d, presentation_queue_target=%d",
         device, presentation_queue_target);
     VdpPresentationQueueData *data =
         (VdpPresentationQueueData *)calloc(1, sizeof(VdpPresentationQueueData));
@@ -448,6 +466,7 @@ static
 VdpStatus
 fakeVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 {
+    TRACE1("{zilch} VdpPresentationQueueDestroy");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -456,6 +475,7 @@ VdpStatus
 fakeVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_queue,
                                            VdpColor *const background_color)
 {
+    TRACE1("{zilch} VdpPresentationQueueSetBackgroundColor");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -464,6 +484,7 @@ VdpStatus
 fakeVdpPresentationQueueGetBackgroundColor(VdpPresentationQueue presentation_queue,
                                            VdpColor *background_color)
 {
+    TRACE1("{zilch} VdpPresentationQueueGetBackgroundColor");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -472,7 +493,7 @@ VdpStatus
 fakeVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue,
                                 VdpTime *current_time)
 {
-    TRACE("fakeVdpPresentationQueueGetTime presentation_queue=%d", presentation_queue);
+    TRACE("{full} VdpPresentationQueueGetTime presentation_queue=%d", presentation_queue);
     struct timeval tv;
     gettimeofday(&tv, NULL);
     *current_time = (uint64_t)tv.tv_sec * 1000000000LL + (uint64_t)tv.tv_usec * 1000LL;
@@ -485,7 +506,7 @@ fakeVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
                                 uint32_t clip_width, uint32_t clip_height,
                                 VdpTime earliest_presentation_time)
 {
-    TRACE1("fakeVdpPresentationQueueDisplay");
+    TRACE1("{zilch} VdpPresentationQueueDisplay");
     return VDP_STATUS_OK;
 }
 
@@ -496,7 +517,7 @@ fakeVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_
                                               VdpTime *first_presentation_time)
 
 {
-    TRACE1("fakeVdpPresentationQueueBlockUntilSurfaceIdle");
+    TRACE1("{zilch} VdpPresentationQueueBlockUntilSurfaceIdle");
     return VDP_STATUS_OK;
 }
 
@@ -508,7 +529,7 @@ fakeVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_que
                                            VdpTime *first_presentation_time)
 {
     *status = VDP_PRESENTATION_QUEUE_STATUS_VISIBLE;
-    TRACE1("fakeVdpPresentationQueueQuerySurfaceStatus");
+    TRACE1("{part} VdpPresentationQueueQuerySurfaceStatus");
     return VDP_STATUS_OK;
 }
 
@@ -518,6 +539,7 @@ fakeVdpVideoSurfaceQueryCapabilities(VdpDevice device, VdpChromaType surface_chr
                                      VdpBool *is_supported, uint32_t *max_width,
                                      uint32_t *max_height)
 {
+    TRACE1("{zilch} VdpVideoSurfaceQueryCapabilities");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -528,6 +550,7 @@ fakeVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(VdpDevice device,
                                                     VdpYCbCrFormat bits_ycbcr_format,
                                                     VdpBool *is_supported)
 {
+    TRACE1("{zilch} VdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -536,7 +559,7 @@ VdpStatus
 fakeVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t width,
                           uint32_t height, VdpVideoSurface *surface)
 {
-    TRACE1("fakeVdpVideoSurfaceCreate");
+    TRACE1("{zilch} VdpVideoSurfaceCreate");
     return VDP_STATUS_OK;
 }
 
@@ -544,6 +567,7 @@ static
 VdpStatus
 fakeVdpVideoSurfaceDestroy(VdpVideoSurface surface)
 {
+    TRACE1("{zilch} VdpVideoSurfaceDestroy");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -552,6 +576,7 @@ VdpStatus
 fakeVdpVideoSurfaceGetParameters(VdpVideoSurface surface, VdpChromaType *chroma_type,
                                  uint32_t *width, uint32_t *height)
 {
+    TRACE1("{zilch} VdpVideoSurfaceGetParameters");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -560,6 +585,7 @@ VdpStatus
 fakeVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destination_ycbcr_format,
                                 void *const *destination_data, uint32_t const *destination_pitches)
 {
+    TRACE1("{zilch} VdpVideoSurfaceGetBitsYCbCr");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -568,7 +594,7 @@ VdpStatus
 fakeVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_ycbcr_format,
                                 void const *const *source_data, uint32_t const *source_pitches)
 {
-    TRACE("fakeVdpVideoSurfacePutBitsYCbCr, %d, %d, %p", surface, source_ycbcr_format, *source_data);
+    TRACE("{zilch} VdpVideoSurfacePutBitsYCbCr, %d, %d, %p", surface, source_ycbcr_format, *source_data);
     return VDP_STATUS_OK;
 }
 
@@ -578,6 +604,7 @@ fakeVdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
                                       VdpBool *is_supported, uint32_t *max_width,
                                       uint32_t *max_height)
 {
+    TRACE1("{zilch} VdpBitmapSurfaceQueryCapabilities");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -586,6 +613,7 @@ VdpStatus
 fakeVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
                            uint32_t height, VdpBool frequently_accessed, VdpBitmapSurface *surface)
 {
+    TRACE1("{zilch} VdpBitmapSurfaceCreate");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -593,6 +621,7 @@ static
 VdpStatus
 fakeVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
 {
+    TRACE1("{zilch} VdpBitmapSurfaceDestroy");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -601,6 +630,7 @@ VdpStatus
 fakeVdpBitmapSurfaceGetParameters(VdpBitmapSurface surface, VdpRGBAFormat *rgba_format,
                                   uint32_t *width, uint32_t *height, VdpBool *frequently_accessed)
 {
+    TRACE1("{zilch} VdpBitmapSurfaceGetParameters");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -609,6 +639,7 @@ VdpStatus
 fakeVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *source_data,
                                   uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
+    TRACE1("{zilch} VdpBitmapSurfacePutBitsNative");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -616,6 +647,7 @@ static
 VdpStatus
 fakeVdpDeviceDestroy(VdpDevice device)
 {
+    TRACE1("{zilch} VdpDeviceDestroy");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -623,6 +655,7 @@ static
 VdpStatus
 fakeVdpGetInformationString(char const **information_string)
 {
+    TRACE1("{zilch} VdpGetInformationString");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -630,7 +663,7 @@ static
 VdpStatus
 fakeVdpGenerateCSCMatrix(VdpProcamp *procamp, VdpColorStandard standard, VdpCSCMatrix *csc_matrix)
 {
-    TRACE1("fakeVdpGenerateCSCMatrix not implemented");
+    TRACE1("{zilch} VdpGenerateCSCMatrix");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -643,6 +676,7 @@ fakeVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
                                         VdpOutputSurfaceRenderBlendState const *blend_state,
                                         uint32_t flags)
 {
+    TRACE1("{zilch} VdpOutputSurfaceRenderOutputSurface");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -655,6 +689,7 @@ fakeVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
                                         VdpOutputSurfaceRenderBlendState const *blend_state,
                                         uint32_t flags)
 {
+    TRACE1("{zilch} VdpOutputSurfaceRenderBitmapSurface");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -662,6 +697,7 @@ static
 VdpStatus
 fakeVdpPreemptionCallbackRegister(VdpDevice device, VdpPreemptionCallback callback, void *context)
 {
+    TRACE1("{zilch} VdpPreemptionCallbackRegister");
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -670,7 +706,7 @@ VdpStatus
 fakeVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
                                         VdpPresentationQueueTarget *target)
 {
-    TRACE("fakeVdpPresentationQueueTargetCreateX11, device=%d, drawable=%u", device,
+    TRACE("{part} VdpPresentationQueueTargetCreateX11, device=%d, drawable=%u", device,
         ((unsigned int)drawable));
 
     VdpPresentationQueueTargetData *data =
@@ -695,7 +731,7 @@ static
 VdpStatus
 fakeVdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_pointer)
 {
-    TRACE("fakeVdpGetProcAddress, device=%d, function_id=%s", device, reverse_func_id(function_id));
+    TRACE("{full} VdpGetProcAddress, device=%d, function_id=%s", device, reverse_func_id(function_id));
     switch (function_id) {
     case VDP_FUNC_ID_GET_ERROR_STRING:
         *function_pointer = &fakeVdpGetErrorString;
@@ -899,7 +935,7 @@ VdpStatus
 vdp_imp_device_create_x11(Display *display, int screen, VdpDevice *device,
                           VdpGetProcAddress **get_proc_address)
 {
-    TRACE("vdp_imp_device_create_x11 display=%p, screen=%d", display, screen);
+    TRACE("{full} vdp_imp_device_create_x11 display=%p, screen=%d", display, screen);
     if (NULL == display)
         return VDP_STATUS_INVALID_POINTER;
     VdpDeviceData *data = (VdpDeviceData *)malloc(sizeof(VdpDeviceData));
