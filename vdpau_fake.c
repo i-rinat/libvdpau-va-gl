@@ -374,7 +374,7 @@ fakeVdpVideoMixerSetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_coun
         }
     }
 
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    return VDP_STATUS_OK;
 }
 
 static
