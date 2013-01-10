@@ -496,8 +496,80 @@ fakeVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
                         VdpRect const *destination_rect, VdpRect const *destination_video_rect,
                         uint32_t layer_count, VdpLayer const *layers)
 {
-    TRACE1("{zilch} VdpVideoMixerRender");
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE1("{WIP} VdpVideoMixerRender");
+
+#ifndef NDEBUG
+    VdpRect const *rect;
+    printf("      mixer=%d, background_surface=%d,", mixer, background_surface);
+    printf(" background_source_rect=");
+
+    rect = background_source_rect;
+    if (NULL == rect) printf("NULL");
+    else printf("(%d,%d,%d,%d)", rect->x0, rect->y0, rect->x1, rect->y1);
+
+    printf(",\n      current_picture_structure=%s,\n",
+        reverser_video_mixer_picture_structure(current_picture_structure));
+    printf("     ");
+    if (video_surface_past_count > 0) {
+        printf(" video_surface_past=[");
+        for (uint32_t k = 0; k < video_surface_past_count; k ++) {
+            if (0 != k) printf(",");
+            printf("%d", video_surface_past[k]);
+        }
+        printf("],");
+    } else {
+        printf(" no_video_surface_past,");
+    }
+    printf(" video_surface_current=%d,", video_surface_current);
+    if (video_surface_future_count > 0) {
+        printf(" video_surface_future=[");
+        for (uint32_t k = 0; k < video_surface_future_count; k ++) {
+            if (0 != k) printf(",");
+            printf("%d", video_surface_future[k]);
+        }
+        printf("],");
+    } else {
+        printf(" no_video_surface_future,");
+    }
+
+    printf("\n      video_source_rect=");
+    rect = video_source_rect;
+    if (NULL == rect) printf("NULL");
+    else printf("(%d,%d,%d,%d)", rect->x0, rect->y0, rect->x1, rect->y1);
+
+    printf(", destination_surface=%d,", destination_surface);
+
+    printf("\n      destination_rect=");
+    rect = destination_rect;
+    if (NULL == rect) printf("NULL");
+    else printf("(%d,%d,%d,%d)", rect->x0, rect->y0, rect->x1, rect->y1);
+
+    printf(", video_surface_current=%d,", video_surface_current);
+
+    if (layer_count > 0) {
+        printf(" layers=[");
+        for (uint32_t k = 0; k < layer_count; k ++) {
+            if (0 != k) printf(",");
+            printf("{%d,", layers[k].source_surface);
+            rect = layers[k].source_rect;
+            if (NULL == rect) printf("src:NULL,");
+            else printf("src:[%d,%d,%d,%d],", rect->x0, rect->y0, rect->x1, rect->y1);
+            rect = layers[k].destination_rect;
+            if (NULL == rect) printf("dst:NULL,");
+            else printf("dst:[%d,%d,%d,%d],", rect->x0, rect->y0, rect->x1, rect->y1);
+            printf("}");
+        }
+        printf("]");
+    } else {
+        printf(" no_layers");
+    }
+
+    printf("\n");
+#endif
+
+
+
+    return VDP_STATUS_OK;
 }
 
 static
