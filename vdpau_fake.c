@@ -786,7 +786,7 @@ fakeVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
     if (! handlestorage_valid(surface, HANDLE_TYPE_VIDEO_SURFACE))
         return VDP_STATUS_INVALID_HANDLE;
 
-    //TODO: fugure out what to do with other formats
+    //TODO: figure out what to do with other formats
     if (VDP_YCBCR_FORMAT_YV12 != source_ycbcr_format)
         return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
 
