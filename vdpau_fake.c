@@ -498,7 +498,7 @@ fakeVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
                         VdpRect const *destination_rect, VdpRect const *destination_video_rect,
                         uint32_t layer_count, VdpLayer const *layers)
 {
-    TRACE1("{WIP} VdpVideoMixerRender");
+    TRACE1("{part} VdpVideoMixerRender");
 
 #ifndef NDEBUG
     VdpRect const *rect;
@@ -569,7 +569,36 @@ fakeVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     printf("\n");
 #endif
 
+    VdpVideoSurfaceData *source_surface =
+        handlestorage_get(video_surface_current, HANDLE_TYPE_VIDEO_SURFACE);
+    if (NULL == source_surface)
+        return VDP_STATUS_INVALID_HANDLE;
 
+    VdpOutputSurfaceData *dest_surface =
+        handlestorage_get(destination_surface, HANDLE_TYPE_OUTPUT_SURFACE);
+    if (NULL == dest_surface)
+        return VDP_STATUS_INVALID_HANDLE;
+
+    struct SwsContext *sws_ctx =
+        sws_getContext(source_surface->width, source_surface->height, PIX_FMT_YUV420P,
+            dest_surface->width, dest_surface->height, PIX_FMT_RGBA,
+            SWS_POINT, NULL, NULL, NULL);
+
+    uint8_t const * const src_planes[] =
+        { source_surface->y_plane, source_surface->v_plane, source_surface->u_plane, NULL };
+    int src_strides[] =
+        {source_surface->stride, source_surface->width/2, source_surface->width/2, 0};
+    uint8_t *dst_planes[] = {dest_surface->buf, NULL, NULL, NULL};
+    int dst_strides[] = {dest_surface->stride, 0, 0, 0};
+    int res = sws_scale(sws_ctx,
+                        src_planes, src_strides, 0, source_surface->height,
+                        dst_planes, dst_strides);
+
+    sws_freeContext(sws_ctx);
+
+    // printf ("res = %d, while height = %d\n", res, source_surface->height);
+    if (res != source_surface->height)
+        return VDP_STATUS_ERROR;
 
     return VDP_STATUS_OK;
 }
