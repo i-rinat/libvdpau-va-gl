@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <glib.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/time.h>
 #include "reverse-constant.h"
 #include "handle-storage.h"
@@ -32,6 +33,18 @@ rgba_format_storage_size(VdpRGBAFormat rgba_format)
         return 1;
     default:
         return 4;
+    }
+}
+
+static
+uint32_t
+chroma_storage_size_divider(VdpChromaType chroma_type)
+{
+    switch (chroma_type) {
+    case VDP_CHROMA_TYPE_420: return 4;
+    case VDP_CHROMA_TYPE_422: return 2;
+    case VDP_CHROMA_TYPE_444: return 1;
+    default: return 1;
     }
 }
 
@@ -631,12 +644,19 @@ fakeVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
     uint32_t const stride = (width % 4 == 0) ? width : (width & 0x3) + 4;
 
     data->type = HANDLE_TYPE_VIDEO_SURFACE;
+    data->device = device;
+    data->chroma_type = chroma_type;
     data->width = width;
     data->stride = stride;
     data->height = height;
     //TODO: find valid storage size for chroma_type
-    data->buf = malloc(stride * height * 4);
-    if (NULL == data->buf) {
+    data->y_plane = malloc(stride * height);
+    data->v_plane = malloc(stride * height / chroma_storage_size_divider(chroma_type));
+    data->u_plane = malloc(stride * height / chroma_storage_size_divider(chroma_type));
+    if (NULL == data->y_plane || NULL == data->v_plane || NULL == data->u_plane) {
+        if (data->y_plane) free(data->y_plane);
+        if (data->v_plane) free(data->v_plane);
+        if (data->u_plane) free(data->u_plane);
         free(data);
         return VDP_STATUS_RESOURCES;
     }
@@ -677,7 +697,40 @@ VdpStatus
 fakeVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_ycbcr_format,
                                 void const *const *source_data, uint32_t const *source_pitches)
 {
-    TRACE("{zilch} VdpVideoSurfacePutBitsYCbCr, %d, %d, %p", surface, source_ycbcr_format, *source_data);
+    TRACE("{part} VdpVideoSurfacePutBitsYCbCr surface=%d, source_ycbcr_format=%s",
+        surface, reverse_ycbcr_format(source_ycbcr_format));
+    if (! handlestorage_valid(surface, HANDLE_TYPE_VIDEO_SURFACE))
+        return VDP_STATUS_INVALID_HANDLE;
+
+    //TODO: fugure out what to do with other formats
+    if (VDP_YCBCR_FORMAT_YV12 != source_ycbcr_format)
+        return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
+
+    VdpVideoSurfaceData *surfaceData = handlestorage_get(surface);
+
+    uint8_t const *src;
+    uint8_t *dst;
+    dst = surfaceData->y_plane;     src = source_data[0];
+    for (uint32_t k = 0; k < surfaceData->height; k ++) {
+        memcpy(dst, src, surfaceData->width);
+        dst += surfaceData->stride;
+        src += source_pitches[0];
+    }
+
+    dst = surfaceData->v_plane;     src = source_data[1];
+    for (uint32_t k = 0; k < surfaceData->height / 2; k ++) {
+        memcpy(dst, src, surfaceData->width / 2);
+        dst += surfaceData->width / 2;
+        src += source_pitches[1];
+    }
+
+    dst = surfaceData->u_plane;     src = source_data[2];
+    for (uint32_t k = 0; k < surfaceData->height / 2; k ++) {
+        memcpy(dst, src, surfaceData->width/2);
+        dst += surfaceData->width / 2;
+        src += source_pitches[2];
+    }
+
     return VDP_STATUS_OK;
 }
 

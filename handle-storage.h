@@ -58,7 +58,9 @@ typedef struct {
     uint32_t width;
     uint32_t stride;
     uint32_t height;
-    void *buf;
+    void *y_plane;
+    void *v_plane;
+    void *u_plane;
 } VdpVideoSurfaceData;
 
 void handlestorage_initialize(void);
