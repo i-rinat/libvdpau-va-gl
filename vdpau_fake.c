@@ -589,7 +589,8 @@ fakeVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     int src_strides[] =
         {source_surface->stride, source_surface->width/2, source_surface->width/2, 0};
     uint8_t *dst_planes[] = {dest_surface->buf, NULL, NULL, NULL};
-    int dst_strides[] = {dest_surface->stride, 0, 0, 0};
+    int dst_strides[] = {dest_surface->stride * rgba_format_storage_size(dest_surface->rgba_format),
+                         0, 0, 0};
     int res = sws_scale(sws_ctx,
                         src_planes, src_strides, 0, source_surface->height,
                         dst_planes, dst_strides);
@@ -630,7 +631,7 @@ fakeVdpPresentationQueueCreate(VdpDevice device,
 
     data->type = HANDLE_TYPE_PRESENTATION_QUEUE;
     data->device = device;
-    data->presentationQueueTarget = presentation_queue_target;
+    data->presentation_queue_target = presentation_queue_target;
 
     *presentation_queue = handlestorage_add(data);
 
@@ -681,7 +682,44 @@ fakeVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
                                 uint32_t clip_width, uint32_t clip_height,
                                 VdpTime earliest_presentation_time)
 {
-    TRACE1("{zilch} VdpPresentationQueueDisplay");
+    TRACE("{WIP_} VdpPresentationQueueDisplay presentation_queue=%d, surface=%d, "
+        "clip_width=%d, clip_height=%d", presentation_queue, surface, clip_width, clip_height);
+
+    VdpOutputSurfaceData *surfaceData = handlestorage_get(surface, HANDLE_TYPE_OUTPUT_SURFACE);
+    if (NULL == surfaceData) return VDP_STATUS_INVALID_HANDLE;
+
+    VdpPresentationQueueData *presentationQueueData =
+        handlestorage_get(presentation_queue, HANDLE_TYPE_PRESENTATION_QUEUE);
+
+    if (NULL == presentationQueueData) return VDP_STATUS_INVALID_HANDLE;
+
+    VdpPresentationQueueTargetData *presentationQueueTargetData =
+        handlestorage_get(presentationQueueData->presentation_queue_target,
+        HANDLE_TYPE_PRESENTATION_QUEUE_TARGET);
+
+    if (NULL == presentationQueueTargetData) return VDP_STATUS_INVALID_HANDLE;
+
+    Drawable drawable = presentationQueueTargetData->drawable;
+
+    VdpDeviceData *deviceData =
+        handlestorage_get(presentationQueueTargetData->device, HANDLE_TYPE_DEVICE);
+
+    if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
+
+    Display *display = deviceData->display;
+    int screen = deviceData->screen;
+
+    XImage *image = XCreateImage(display, DefaultVisual(display, screen), 24, ZPixmap, 0,
+        (char *)(surfaceData->buf), surfaceData->width, surfaceData->height, 32,
+        surfaceData->stride * rgba_format_storage_size(surfaceData->rgba_format));
+
+    XPutImage(display, drawable, DefaultGC(display, screen), image, 0, 0, 0, 0,
+        surfaceData->width, surfaceData->height);
+
+    //void *dummy=malloc(4);  // as XDestroyImage frees data too, fool it
+    //image->data = dummy;
+    //XDestroyImage(image);
+
     return VDP_STATUS_OK;
 }
 

@@ -33,7 +33,7 @@ typedef struct {
 typedef struct {
     HandleType type;
     int device;
-    int presentationQueueTarget;
+    int presentation_queue_target;
 } VdpPresentationQueueData;
 
 typedef struct {
