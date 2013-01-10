@@ -589,7 +589,18 @@ fakeVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_
                                               VdpTime *first_presentation_time)
 
 {
-    TRACE1("{zilch} VdpPresentationQueueBlockUntilSurfaceIdle");
+    TRACE("{full} VdpPresentationQueueBlockUntilSurfaceIdle presentation_queue=%d, surface=%d",
+        presentation_queue, surface);
+
+    if (! handlestorage_valid(presentation_queue, HANDLE_TYPE_PRESENTATION_QUEUE))
+        return VDP_STATUS_INVALID_HANDLE;
+
+    if (! handlestorage_valid(surface, HANDLE_TYPE_OUTPUT_SURFACE))
+        return VDP_STATUS_INVALID_HANDLE;
+
+    // use current time as presentation time
+    fakeVdpPresentationQueueGetTime(presentation_queue, first_presentation_time);
+
     return VDP_STATUS_OK;
 }
 
