@@ -10,5 +10,6 @@ const char * reverse_video_mixer_attributes(VdpVideoMixerAttribute attr);
 const char * reverse_rgba_format(VdpRGBAFormat rgba_format);
 const char * reverse_chroma_type(VdpChromaType chroma_type);
 const char * reverse_ycbcr_format(VdpYCbCrFormat ycbcr_format);
+const char * reverser_video_mixer_picture_structure(VdpVideoMixerPictureStructure s);
 
 #endif /* REVERSE_CONSTANT_H_ */

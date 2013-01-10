@@ -250,3 +250,18 @@ reverse_ycbcr_format(VdpYCbCrFormat ycbcr_format)
         return "Unknown YCbCr format";
     }
 }
+
+const char *
+reverser_video_mixer_picture_structure(VdpVideoMixerPictureStructure s)
+{
+    switch (s) {
+    case VDP_VIDEO_MIXER_PICTURE_STRUCTURE_TOP_FIELD:
+        return "VDP_VIDEO_MIXER_PICTURE_STRUCTURE_TOP_FIELD";
+    case VDP_VIDEO_MIXER_PICTURE_STRUCTURE_BOTTOM_FIELD:
+        return "VDP_VIDEO_MIXER_PICTURE_STRUCTURE_BOTTOM_FIELD";
+    case VDP_VIDEO_MIXER_PICTURE_STRUCTURE_FRAME:
+        return "VDP_VIDEO_MIXER_PICTURE_STRUCTURE_FRAME";
+    default:
+        return "Unknown video mixer picture structure";
+    }
+}
