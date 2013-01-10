@@ -783,14 +783,14 @@ fakeVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
 {
     TRACE("{part} VdpVideoSurfacePutBitsYCbCr surface=%d, source_ycbcr_format=%s",
         surface, reverse_ycbcr_format(source_ycbcr_format));
-    if (! handlestorage_valid(surface, HANDLE_TYPE_VIDEO_SURFACE))
-        return VDP_STATUS_INVALID_HANDLE;
 
     //TODO: figure out what to do with other formats
     if (VDP_YCBCR_FORMAT_YV12 != source_ycbcr_format)
         return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
 
-    VdpVideoSurfaceData *surfaceData = handlestorage_get(surface);
+    VdpVideoSurfaceData *surfaceData = handlestorage_get(surface, HANDLE_TYPE_VIDEO_SURFACE);
+    if (NULL == surfaceData)
+        return VDP_STATUS_INVALID_HANDLE;
 
     uint8_t const *src;
     uint8_t *dst;

@@ -39,9 +39,9 @@ handlestorage_valid(int handle, HandleType type)
 }
 
 void *
-handlestorage_get(int handle)
+handlestorage_get(int handle, HandleType type)
 {
-    return handlestorage_valid(handle, HANDLE_TYPE_ANY)
+    return handlestorage_valid(handle, type)
             ? g_ptr_array_index(vdpHandles, handle)
             : NULL;
 }
