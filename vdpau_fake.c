@@ -256,6 +256,7 @@ fakeVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
 
     data->type = HANDLE_TYPE_OUTPUT_SURFACE;
     data->device = device;
+    data->rgba_format = rgba_format;
     data->width = width;
     data->stride = stride;
     data->height = height;
