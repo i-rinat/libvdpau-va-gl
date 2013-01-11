@@ -67,6 +67,7 @@ void handlestorage_initialize(void);
 int handlestorage_add(void *data);
 int handlestorage_valid(int handle, HandleType type);
 void * handlestorage_get(int handle, HandleType type);
+void handlestorage_expunge(int handle);
 void handlestorage_destory(void);
 
 

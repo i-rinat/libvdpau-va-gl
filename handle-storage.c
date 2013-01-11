@@ -47,6 +47,14 @@ handlestorage_get(int handle, HandleType type)
 }
 
 void
+handlestorage_expunge(int handle)
+{
+    if (handlestorage_valid(handle, HANDLE_TYPE_ANY)) {
+        g_ptr_array_index(vdpHandles, handle) = NULL;
+    }
+}
+
+void
 handlestorage_destory(void)
 {
     g_ptr_array_unref(vdpHandles);
