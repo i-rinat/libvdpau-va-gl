@@ -977,8 +977,15 @@ static
 VdpStatus
 fakeVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
 {
-    TRACE1("{zilch} VdpBitmapSurfaceDestroy");
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE("{full} VdpBitmapSurfaceDestroy surface=%d", surface);
+    VdpBitmapSurfaceData *data = handlestorage_get(surface, HANDLE_TYPE_BITMAP_SURFACE);
+    if (NULL == data)
+        return VDP_STATUS_INVALID_HANDLE;
+
+    free(data->buf);
+    free(data);
+    handlestorage_expunge(surface);
+    return VDP_STATUS_OK;
 }
 
 static
