@@ -278,10 +278,11 @@ VdpStatus
 fakeVdpOutputSurfaceDestroy(VdpOutputSurface surface)
 {
     TRACE("{full} VdpOutputSurfaceDestroy surface=%d", surface);
-    void *data = handlestorage_get(surface, HANDLE_TYPE_OUTPUT_SURFACE);
+    VdpOutputSurfaceData *data = handlestorage_get(surface, HANDLE_TYPE_OUTPUT_SURFACE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
 
+    free(data->buf);
     free(data);
     handlestorage_expunge(surface);
     return VDP_STATUS_OK;
@@ -850,10 +851,13 @@ fakeVdpVideoSurfaceDestroy(VdpVideoSurface surface)
 {
     TRACE("{full} VdpVideoSurfaceDestroy surface=%d", surface);
 
-    void *data = handlestorage_get(surface, HANDLE_TYPE_VIDEO_SURFACE);
+    VdpVideoSurfaceData *data = handlestorage_get(surface, HANDLE_TYPE_VIDEO_SURFACE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
 
+    free(data->y_plane);
+    free(data->v_plane);
+    free(data->u_plane);
     free(data);
     handlestorage_expunge(surface);
     return VDP_STATUS_OK;
