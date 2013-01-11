@@ -481,8 +481,15 @@ static
 VdpStatus
 fakeVdpVideoMixerDestroy(VdpVideoMixer mixer)
 {
-    TRACE1("{zilch} VdpVideoMixerDestroy");
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE1("{full} VdpVideoMixerDestroy");
+    void *data = handlestorage_get(mixer, HANDLE_TYPE_VIDEO_MIXER);
+    if (NULL == data)
+        return VDP_STATUS_INVALID_HANDLE;
+
+    free(data);
+    handlestorage_expunge(mixer);
+
+    return VDP_STATUS_OK;
 }
 
 static
@@ -822,8 +829,15 @@ static
 VdpStatus
 fakeVdpVideoSurfaceDestroy(VdpVideoSurface surface)
 {
-    TRACE1("{zilch} VdpVideoSurfaceDestroy");
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE1("{full} VdpVideoSurfaceDestroy");
+
+    void *data = handlestorage_get(surface, HANDLE_TYPE_VIDEO_SURFACE);
+    if (NULL == data)
+        return VDP_STATUS_INVALID_HANDLE;
+
+    free(data);
+    handlestorage_expunge(surface);
+    return VDP_STATUS_OK;
 }
 
 static
