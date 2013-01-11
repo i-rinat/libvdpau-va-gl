@@ -487,7 +487,7 @@ static
 VdpStatus
 fakeVdpVideoMixerDestroy(VdpVideoMixer mixer)
 {
-    TRACE1("{full} VdpVideoMixerDestroy");
+    TRACE("{full} VdpVideoMixerDestroy mixer=%d", mixer);
     void *data = handlestorage_get(mixer, HANDLE_TYPE_VIDEO_MIXER);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
@@ -621,7 +621,8 @@ static
 VdpStatus
 fakeVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_target)
 {
-    TRACE1("{full} VdpPresentationQueueTargetDestroy");
+    TRACE("{full} VdpPresentationQueueTargetDestroy presentation_queue_target=%d",
+        presentation_queue_target);
     void *data = handlestorage_get(presentation_queue_target, HANDLE_TYPE_PRESENTATION_QUEUE_TARGET);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
@@ -841,7 +842,7 @@ static
 VdpStatus
 fakeVdpVideoSurfaceDestroy(VdpVideoSurface surface)
 {
-    TRACE1("{full} VdpVideoSurfaceDestroy");
+    TRACE("{full} VdpVideoSurfaceDestroy surface=%d", surface);
 
     void *data = handlestorage_get(surface, HANDLE_TYPE_VIDEO_SURFACE);
     if (NULL == data)
