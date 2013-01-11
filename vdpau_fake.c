@@ -615,8 +615,14 @@ static
 VdpStatus
 fakeVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_target)
 {
-    TRACE1("{zilch} VdpPresentationQueueTargetDestroy");
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE1("{full} VdpPresentationQueueTargetDestroy");
+    void *data = handlestorage_get(presentation_queue_target, HANDLE_TYPE_PRESENTATION_QUEUE_TARGET);
+    if (NULL == data)
+        return VDP_STATUS_INVALID_HANDLE;
+
+    free(data);
+    handlestorage_expunge(presentation_queue_target);
+    return VDP_STATUS_OK;
 }
 
 static
