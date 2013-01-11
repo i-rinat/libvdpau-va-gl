@@ -10,7 +10,7 @@ pkg_check_modules(SWSCALE libswscale REQUIRED)
 link_directories (
 	${VDPAU_LIBRARY_DIRS}
 	${GLIB20_LIBRARY_DIRS}
-	${STATIC_SWSCALE_LIBRARY_DIRS}
+	${SWSCALE_LIBRARY_DIRS}
 )
 
 include_directories (
@@ -27,7 +27,7 @@ add_library (vdpau_fake SHARED
 
 target_link_libraries (vdpau_fake
 	${GLIB20_LIBRARIES}
-	${STATIC_SWSCALE_LIBRARIES}
+	${SWSCALE_LIBRARIES}
 )
 
 set_target_properties (vdpau_fake
