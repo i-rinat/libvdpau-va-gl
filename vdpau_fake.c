@@ -277,8 +277,14 @@ static
 VdpStatus
 fakeVdpOutputSurfaceDestroy(VdpOutputSurface surface)
 {
-    TRACE1("{zilch} VdpOutputSurfaceDestroy");
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE("{full} VdpOutputSurfaceDestroy surface=%d", surface);
+    void *data = handlestorage_get(surface, HANDLE_TYPE_OUTPUT_SURFACE);
+    if (NULL == data)
+        return VDP_STATUS_INVALID_HANDLE;
+
+    free(data);
+    handlestorage_expunge(surface);
+    return VDP_STATUS_OK;
 }
 
 static
