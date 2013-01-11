@@ -943,8 +943,34 @@ VdpStatus
 fakeVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
                            uint32_t height, VdpBool frequently_accessed, VdpBitmapSurface *surface)
 {
-    TRACE1("{zilch} VdpBitmapSurfaceCreate");
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE("{full} VdpBitmapSurfaceCreate device=%d, rgba_format=%s, width=%d, height=%d,"
+        "frequently_accessed=%d", device, reverse_rgba_format(rgba_format), width, height,
+        frequently_accessed);
+    VdpDeviceData *deviceData = handlestorage_get(device, HANDLE_TYPE_DEVICE);
+    if (NULL == deviceData)
+        return VDP_STATUS_INVALID_HANDLE;
+
+    VdpBitmapSurfaceData *data = (VdpBitmapSurfaceData *)calloc(1, sizeof(VdpBitmapSurfaceData));
+    if (NULL == data)
+        return VDP_STATUS_RESOURCES;
+
+    uint32_t stride = (width % 4 == 0) ? width : (width & 3) + 4;
+    void *buf = malloc(stride * height * rgba_format_storage_size(rgba_format));
+    if (NULL == buf) {
+        free(data);
+        return VDP_STATUS_RESOURCES;
+    }
+
+    data->type = HANDLE_TYPE_BITMAP_SURFACE;
+    data->device = device;
+    data->rgba_format = rgba_format;
+    data->width = width;
+    data->height = height;
+    data->stride = stride;
+    data->buf = buf;
+
+    *surface = handlestorage_add(data);
+    return VDP_STATUS_OK;
 }
 
 static

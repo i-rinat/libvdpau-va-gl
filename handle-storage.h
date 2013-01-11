@@ -13,6 +13,7 @@ typedef uint32_t    HandleType;
 #define HANDLE_TYPE_VIDEO_MIXER                 (HandleType)4
 #define HANDLE_TYPE_OUTPUT_SURFACE              (HandleType)5
 #define HANDLE_TYPE_VIDEO_SURFACE               (HandleType)6
+#define HANDLE_TYPE_BITMAP_SURFACE              (HandleType)7
 
 typedef struct {
     HandleType type;
@@ -62,6 +63,16 @@ typedef struct {
     void *v_plane;
     void *u_plane;
 } VdpVideoSurfaceData;
+
+typedef struct {
+    HandleType type;
+    VdpDevice device;
+    VdpRGBAFormat rgba_format;
+    uint32_t width;
+    uint32_t stride;
+    uint32_t height;
+    void *buf;
+} VdpBitmapSurfaceData;
 
 void handlestorage_initialize(void);
 int handlestorage_add(void *data);
