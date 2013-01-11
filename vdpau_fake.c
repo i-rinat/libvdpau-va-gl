@@ -977,8 +977,14 @@ static
 VdpStatus
 fakeVdpDeviceDestroy(VdpDevice device)
 {
-    TRACE1("{zilch} VdpDeviceDestroy");
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE("{full} VdpDeviceDestroy device=%d", device);
+    void *data = handlestorage_get(device, HANDLE_TYPE_DEVICE);
+    if (NULL == data)
+        return VDP_STATUS_INVALID_HANDLE;
+
+    free(data);
+    handlestorage_expunge(device);
+    return VDP_STATUS_OK;
 }
 
 static
