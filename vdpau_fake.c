@@ -709,7 +709,7 @@ fakeVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
                                 uint32_t clip_width, uint32_t clip_height,
                                 VdpTime earliest_presentation_time)
 {
-    TRACE("{WIP_} VdpPresentationQueueDisplay presentation_queue=%d, surface=%d, "
+    TRACE("{part} VdpPresentationQueueDisplay presentation_queue=%d, surface=%d, "
         "clip_width=%d, clip_height=%d", presentation_queue, surface, clip_width, clip_height);
 
     VdpOutputSurfaceData *surfaceData = handlestorage_get(surface, HANDLE_TYPE_OUTPUT_SURFACE);
