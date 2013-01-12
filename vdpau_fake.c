@@ -391,6 +391,27 @@ fakeVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
 {
     TRACE("{part} VdpVideoMixerCreate feature_count=%d, parameter_count=%d",
         feature_count, parameter_count);
+#ifndef NDEBUG
+    for (uint32_t k = 0; k < parameter_count; k ++) {
+        printf("      parameter ");
+        switch (parameters[k]) {
+        case VDP_VIDEO_MIXER_PARAMETER_VIDEO_SURFACE_WIDTH:
+            printf("video surface width = %d\n", *(uint32_t*)parameter_values[k]);
+            break;
+        case VDP_VIDEO_MIXER_PARAMETER_VIDEO_SURFACE_HEIGHT:
+            printf("video surface height = %d\n", *(uint32_t*)parameter_values[k]);
+            break;
+        case VDP_VIDEO_MIXER_PARAMETER_CHROMA_TYPE:
+            printf("chroma type = %s\n", reverse_chroma_type(*(uint32_t*)parameter_values[k]));
+            break;
+        case VDP_VIDEO_MIXER_PARAMETER_LAYERS:
+            printf("layers = %d\n", *(uint32_t*)parameter_values[k]);
+            break;
+        default:
+            return VDP_STATUS_INVALID_VIDEO_MIXER_PARAMETER;
+        }
+    }
+#endif
 
     if (!handlestorage_valid(device, HANDLE_TYPE_DEVICE))
         return VDP_STATUS_INVALID_HANDLE;
