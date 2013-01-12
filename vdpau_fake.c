@@ -1009,7 +1009,7 @@ VdpStatus
 fakeVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *source_data,
                                   uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
-    TRACE("{WIP} VdpBitmapSurfacePutBitsNative surface=%d", surface);
+    TRACE("{part} VdpBitmapSurfacePutBitsNative surface=%d", surface);
 #ifndef NDEBUG
     printf("      destination_rect=");
     if (NULL == destination_rect) printf("NULL");
@@ -1030,7 +1030,7 @@ fakeVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
     if (NULL != destination_rect) rect = *destination_rect;
 
     for (uint32_t line = rect.y0; line <= rect.y1; line ++) {
-        uint8_t *dst = (uint8_t *)surfaceData->buf + rect.y0 * surfaceData->stride * 4;
+        uint8_t *dst = (uint8_t *)surfaceData->buf + (rect.x0 + line*surfaceData->stride) * 4;
         uint8_t *src = (uint8_t *)(source_data[0]) + (line - rect.y0) * source_pitches[0];
         memcpy(dst, src, 4*(rect.x1 - rect.x0 + 1));
     }
