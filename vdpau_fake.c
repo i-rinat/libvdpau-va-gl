@@ -1065,7 +1065,33 @@ static
 VdpStatus
 fakeVdpGenerateCSCMatrix(VdpProcamp *procamp, VdpColorStandard standard, VdpCSCMatrix *csc_matrix)
 {
-    TRACE1("{zilch} VdpGenerateCSCMatrix");
+    TRACE("{part} VdpGenerateCSCMatrix standard=%d", standard);
+    if (NULL == procamp || NULL == csc_matrix)
+        return VDP_STATUS_INVALID_POINTER;
+    if (VDP_PROCAMP_VERSION != procamp->struct_version)
+        return VDP_STATUS_INVALID_VALUE;
+
+    VdpCSCMatrix *m = csc_matrix;
+    switch (standard) {
+    case VDP_COLOR_STANDARD_ITUR_BT_601:
+        (*m)[0][0] = 1.16438f; (*m)[0][1] =  0.0f;     (*m)[0][2] =  1.59603f; (*m)[0][3] = -222.921f;
+        (*m)[1][0] = 1.16438f; (*m)[1][1] = -0.39176f; (*m)[1][2] = -0.81297f; (*m)[1][3] =  135.576f;
+        (*m)[2][0] = 1.16438f; (*m)[2][1] =  2.01723f; (*m)[2][2] =  0.0f;     (*m)[2][3] = -276.836f;
+        break;
+    case VDP_COLOR_STANDARD_ITUR_BT_709:
+        (*m)[0][0] =  1.0f; (*m)[0][1] =  0.0f;     (*m)[0][2] =  1.402f;   (*m)[0][3] = -179.456f;
+        (*m)[1][0] =  1.0f; (*m)[1][1] = -0.34414f; (*m)[1][2] = -0.71414f; (*m)[1][3] =  135.460f;
+        (*m)[2][0] =  1.0f; (*m)[2][1] =  1.772f;   (*m)[2][2] =  0.0f;     (*m)[2][3] = -226.816f;
+        break;
+    case VDP_COLOR_STANDARD_SMPTE_240M:
+        (*m)[0][0] =  0.58139f; (*m)[0][1] = -0.76437f; (*m)[0][2] =  1.5760f;  (*m)[0][3] = 0.0f;
+        (*m)[1][0] =  0.58140f; (*m)[1][1] = -0.99101f; (*m)[1][2] = -0.47663f; (*m)[1][3] = 0.0f;
+        (*m)[2][0] =  0.58139f; (*m)[2][1] =  1.0616f;  (*m)[2][2] =  0.00000f; (*m)[2][3] = 0.0f;
+        break;
+    default:
+        return VDP_STATUS_INVALID_COLOR_STANDARD;
+    }
+
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
