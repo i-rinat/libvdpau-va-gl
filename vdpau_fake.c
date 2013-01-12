@@ -1125,8 +1125,36 @@ fakeVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
                                         VdpOutputSurfaceRenderBlendState const *blend_state,
                                         uint32_t flags)
 {
-    TRACE1("{zilch} VdpOutputSurfaceRenderOutputSurface");
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE("{dirty impl} VdpOutputSurfaceRenderOutputSurface destination_surface=%d, source_surface=%d",
+        destination_surface, source_surface);
+#ifndef NDEBUG
+    printf("      destination_rect=");
+    if (NULL == destination_rect) printf("NULL");
+    else printf("(%d,%d,%d,%d)",    destination_rect->x0, destination_rect->y0,
+                                    destination_rect->x1, destination_rect->y1);
+
+    printf(", source_rect=");
+    if (NULL == source_rect) printf("NULL");
+    else printf("(%d,%d,%d,%d)", source_rect->x0, source_rect->y0, source_rect->x1, source_rect->y1);
+    printf("\n      colors=%p, blend_state=%p, flags=%d", colors, blend_state, flags);
+    printf("\n");
+#endif
+
+    //TODO: remove code duplication with fakeVdpOutputSurfaceRenderBitmapSurface
+    //TODO: use swscale
+    VdpOutputSurfaceData *dstSurface =
+        handlestorage_get(destination_surface, HANDLE_TYPE_OUTPUT_SURFACE);
+    if (NULL == dstSurface)
+        return VDP_STATUS_INVALID_HANDLE;
+
+    VdpOutputSurfaceData *srcSurface =
+        handlestorage_get(source_surface, HANDLE_TYPE_OUTPUT_SURFACE);
+    if (NULL == srcSurface)
+        return VDP_STATUS_INVALID_HANDLE;
+
+    memcpy(dstSurface->buf, srcSurface->buf, srcSurface->stride * srcSurface->height * 4);
+
+    return VDP_STATUS_OK;
 }
 
 static
