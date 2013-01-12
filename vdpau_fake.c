@@ -740,12 +740,15 @@ fakeVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
         (char *)(surfaceData->buf), surfaceData->width, surfaceData->height, 32,
         surfaceData->stride * rgba_format_storage_size(surfaceData->rgba_format));
 
+    if (NULL == image) {
+        TRACE1("image become NULL in VdpPresentationQueueDisplay");
+        return VDP_STATUS_RESOURCES;
+    }
+
     XPutImage(display, drawable, DefaultGC(display, screen), image, 0, 0, 0, 0,
         surfaceData->width, surfaceData->height);
 
-    //void *dummy=malloc(4);  // as XDestroyImage frees data too, fool it
-    //image->data = dummy;
-    //XDestroyImage(image);
+    free(image);
 
     return VDP_STATUS_OK;
 }
