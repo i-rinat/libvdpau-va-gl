@@ -1113,7 +1113,7 @@ fakeVdpGenerateCSCMatrix(VdpProcamp *procamp, VdpColorStandard standard, VdpCSCM
         return VDP_STATUS_INVALID_COLOR_STANDARD;
     }
 
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    return VDP_STATUS_OK;
 }
 
 static
