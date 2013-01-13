@@ -253,7 +253,7 @@ fakeVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
 
-    uint32_t const stride = (width % 4 == 0) ? width : (width & 0x3) + 4;
+    uint32_t const stride = (width % 4 == 0) ? width : (width & ~0x3UL) + 4;
 
     data->type = HANDLE_TYPE_OUTPUT_SURFACE;
     data->device = device;
@@ -844,7 +844,7 @@ fakeVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
 
-    uint32_t const stride = (width % 4 == 0) ? width : (width & 0x3) + 4;
+    uint32_t const stride = (width % 4 == 0) ? width : (width & ~0x3UL) + 4;
 
     data->type = HANDLE_TYPE_VIDEO_SURFACE;
     data->device = device;
@@ -982,7 +982,7 @@ fakeVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
 
-    uint32_t stride = (width % 4 == 0) ? width : (width & 3) + 4;
+    uint32_t const stride = (width % 4 == 0) ? width : (width & ~0x3UL) + 4;
     void *buf = malloc(stride * height * rgba_format_storage_size(rgba_format));
     if (NULL == buf) {
         free(data);
