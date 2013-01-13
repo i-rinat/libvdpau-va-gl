@@ -604,6 +604,8 @@ fakeVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     printf("\n");
 #endif
 
+    //TODO: handle rectangles
+
     VdpVideoSurfaceData *source_surface =
         handlestorage_get(video_surface_current, HANDLE_TYPE_VIDEO_SURFACE);
     if (NULL == source_surface)
