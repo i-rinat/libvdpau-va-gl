@@ -304,3 +304,22 @@ reverse_blend_factor(VdpOutputSurfaceRenderBlendFactor blend_factor)
         return "Unknown blend factor";
     }
 }
+
+const char *
+reverse_blend_equation(VdpOutputSurfaceRenderBlendEquation blend_equation)
+{
+    switch (blend_equation) {
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_SUBTRACT:
+        return "VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_SUBTRACT";
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_REVERSE_SUBTRACT:
+        return "VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_REVERSE_SUBTRACT";
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD:
+        return "VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD";
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_MIN:
+        return "VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_MIN";
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_MAX:
+        return "VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_MAX";
+    default:
+        return "Unknown blend equation";
+    }
+}
