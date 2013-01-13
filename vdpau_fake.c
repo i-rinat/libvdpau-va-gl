@@ -1049,13 +1049,13 @@ fakeVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
     if (VDP_RGBA_FORMAT_B8G8R8A8 != surfaceData->rgba_format)
         return VDP_STATUS_INVALID_RGBA_FORMAT;
 
-    VdpRect rect = {0, 0, surfaceData->width-1, surfaceData->height-1};
+    VdpRect rect = {0, 0, surfaceData->width, surfaceData->height};
     if (NULL != destination_rect) rect = *destination_rect;
 
-    for (uint32_t line = rect.y0; line <= rect.y1; line ++) {
+    for (uint32_t line = rect.y0; line < rect.y1; line ++) {
         uint8_t *dst = (uint8_t *)surfaceData->buf + (rect.x0 + line*surfaceData->stride) * 4;
         uint8_t *src = (uint8_t *)(source_data[0]) + (line - rect.y0) * source_pitches[0];
-        memcpy(dst, src, 4*(rect.x1 - rect.x0 + 1));
+        memcpy(dst, src, 4*(rect.x1 - rect.x0));
     }
 
     return VDP_STATUS_OK;
