@@ -28,7 +28,7 @@ handlestorage_valid(int handle, HandleType type)
     if (NULL == g_ptr_array_index(vdpHandles, handle)) return 0;
 
     // otherwise return true if called want any handle
-    if (HANDLE_TYPE_ANY == type) return 1;
+    if (HANDLETYPE_ANY == type) return 1;
 
     // else check handle type
     HandleType elementType = ((VdpGenericHandle *)g_ptr_array_index(vdpHandles, handle))->type;
@@ -49,7 +49,7 @@ handlestorage_get(int handle, HandleType type)
 void
 handlestorage_expunge(int handle)
 {
-    if (handlestorage_valid(handle, HANDLE_TYPE_ANY)) {
+    if (handlestorage_valid(handle, HANDLETYPE_ANY)) {
         g_ptr_array_index(vdpHandles, handle) = NULL;
     }
 }

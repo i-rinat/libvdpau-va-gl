@@ -243,7 +243,7 @@ fakeVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
 {
     TRACE("{part} VdpOutputSurfaceCreate device=%d, rgba_format=%s, width=%d, height=%d",
         device, reverse_rgba_format(rgba_format), width, height);
-    if (! handlestorage_valid(device, HANDLE_TYPE_DEVICE))
+    if (! handlestorage_valid(device, HANDLETYPE_DEVICE))
         return VDP_STATUS_INVALID_HANDLE;
 
     if (width > 4096 || height > 4096)
@@ -255,7 +255,7 @@ fakeVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
 
     uint32_t const stride = (width % 4 == 0) ? width : (width & ~0x3UL) + 4;
 
-    data->type = HANDLE_TYPE_OUTPUT_SURFACE;
+    data->type = HANDLETYPE_OUTPUT_SURFACE;
     data->device = device;
     data->rgba_format = rgba_format;
     data->width = width;
@@ -278,7 +278,7 @@ VdpStatus
 fakeVdpOutputSurfaceDestroy(VdpOutputSurface surface)
 {
     TRACE("{full} VdpOutputSurfaceDestroy surface=%d", surface);
-    VdpOutputSurfaceData *data = handlestorage_get(surface, HANDLE_TYPE_OUTPUT_SURFACE);
+    VdpOutputSurfaceData *data = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
 
@@ -413,14 +413,14 @@ fakeVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
     }
 #endif
 
-    if (!handlestorage_valid(device, HANDLE_TYPE_DEVICE))
+    if (!handlestorage_valid(device, HANDLETYPE_DEVICE))
         return VDP_STATUS_INVALID_HANDLE;
 
     VdpVideoMixerData *data = (VdpVideoMixerData *)calloc(1, sizeof(VdpVideoMixerData));
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
 
-    data->type = HANDLE_TYPE_VIDEO_MIXER;
+    data->type = HANDLETYPE_VIDEO_MIXER;
     data->device = device;
 
     *mixer = handlestorage_add(data);
@@ -510,7 +510,7 @@ VdpStatus
 fakeVdpVideoMixerDestroy(VdpVideoMixer mixer)
 {
     TRACE("{full} VdpVideoMixerDestroy mixer=%d", mixer);
-    void *data = handlestorage_get(mixer, HANDLE_TYPE_VIDEO_MIXER);
+    void *data = handlestorage_get(mixer, HANDLETYPE_VIDEO_MIXER);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
 
@@ -607,12 +607,12 @@ fakeVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     //TODO: handle rectangles
 
     VdpVideoSurfaceData *source_surface =
-        handlestorage_get(video_surface_current, HANDLE_TYPE_VIDEO_SURFACE);
+        handlestorage_get(video_surface_current, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == source_surface)
         return VDP_STATUS_INVALID_HANDLE;
 
     VdpOutputSurfaceData *dest_surface =
-        handlestorage_get(destination_surface, HANDLE_TYPE_OUTPUT_SURFACE);
+        handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == dest_surface)
         return VDP_STATUS_INVALID_HANDLE;
 
@@ -647,7 +647,7 @@ fakeVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_qu
 {
     TRACE("{full} VdpPresentationQueueTargetDestroy presentation_queue_target=%d",
         presentation_queue_target);
-    void *data = handlestorage_get(presentation_queue_target, HANDLE_TYPE_PRESENTATION_QUEUE_TARGET);
+    void *data = handlestorage_get(presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
 
@@ -668,12 +668,12 @@ fakeVdpPresentationQueueCreate(VdpDevice device,
         (VdpPresentationQueueData *)calloc(1, sizeof(VdpPresentationQueueData));
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
-    if (!handlestorage_valid(device, HANDLE_TYPE_DEVICE))
+    if (!handlestorage_valid(device, HANDLETYPE_DEVICE))
         return VDP_STATUS_INVALID_HANDLE;
-    if (!handlestorage_valid(presentation_queue_target, HANDLE_TYPE_PRESENTATION_QUEUE_TARGET))
+    if (!handlestorage_valid(presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET))
         return VDP_STATUS_INVALID_HANDLE;
 
-    data->type = HANDLE_TYPE_PRESENTATION_QUEUE;
+    data->type = HANDLETYPE_PRESENTATION_QUEUE;
     data->device = device;
     data->presentation_queue_target = presentation_queue_target;
 
@@ -687,7 +687,7 @@ VdpStatus
 fakeVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 {
     TRACE("{full} VdpPresentationQueueDestroy presentation_queue=%d", presentation_queue);
-    void *data = handlestorage_get(presentation_queue, HANDLE_TYPE_PRESENTATION_QUEUE);
+    void *data = handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
 
@@ -735,24 +735,24 @@ fakeVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     TRACE("{part} VdpPresentationQueueDisplay presentation_queue=%d, surface=%d, "
         "clip_width=%d, clip_height=%d", presentation_queue, surface, clip_width, clip_height);
 
-    VdpOutputSurfaceData *surfaceData = handlestorage_get(surface, HANDLE_TYPE_OUTPUT_SURFACE);
+    VdpOutputSurfaceData *surfaceData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == surfaceData) return VDP_STATUS_INVALID_HANDLE;
 
     VdpPresentationQueueData *presentationQueueData =
-        handlestorage_get(presentation_queue, HANDLE_TYPE_PRESENTATION_QUEUE);
+        handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
 
     if (NULL == presentationQueueData) return VDP_STATUS_INVALID_HANDLE;
 
     VdpPresentationQueueTargetData *presentationQueueTargetData =
         handlestorage_get(presentationQueueData->presentation_queue_target,
-        HANDLE_TYPE_PRESENTATION_QUEUE_TARGET);
+        HANDLETYPE_PRESENTATION_QUEUE_TARGET);
 
     if (NULL == presentationQueueTargetData) return VDP_STATUS_INVALID_HANDLE;
 
     Drawable drawable = presentationQueueTargetData->drawable;
 
     VdpDeviceData *deviceData =
-        handlestorage_get(presentationQueueTargetData->device, HANDLE_TYPE_DEVICE);
+        handlestorage_get(presentationQueueTargetData->device, HANDLETYPE_DEVICE);
 
     if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
 
@@ -786,10 +786,10 @@ fakeVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_
     TRACE("{full} VdpPresentationQueueBlockUntilSurfaceIdle presentation_queue=%d, surface=%d",
         presentation_queue, surface);
 
-    if (! handlestorage_valid(presentation_queue, HANDLE_TYPE_PRESENTATION_QUEUE))
+    if (! handlestorage_valid(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE))
         return VDP_STATUS_INVALID_HANDLE;
 
-    if (! handlestorage_valid(surface, HANDLE_TYPE_OUTPUT_SURFACE))
+    if (! handlestorage_valid(surface, HANDLETYPE_OUTPUT_SURFACE))
         return VDP_STATUS_INVALID_HANDLE;
 
     // use current time as presentation time
@@ -839,7 +839,7 @@ fakeVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
     TRACE("{part} VdpVideoSurfaceCreate, device=%d, chroma_type=%s, width=%d, height=%d",
         device, reverse_chroma_type(chroma_type), width, height);
 
-    if (! handlestorage_valid(device, HANDLE_TYPE_DEVICE))
+    if (! handlestorage_valid(device, HANDLETYPE_DEVICE))
         return VDP_STATUS_INVALID_HANDLE;
 
     VdpVideoSurfaceData *data = (VdpVideoSurfaceData *)calloc(1, sizeof(VdpVideoSurfaceData));
@@ -848,7 +848,7 @@ fakeVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
 
     uint32_t const stride = (width % 4 == 0) ? width : (width & ~0x3UL) + 4;
 
-    data->type = HANDLE_TYPE_VIDEO_SURFACE;
+    data->type = HANDLETYPE_VIDEO_SURFACE;
     data->device = device;
     data->chroma_type = chroma_type;
     data->width = width;
@@ -877,7 +877,7 @@ fakeVdpVideoSurfaceDestroy(VdpVideoSurface surface)
 {
     TRACE("{full} VdpVideoSurfaceDestroy surface=%d", surface);
 
-    VdpVideoSurfaceData *data = handlestorage_get(surface, HANDLE_TYPE_VIDEO_SURFACE);
+    VdpVideoSurfaceData *data = handlestorage_get(surface, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
 
@@ -919,7 +919,7 @@ fakeVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
     if (VDP_YCBCR_FORMAT_YV12 != source_ycbcr_format)
         return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
 
-    VdpVideoSurfaceData *surfaceData = handlestorage_get(surface, HANDLE_TYPE_VIDEO_SURFACE);
+    VdpVideoSurfaceData *surfaceData = handlestorage_get(surface, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == surfaceData)
         return VDP_STATUS_INVALID_HANDLE;
 
@@ -956,7 +956,7 @@ fakeVdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
                                       uint32_t *max_height)
 {
     TRACE("{part} VdpBitmapSurfaceQueryCapabilities device=%d", device);
-    if (! handlestorage_valid(device, HANDLE_TYPE_DEVICE))
+    if (! handlestorage_valid(device, HANDLETYPE_DEVICE))
         return VDP_STATUS_INVALID_HANDLE;
 
     printf("      format %s\n", reverse_rgba_format(surface_rgba_format));
@@ -976,7 +976,7 @@ fakeVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     TRACE("{full} VdpBitmapSurfaceCreate device=%d, rgba_format=%s, width=%d, height=%d,"
         "frequently_accessed=%d", device, reverse_rgba_format(rgba_format), width, height,
         frequently_accessed);
-    VdpDeviceData *deviceData = handlestorage_get(device, HANDLE_TYPE_DEVICE);
+    VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
 
@@ -991,7 +991,7 @@ fakeVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
         return VDP_STATUS_RESOURCES;
     }
 
-    data->type = HANDLE_TYPE_BITMAP_SURFACE;
+    data->type = HANDLETYPE_BITMAP_SURFACE;
     data->device = device;
     data->rgba_format = rgba_format;
     data->width = width;
@@ -1008,7 +1008,7 @@ VdpStatus
 fakeVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
 {
     TRACE("{full} VdpBitmapSurfaceDestroy surface=%d", surface);
-    VdpBitmapSurfaceData *data = handlestorage_get(surface, HANDLE_TYPE_BITMAP_SURFACE);
+    VdpBitmapSurfaceData *data = handlestorage_get(surface, HANDLETYPE_BITMAP_SURFACE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
 
@@ -1041,7 +1041,7 @@ fakeVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
     printf("\n");
 #endif
 
-    VdpBitmapSurfaceData *surfaceData = handlestorage_get(surface, HANDLE_TYPE_BITMAP_SURFACE);
+    VdpBitmapSurfaceData *surfaceData = handlestorage_get(surface, HANDLETYPE_BITMAP_SURFACE);
     if (NULL == surfaceData)
         return VDP_STATUS_INVALID_HANDLE;
 
@@ -1066,7 +1066,7 @@ VdpStatus
 fakeVdpDeviceDestroy(VdpDevice device)
 {
     TRACE("{full} VdpDeviceDestroy device=%d", device);
-    void *data = handlestorage_get(device, HANDLE_TYPE_DEVICE);
+    void *data = handlestorage_get(device, HANDLETYPE_DEVICE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
 
@@ -1145,12 +1145,12 @@ fakeVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     //TODO: remove code duplication with fakeVdpOutputSurfaceRenderBitmapSurface
     //TODO: use swscale
     VdpOutputSurfaceData *dstSurface =
-        handlestorage_get(destination_surface, HANDLE_TYPE_OUTPUT_SURFACE);
+        handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == dstSurface)
         return VDP_STATUS_INVALID_HANDLE;
 
     VdpOutputSurfaceData *srcSurface =
-        handlestorage_get(source_surface, HANDLE_TYPE_OUTPUT_SURFACE);
+        handlestorage_get(source_surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == srcSurface)
         return VDP_STATUS_INVALID_HANDLE;
 
@@ -1204,12 +1204,12 @@ fakeVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
 
     //TODO: stop doing dumb things and use swscale instead
     VdpOutputSurfaceData *dstSurface =
-        handlestorage_get(destination_surface, HANDLE_TYPE_OUTPUT_SURFACE);
+        handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == dstSurface)
         return VDP_STATUS_INVALID_HANDLE;
 
     VdpBitmapSurfaceData *srcSurface =
-        handlestorage_get(source_surface, HANDLE_TYPE_BITMAP_SURFACE);
+        handlestorage_get(source_surface, HANDLETYPE_BITMAP_SURFACE);
     if (NULL == srcSurface)
         return VDP_STATUS_INVALID_HANDLE;
 
@@ -1239,10 +1239,10 @@ fakeVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
     if (NULL == data)
         return VDP_STATUS_ERROR;
 
-    if (!handlestorage_valid(device, HANDLE_TYPE_DEVICE))
+    if (!handlestorage_valid(device, HANDLETYPE_DEVICE))
         return VDP_STATUS_INVALID_HANDLE;
 
-    data->type = HANDLE_TYPE_PRESENTATION_QUEUE_TARGET;
+    data->type = HANDLETYPE_PRESENTATION_QUEUE_TARGET;
     data->device = device;
     data->drawable = drawable;
 
@@ -1467,7 +1467,7 @@ vdp_imp_device_create_x11(Display *display, int screen, VdpDevice *device,
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
 
-    data->type = HANDLE_TYPE_DEVICE;
+    data->type = HANDLETYPE_DEVICE;
     data->display = display;
     data->screen = screen;
 

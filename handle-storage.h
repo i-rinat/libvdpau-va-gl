@@ -6,14 +6,14 @@
 #include <glib.h>
 
 typedef uint32_t    HandleType;
-#define HANDLE_TYPE_ANY                         (HandleType)0
-#define HANDLE_TYPE_DEVICE                      (HandleType)1
-#define HANDLE_TYPE_PRESENTATION_QUEUE_TARGET   (HandleType)2
-#define HANDLE_TYPE_PRESENTATION_QUEUE          (HandleType)3
-#define HANDLE_TYPE_VIDEO_MIXER                 (HandleType)4
-#define HANDLE_TYPE_OUTPUT_SURFACE              (HandleType)5
-#define HANDLE_TYPE_VIDEO_SURFACE               (HandleType)6
-#define HANDLE_TYPE_BITMAP_SURFACE              (HandleType)7
+#define HANDLETYPE_ANY                         (HandleType)0
+#define HANDLETYPE_DEVICE                      (HandleType)1
+#define HANDLETYPE_PRESENTATION_QUEUE_TARGET   (HandleType)2
+#define HANDLETYPE_PRESENTATION_QUEUE          (HandleType)3
+#define HANDLETYPE_VIDEO_MIXER                 (HandleType)4
+#define HANDLETYPE_OUTPUT_SURFACE              (HandleType)5
+#define HANDLETYPE_VIDEO_SURFACE               (HandleType)6
+#define HANDLETYPE_BITMAP_SURFACE              (HandleType)7
 
 typedef struct {
     HandleType type;
