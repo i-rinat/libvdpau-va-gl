@@ -11,8 +11,8 @@
 #include "handle-storage.h"
 
 #ifndef NDEBUG
-    #define TRACE(str, ...)  printf("[VDPFAKE] " str "\n", __VA_ARGS__)
-    #define TRACE1(str)  printf("[VDPFAKE] " str "\n")
+    #define TRACE(str, ...)  printf("[VDPSOFT] " str "\n", __VA_ARGS__)
+    #define TRACE1(str)  printf("[VDPSOFT] " str "\n")
 #else
     #define TRACE(str, ...)
     #define TRACE1(str)
