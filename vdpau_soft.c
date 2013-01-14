@@ -1,12 +1,12 @@
-#include <vdpau/vdpau.h>
-#include <vdpau/vdpau_x11.h>
-#include <stdio.h>
 #include <assert.h>
 #include <glib.h>
 #include <libswscale/swscale.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include <vdpau/vdpau.h>
+#include <vdpau/vdpau_x11.h>
 #include "reverse-constant.h"
 #include "handle-storage.h"
 
