@@ -1,5 +1,8 @@
 #include <assert.h>
 #include <cairo.h>
+#include <cairo-xcb.h>
+#include <cairo-xlib.h>
+#include <cairo-xlib-xrender.h>
 #include <glib.h>
 #include <libswscale/swscale.h>
 #include <stdio.h>
@@ -8,6 +11,7 @@
 #include <sys/time.h>
 #include <vdpau/vdpau.h>
 #include <vdpau/vdpau_x11.h>
+#include <xcb/xproto.h>
 #include "reverse-constant.h"
 #include "handle-storage.h"
 
@@ -250,27 +254,29 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     if (width > 4096 || height > 4096)
         return VDP_STATUS_INVALID_SIZE;
 
+
+    if (VDP_RGBA_FORMAT_B8G8R8A8 != rgba_format) {
+#ifndef NDEBUG
+        printf("  unsupported RGBA format\n");
+#endif
+        return VDP_STATUS_INVALID_RGBA_FORMAT;
+    }
+
     VdpOutputSurfaceData *data = (VdpOutputSurfaceData *)calloc(1, sizeof(VdpOutputSurfaceData));
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
 
-    uint32_t const stride = (width % 4 == 0) ? width : (width & ~0x3UL) + 4;
-
     data->type = HANDLETYPE_OUTPUT_SURFACE;
     data->device = device;
     data->rgba_format = rgba_format;
-    data->width = width;
-    data->stride = stride;
-    data->height = height;
-    data->buf = malloc(stride * height * rgba_format_storage_size(rgba_format));
-
-    if (NULL == data->buf) {
+    data->cairo_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+    if (CAIRO_STATUS_SUCCESS != cairo_surface_status(data->cairo_surface)) {
+        cairo_surface_destroy(data->cairo_surface);
         free(data);
         return VDP_STATUS_RESOURCES;
     }
 
     *surface = handlestorage_add(data);
-
     return VDP_STATUS_OK;
 }
 
@@ -283,7 +289,7 @@ softVdpOutputSurfaceDestroy(VdpOutputSurface surface)
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
 
-    free(data->buf);
+    cairo_surface_destroy(data->cairo_surface);
     free(data);
     handlestorage_expunge(surface);
     return VDP_STATUS_OK;
@@ -619,16 +625,18 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
 
     struct SwsContext *sws_ctx =
         sws_getContext(source_surface->width, source_surface->height, PIX_FMT_YUV420P,
-            dest_surface->width, dest_surface->height, PIX_FMT_RGBA,
-            SWS_POINT, NULL, NULL, NULL);
+            cairo_image_surface_get_width(dest_surface->cairo_surface),
+            cairo_image_surface_get_height(dest_surface->cairo_surface),
+            PIX_FMT_RGBA, SWS_POINT, NULL, NULL, NULL);
 
     uint8_t const * const src_planes[] =
         { source_surface->y_plane, source_surface->v_plane, source_surface->u_plane, NULL };
     int src_strides[] =
         {source_surface->stride, source_surface->width/2, source_surface->width/2, 0};
-    uint8_t *dst_planes[] = {dest_surface->buf, NULL, NULL, NULL};
-    int dst_strides[] = {dest_surface->stride * rgba_format_storage_size(dest_surface->rgba_format),
-                         0, 0, 0};
+    uint8_t *dst_planes[] = {NULL, NULL, NULL, NULL};
+    dst_planes[0] = cairo_image_surface_get_data(dest_surface->cairo_surface);
+    int dst_strides[] = {0, 0, 0, 0};
+    dst_strides[0] = cairo_image_surface_get_stride(dest_surface->cairo_surface);
     int res = sws_scale(sws_ctx,
                         src_planes, src_strides, 0, source_surface->height,
                         dst_planes, dst_strides);
@@ -760,19 +768,89 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     Display *display = deviceData->display;
     int screen = deviceData->screen;
 
-    XImage *image = XCreateImage(display, DefaultVisual(display, screen), 24, ZPixmap, 0,
-        (char *)(surfaceData->buf), surfaceData->width, surfaceData->height, 32,
-        surfaceData->stride * rgba_format_storage_size(surfaceData->rgba_format));
+    int out_width = cairo_image_surface_get_width(surfaceData->cairo_surface);
+    int out_height = cairo_image_surface_get_height(surfaceData->cairo_surface);
 
-    if (NULL == image) {
-        TRACE1("image become NULL in VdpPresentationQueueDisplay");
+
+    //~ char *buf = (char*)cairo_image_surface_get_data(surfaceData->cairo_surface);
+    //~ XImage *image = XCreateImage(display, DefaultVisual(display, screen), 24, ZPixmap, 0,
+        //~ buf,
+        //~ out_width, out_height, 32,
+        //~ cairo_image_surface_get_stride(surfaceData->cairo_surface));
+//~
+    //~ if (NULL == image) {
+        //~ TRACE1("image become NULL in VdpPresentationQueueDisplay");
+        //~ return VDP_STATUS_RESOURCES;
+    //~ }
+//~
+    //~ XPutImage(display, drawable, DefaultGC(display, screen), image, 0, 0, 0, 0,
+        //~ out_width, out_height);
+//~
+    //~ free(image);
+
+
+    xcb_connection_t *xcb_connection = xcb_connect(NULL, &screen);
+    if (NULL == xcb_connection) {
+        printf("xcb_connect returned NULL\n");
         return VDP_STATUS_RESOURCES;
     }
 
-    XPutImage(display, drawable, DefaultGC(display, screen), image, 0, 0, 0, 0,
-        surfaceData->width, surfaceData->height);
+    xcb_screen_t *xcb_screen = NULL;
+    {
+        const xcb_setup_t *s = xcb_get_setup(xcb_connection);
+        xcb_screen_iterator_t iter;
+        int screen_nbr = screen;
 
-    free(image);
+        if (s) {
+            iter = xcb_setup_roots_iterator(s);
+            for (; iter.rem; --screen, xcb_screen_next(&iter))
+                if (0 == screen_nbr) {
+                    xcb_screen = iter.data;
+                    break;
+                }
+        }
+    }
+
+    if (NULL == xcb_screen) {
+        printf("xcb_screen is NULL\n");
+        return VDP_STATUS_RESOURCES;
+    }
+
+    xcb_visualtype_t *visual_type = NULL;
+    if (xcb_screen) {
+        xcb_depth_iterator_t depth_iter;
+        depth_iter = xcb_screen_allowed_depths_iterator (xcb_screen);
+        for (; depth_iter.rem; xcb_depth_next (&depth_iter)) {
+            xcb_visualtype_iterator_t visual_iter;
+
+            visual_iter = xcb_depth_visuals_iterator (depth_iter.data);
+            for (; visual_iter.rem; xcb_visualtype_next (&visual_iter)) {
+                if (xcb_screen->root_visual == visual_iter.data->visual_id) {
+                    visual_type = visual_iter.data;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (NULL == visual_type) {
+        printf("visual_type is NULL\n");
+        return VDP_STATUS_RESOURCES;
+    }
+
+    cairo_surface_t *xsurf = cairo_xcb_surface_create(
+        xcb_connection, drawable,
+        visual_type,
+        out_width, out_height);
+
+    cairo_t *cr = cairo_create(xsurf);
+    cairo_set_source_surface(cr, surfaceData->cairo_surface, 0, 0);
+    cairo_paint(cr);
+    cairo_destroy(cr);
+
+    cairo_surface_destroy(xsurf);
+
+    xcb_disconnect(xcb_connection);
 
     return VDP_STATUS_OK;
 }
@@ -992,13 +1070,20 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
         return VDP_STATUS_RESOURCES;
     }
 
+    //TODO: other format handling
+    if (rgba_format != VDP_RGBA_FORMAT_B8G8R8A8)
+        return VDP_STATUS_INVALID_RGBA_FORMAT;
+
+    data->cairo_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+    if (CAIRO_STATUS_SUCCESS != cairo_surface_status(data->cairo_surface)) {
+        cairo_surface_destroy(data->cairo_surface);
+        free(data);
+        return VDP_STATUS_RESOURCES;
+    }
+
     data->type = HANDLETYPE_BITMAP_SURFACE;
     data->device = device;
     data->rgba_format = rgba_format;
-    data->width = width;
-    data->height = height;
-    data->stride = stride;
-    data->buf = buf;
 
     *surface = handlestorage_add(data);
     return VDP_STATUS_OK;
@@ -1013,7 +1098,7 @@ softVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
 
-    free(data->buf);
+    cairo_surface_destroy(data->cairo_surface);
     free(data);
     handlestorage_expunge(surface);
     return VDP_STATUS_OK;
@@ -1050,15 +1135,27 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
     if (VDP_RGBA_FORMAT_B8G8R8A8 != surfaceData->rgba_format)
         return VDP_STATUS_INVALID_RGBA_FORMAT;
 
-    VdpRect rect = {0, 0, surfaceData->width, surfaceData->height};
+    uint32_t width = cairo_image_surface_get_width(surfaceData->cairo_surface);
+    uint32_t height = cairo_image_surface_get_height(surfaceData->cairo_surface);
+
+    VdpRect rect = {0, 0, width, height};
     if (NULL != destination_rect) rect = *destination_rect;
 
-    for (uint32_t line = rect.y0; line < rect.y1; line ++) {
-        uint8_t *dst = (uint8_t *)surfaceData->buf + (rect.x0 + line*surfaceData->stride) * 4;
-        uint8_t *src = (uint8_t *)(source_data[0]) + (line - rect.y0) * source_pitches[0];
-        memcpy(dst, src, 4*(rect.x1 - rect.x0));
+    cairo_surface_t *src_surf =
+        cairo_image_surface_create_for_data((unsigned char *)(source_data[0]),
+        CAIRO_FORMAT_ARGB32, rect.x1-rect.x0, rect.y1-rect.y0, source_pitches[0]);
+    if (CAIRO_STATUS_INVALID_STRIDE == cairo_surface_status(src_surf)) {
+        printf("CAIRO_STATUS_INVALID_STRIDE\n");
+        cairo_surface_destroy(src_surf);
+        return VDP_STATUS_INVALID_VALUE;
     }
 
+    cairo_t *cr = cairo_create(surfaceData->cairo_surface);
+    cairo_set_source_surface(cr, src_surf, 0, 0);
+    cairo_paint(cr);
+    cairo_destroy(cr);
+
+    cairo_surface_destroy(src_surf);
     return VDP_STATUS_OK;
 }
 
@@ -1143,19 +1240,24 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     printf("\n");
 #endif
 
-    //TODO: remove code duplication with fakeVdpOutputSurfaceRenderBitmapSurface
-    //TODO: use swscale
+    if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version)
+        return VDP_STATUS_INVALID_VALUE;
+
+    //TODO: stop doing dumb things and use swscale instead
     VdpOutputSurfaceData *dstSurface =
         handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == dstSurface)
         return VDP_STATUS_INVALID_HANDLE;
 
-    VdpOutputSurfaceData *srcSurface =
-        handlestorage_get(source_surface, HANDLETYPE_OUTPUT_SURFACE);
+    VdpBitmapSurfaceData *srcSurface =
+        handlestorage_get(source_surface, HANDLETYPE_BITMAP_SURFACE);
     if (NULL == srcSurface)
         return VDP_STATUS_INVALID_HANDLE;
 
-    memcpy(dstSurface->buf, srcSurface->buf, srcSurface->stride * srcSurface->height * 4);
+    cairo_t *cr = cairo_create(dstSurface->cairo_surface);
+    cairo_set_source_surface(cr, srcSurface->cairo_surface, 0, 0);
+    cairo_paint(cr);
+    cairo_destroy(cr);
 
     return VDP_STATUS_OK;
 }
@@ -1214,7 +1316,10 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     if (NULL == srcSurface)
         return VDP_STATUS_INVALID_HANDLE;
 
-    memcpy(dstSurface->buf, srcSurface->buf, srcSurface->stride * srcSurface->height * 4);
+    cairo_t *cr = cairo_create(dstSurface->cairo_surface);
+    cairo_set_source_surface(cr, srcSurface->cairo_surface, 0, 0);
+    cairo_paint(cr);
+    cairo_destroy(cr);
 
     return VDP_STATUS_OK;
 }

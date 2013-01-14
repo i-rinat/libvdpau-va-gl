@@ -2,6 +2,7 @@
 #ifndef HANDLE_STORAGE_H_
 #define HANDLE_STORAGE_H_
 
+#include <cairo.h>
 #include <vdpau/vdpau_x11.h>
 #include <glib.h>
 
@@ -46,10 +47,7 @@ typedef struct {
     HandleType type;
     VdpDevice device;
     VdpRGBAFormat rgba_format;
-    uint32_t width;
-    uint32_t stride;
-    uint32_t height;
-    void *buf;
+    cairo_surface_t *cairo_surface;
 } VdpOutputSurfaceData;
 
 typedef struct {
@@ -68,10 +66,7 @@ typedef struct {
     HandleType type;
     VdpDevice device;
     VdpRGBAFormat rgba_format;
-    uint32_t width;
-    uint32_t stride;
-    uint32_t height;
-    void *buf;
+    cairo_surface_t *cairo_surface;
 } VdpBitmapSurfaceData;
 
 void handlestorage_initialize(void);
