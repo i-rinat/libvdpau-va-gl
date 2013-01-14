@@ -51,7 +51,7 @@ chroma_storage_size_divider(VdpChromaType chroma_type)
 
 static
 const char *
-fakeVdpGetErrorString(VdpStatus status)
+softVdpGetErrorString(VdpStatus status)
 {
     switch (status) {
     case VDP_STATUS_OK:
@@ -140,7 +140,7 @@ fakeVdpGetErrorString(VdpStatus status)
 
 static
 VdpStatus
-fakeVdpGetApiVersion(uint32_t *api_version)
+softVdpGetApiVersion(uint32_t *api_version)
 {
     TRACE1("{full} VdpGetApiVersion");
     *api_version = VDPAU_VERSION;
@@ -149,7 +149,7 @@ fakeVdpGetApiVersion(uint32_t *api_version)
 
 static
 VdpStatus
-fakeVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, VdpBool *is_supported,
+softVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, VdpBool *is_supported,
                                 uint32_t *max_level, uint32_t *max_macroblocks,
                                 uint32_t *max_width, uint32_t *max_height)
 {
@@ -159,7 +159,7 @@ fakeVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, Vdp
 
 static
 VdpStatus
-fakeVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width, uint32_t height,
+softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width, uint32_t height,
                      uint32_t max_references, VdpDecoder *decoder)
 {
     TRACE1("{zilch} VdpDecoderCreate");
@@ -168,7 +168,7 @@ fakeVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
 
 static
 VdpStatus
-fakeVdpDecoderDestroy(VdpDecoder decoder)
+softVdpDecoderDestroy(VdpDecoder decoder)
 {
     TRACE1("{zilch} VdpDecoderDestroy");
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -176,7 +176,7 @@ fakeVdpDecoderDestroy(VdpDecoder decoder)
 
 static
 VdpStatus
-fakeVdpDecoderGetParameters(VdpDecoder decoder, VdpDecoderProfile *profile,
+softVdpDecoderGetParameters(VdpDecoder decoder, VdpDecoderProfile *profile,
                             uint32_t *width, uint32_t *height)
 {
     TRACE1("{zilch} VdpDecoderGetParameters");
@@ -185,7 +185,7 @@ fakeVdpDecoderGetParameters(VdpDecoder decoder, VdpDecoderProfile *profile,
 
 static
 VdpStatus
-fakeVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
+softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                      VdpPictureInfo const *picture_info, uint32_t bitstream_buffer_count,
                      VdpBitstreamBuffer const *bitstream_buffers)
 {
@@ -195,7 +195,7 @@ fakeVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
 
 static
 VdpStatus
-fakeVdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba_format,
+softVdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba_format,
                                       VdpBool *is_supported, uint32_t *max_width,
                                       uint32_t *max_height)
 {
@@ -205,7 +205,7 @@ fakeVdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
 
 static
 VdpStatus
-fakeVdpOutputSurfaceQueryGetPutBitsNativeCapabilities(VdpDevice device,
+softVdpOutputSurfaceQueryGetPutBitsNativeCapabilities(VdpDevice device,
                                                       VdpRGBAFormat surface_rgba_format,
                                                       VdpBool *is_supported)
 {
@@ -215,7 +215,7 @@ fakeVdpOutputSurfaceQueryGetPutBitsNativeCapabilities(VdpDevice device,
 
 static
 VdpStatus
-fakeVdpOutputSurfaceQueryPutBitsIndexedCapabilities(VdpDevice device,
+softVdpOutputSurfaceQueryPutBitsIndexedCapabilities(VdpDevice device,
                                                     VdpRGBAFormat surface_rgba_format,
                                                     VdpIndexedFormat bits_indexed_format,
                                                     VdpColorTableFormat color_table_format,
@@ -227,7 +227,7 @@ fakeVdpOutputSurfaceQueryPutBitsIndexedCapabilities(VdpDevice device,
 
 static
 VdpStatus
-fakeVdpOutputSurfaceQueryPutBitsYCbCrCapabilities(VdpDevice device,
+softVdpOutputSurfaceQueryPutBitsYCbCrCapabilities(VdpDevice device,
                                                   VdpRGBAFormat surface_rgba_format,
                                                   VdpYCbCrFormat bits_ycbcr_format,
                                                   VdpBool *is_supported)
@@ -238,7 +238,7 @@ fakeVdpOutputSurfaceQueryPutBitsYCbCrCapabilities(VdpDevice device,
 
 static
 VdpStatus
-fakeVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
+softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
                            uint32_t height, VdpOutputSurface *surface)
 {
     TRACE("{part} VdpOutputSurfaceCreate device=%d, rgba_format=%s, width=%d, height=%d",
@@ -275,7 +275,7 @@ fakeVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
 
 static
 VdpStatus
-fakeVdpOutputSurfaceDestroy(VdpOutputSurface surface)
+softVdpOutputSurfaceDestroy(VdpOutputSurface surface)
 {
     TRACE("{full} VdpOutputSurfaceDestroy surface=%d", surface);
     VdpOutputSurfaceData *data = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
@@ -290,7 +290,7 @@ fakeVdpOutputSurfaceDestroy(VdpOutputSurface surface)
 
 static
 VdpStatus
-fakeVdpOutputSurfaceGetParameters(VdpOutputSurface surface, VdpRGBAFormat *rgba_format,
+softVdpOutputSurfaceGetParameters(VdpOutputSurface surface, VdpRGBAFormat *rgba_format,
                                   uint32_t *width, uint32_t *height)
 {
     TRACE1("{zilch} VdpOutputSurfaceGetParameters");
@@ -299,7 +299,7 @@ fakeVdpOutputSurfaceGetParameters(VdpOutputSurface surface, VdpRGBAFormat *rgba_
 
 static
 VdpStatus
-fakeVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *source_rect,
+softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *source_rect,
                                   void *const *destination_data,
                                   uint32_t const *destination_pitches)
 {
@@ -309,7 +309,7 @@ fakeVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
 
 static
 VdpStatus
-fakeVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *source_data,
+softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *source_data,
                                   uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
     TRACE1("{zilch} VdpVideoMixerQueryParameterSupport");
@@ -318,7 +318,7 @@ fakeVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *s
 
 static
 VdpStatus
-fakeVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat source_indexed_format,
+softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat source_indexed_format,
                                    void const *const *source_data, uint32_t const *source_pitch,
                                    VdpRect const *destination_rect,
                                    VdpColorTableFormat color_table_format, void const *color_table)
@@ -329,7 +329,7 @@ fakeVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
 
 static
 VdpStatus
-fakeVdpOutputSurfacePutBitsYCbCr(VdpOutputSurface surface, VdpYCbCrFormat source_ycbcr_format,
+softVdpOutputSurfacePutBitsYCbCr(VdpOutputSurface surface, VdpYCbCrFormat source_ycbcr_format,
                                  void const *const *source_data, uint32_t const *source_pitches,
                                  VdpRect const *destination_rect, VdpCSCMatrix const *csc_matrix)
 {
@@ -339,7 +339,7 @@ fakeVdpOutputSurfacePutBitsYCbCr(VdpOutputSurface surface, VdpYCbCrFormat source
 
 static
 VdpStatus
-fakeVdpVideoMixerQueryFeatureSupport(VdpDevice device, VdpVideoMixerFeature feature,
+softVdpVideoMixerQueryFeatureSupport(VdpDevice device, VdpVideoMixerFeature feature,
                                      VdpBool *is_supported)
 {
     TRACE1("{zilch} VdpVideoMixerQueryFeatureSupport");
@@ -348,7 +348,7 @@ fakeVdpVideoMixerQueryFeatureSupport(VdpDevice device, VdpVideoMixerFeature feat
 
 static
 VdpStatus
-fakeVdpVideoMixerQueryParameterSupport(VdpDevice device, VdpVideoMixerParameter parameter,
+softVdpVideoMixerQueryParameterSupport(VdpDevice device, VdpVideoMixerParameter parameter,
                                        VdpBool *is_supported)
 {
     TRACE1("{zilch} VdpVideoMixerQueryParameterSupport");
@@ -357,7 +357,7 @@ fakeVdpVideoMixerQueryParameterSupport(VdpDevice device, VdpVideoMixerParameter 
 
 static
 VdpStatus
-fakeVdpVideoMixerQueryAttributeSupport(VdpDevice device, VdpVideoMixerAttribute attribute,
+softVdpVideoMixerQueryAttributeSupport(VdpDevice device, VdpVideoMixerAttribute attribute,
                                        VdpBool *is_supported)
 {
     TRACE1("{zilch} VdpVideoMixerQueryAttributeSupport");
@@ -366,7 +366,7 @@ fakeVdpVideoMixerQueryAttributeSupport(VdpDevice device, VdpVideoMixerAttribute 
 
 static
 VdpStatus
-fakeVdpVideoMixerQueryParameterValueRange(VdpDevice device, VdpVideoMixerParameter parameter,
+softVdpVideoMixerQueryParameterValueRange(VdpDevice device, VdpVideoMixerParameter parameter,
                                           void *min_value, void *max_value)
 {
     TRACE1("{zilch} VdpVideoMixerQueryParameterValueRange");
@@ -375,7 +375,7 @@ fakeVdpVideoMixerQueryParameterValueRange(VdpDevice device, VdpVideoMixerParamet
 
 static
 VdpStatus
-fakeVdpVideoMixerQueryAttributeValueRange(VdpDevice device, VdpVideoMixerAttribute attribute,
+softVdpVideoMixerQueryAttributeValueRange(VdpDevice device, VdpVideoMixerAttribute attribute,
                                           void *min_value, void *max_value)
 {
     TRACE1("{zilch} VdpVideoMixerQueryAttributeValueRange");
@@ -384,7 +384,7 @@ fakeVdpVideoMixerQueryAttributeValueRange(VdpDevice device, VdpVideoMixerAttribu
 
 static
 VdpStatus
-fakeVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
+softVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
                         VdpVideoMixerFeature const *features, uint32_t parameter_count,
                         VdpVideoMixerParameter const *parameters,
                         void const *const *parameter_values, VdpVideoMixer *mixer)
@@ -430,7 +430,7 @@ fakeVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
 
 static
 VdpStatus
-fakeVdpVideoMixerSetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
+softVdpVideoMixerSetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
                                    VdpVideoMixerFeature const *features,
                                    VdpBool const *feature_enables)
 {
@@ -444,7 +444,7 @@ fakeVdpVideoMixerSetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
 
 static
 VdpStatus
-fakeVdpVideoMixerSetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_count,
+softVdpVideoMixerSetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_count,
                                     VdpVideoMixerAttribute const *attributes,
                                     void const *const *attribute_values)
 {
@@ -469,7 +469,7 @@ fakeVdpVideoMixerSetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_coun
 
 static
 VdpStatus
-fakeVdpVideoMixerGetFeatureSupport(VdpVideoMixer mixer, uint32_t feature_count,
+softVdpVideoMixerGetFeatureSupport(VdpVideoMixer mixer, uint32_t feature_count,
                                    VdpVideoMixerFeature const *features, VdpBool *feature_supports)
 {
     TRACE1("{zilch} VdpVideoMixerGetFeatureSupport");
@@ -478,7 +478,7 @@ fakeVdpVideoMixerGetFeatureSupport(VdpVideoMixer mixer, uint32_t feature_count,
 
 static
 VdpStatus
-fakeVdpVideoMixerGetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
+softVdpVideoMixerGetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
                                    VdpVideoMixerFeature const *features, VdpBool *feature_enables)
 {
     TRACE1("{zilch} VdpVideoMixerGetFeatureEnables");
@@ -487,7 +487,7 @@ fakeVdpVideoMixerGetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
 
 static
 VdpStatus
-fakeVdpVideoMixerGetParameterValues(VdpVideoMixer mixer, uint32_t parameter_count,
+softVdpVideoMixerGetParameterValues(VdpVideoMixer mixer, uint32_t parameter_count,
                                     VdpVideoMixerParameter const *parameters,
                                     void *const *parameter_values)
 {
@@ -497,7 +497,7 @@ fakeVdpVideoMixerGetParameterValues(VdpVideoMixer mixer, uint32_t parameter_coun
 
 static
 VdpStatus
-fakeVdpVideoMixerGetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_count,
+softVdpVideoMixerGetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_count,
                                     VdpVideoMixerAttribute const *attributes,
                                     void *const *attribute_values)
 {
@@ -507,7 +507,7 @@ fakeVdpVideoMixerGetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_coun
 
 static
 VdpStatus
-fakeVdpVideoMixerDestroy(VdpVideoMixer mixer)
+softVdpVideoMixerDestroy(VdpVideoMixer mixer)
 {
     TRACE("{full} VdpVideoMixerDestroy mixer=%d", mixer);
     void *data = handlestorage_get(mixer, HANDLETYPE_VIDEO_MIXER);
@@ -522,7 +522,7 @@ fakeVdpVideoMixerDestroy(VdpVideoMixer mixer)
 
 static
 VdpStatus
-fakeVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface,
+softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface,
                         VdpRect const *background_source_rect,
                         VdpVideoMixerPictureStructure current_picture_structure,
                         uint32_t video_surface_past_count,
@@ -643,7 +643,7 @@ fakeVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
 
 static
 VdpStatus
-fakeVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_target)
+softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_target)
 {
     TRACE("{full} VdpPresentationQueueTargetDestroy presentation_queue_target=%d",
         presentation_queue_target);
@@ -658,7 +658,7 @@ fakeVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_qu
 
 static
 VdpStatus
-fakeVdpPresentationQueueCreate(VdpDevice device,
+softVdpPresentationQueueCreate(VdpDevice device,
                                VdpPresentationQueueTarget presentation_queue_target,
                                VdpPresentationQueue *presentation_queue)
 {
@@ -684,7 +684,7 @@ fakeVdpPresentationQueueCreate(VdpDevice device,
 
 static
 VdpStatus
-fakeVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
+softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 {
     TRACE("{full} VdpPresentationQueueDestroy presentation_queue=%d", presentation_queue);
     void *data = handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
@@ -698,7 +698,7 @@ fakeVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 
 static
 VdpStatus
-fakeVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_queue,
+softVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_queue,
                                            VdpColor *const background_color)
 {
     TRACE1("{zilch} VdpPresentationQueueSetBackgroundColor");
@@ -707,7 +707,7 @@ fakeVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_que
 
 static
 VdpStatus
-fakeVdpPresentationQueueGetBackgroundColor(VdpPresentationQueue presentation_queue,
+softVdpPresentationQueueGetBackgroundColor(VdpPresentationQueue presentation_queue,
                                            VdpColor *background_color)
 {
     TRACE1("{zilch} VdpPresentationQueueGetBackgroundColor");
@@ -716,7 +716,7 @@ fakeVdpPresentationQueueGetBackgroundColor(VdpPresentationQueue presentation_que
 
 static
 VdpStatus
-fakeVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue,
+softVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue,
                                 VdpTime *current_time)
 {
     TRACE("{full} VdpPresentationQueueGetTime presentation_queue=%d", presentation_queue);
@@ -728,7 +728,7 @@ fakeVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue,
 
 static
 VdpStatus
-fakeVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSurface surface,
+softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSurface surface,
                                 uint32_t clip_width, uint32_t clip_height,
                                 VdpTime earliest_presentation_time)
 {
@@ -778,7 +778,7 @@ fakeVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
 
 static
 VdpStatus
-fakeVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_queue,
+softVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_queue,
                                               VdpOutputSurface surface,
                                               VdpTime *first_presentation_time)
 
@@ -793,14 +793,14 @@ fakeVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_
         return VDP_STATUS_INVALID_HANDLE;
 
     // use current time as presentation time
-    fakeVdpPresentationQueueGetTime(presentation_queue, first_presentation_time);
+    softVdpPresentationQueueGetTime(presentation_queue, first_presentation_time);
 
     return VDP_STATUS_OK;
 }
 
 static
 VdpStatus
-fakeVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_queue,
+softVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_queue,
                                            VdpOutputSurface surface,
                                            VdpPresentationQueueStatus *status,
                                            VdpTime *first_presentation_time)
@@ -812,7 +812,7 @@ fakeVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_que
 
 static
 VdpStatus
-fakeVdpVideoSurfaceQueryCapabilities(VdpDevice device, VdpChromaType surface_chroma_type,
+softVdpVideoSurfaceQueryCapabilities(VdpDevice device, VdpChromaType surface_chroma_type,
                                      VdpBool *is_supported, uint32_t *max_width,
                                      uint32_t *max_height)
 {
@@ -822,7 +822,7 @@ fakeVdpVideoSurfaceQueryCapabilities(VdpDevice device, VdpChromaType surface_chr
 
 static
 VdpStatus
-fakeVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(VdpDevice device,
+softVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(VdpDevice device,
                                                     VdpChromaType surface_chroma_type,
                                                     VdpYCbCrFormat bits_ycbcr_format,
                                                     VdpBool *is_supported)
@@ -833,7 +833,7 @@ fakeVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(VdpDevice device,
 
 static
 VdpStatus
-fakeVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t width,
+softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t width,
                           uint32_t height, VdpVideoSurface *surface)
 {
     TRACE("{part} VdpVideoSurfaceCreate, device=%d, chroma_type=%s, width=%d, height=%d",
@@ -873,7 +873,7 @@ fakeVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
 
 static
 VdpStatus
-fakeVdpVideoSurfaceDestroy(VdpVideoSurface surface)
+softVdpVideoSurfaceDestroy(VdpVideoSurface surface)
 {
     TRACE("{full} VdpVideoSurfaceDestroy surface=%d", surface);
 
@@ -891,7 +891,7 @@ fakeVdpVideoSurfaceDestroy(VdpVideoSurface surface)
 
 static
 VdpStatus
-fakeVdpVideoSurfaceGetParameters(VdpVideoSurface surface, VdpChromaType *chroma_type,
+softVdpVideoSurfaceGetParameters(VdpVideoSurface surface, VdpChromaType *chroma_type,
                                  uint32_t *width, uint32_t *height)
 {
     TRACE1("{zilch} VdpVideoSurfaceGetParameters");
@@ -900,7 +900,7 @@ fakeVdpVideoSurfaceGetParameters(VdpVideoSurface surface, VdpChromaType *chroma_
 
 static
 VdpStatus
-fakeVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destination_ycbcr_format,
+softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destination_ycbcr_format,
                                 void *const *destination_data, uint32_t const *destination_pitches)
 {
     TRACE1("{zilch} VdpVideoSurfaceGetBitsYCbCr");
@@ -909,7 +909,7 @@ fakeVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destinat
 
 static
 VdpStatus
-fakeVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_ycbcr_format,
+softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_ycbcr_format,
                                 void const *const *source_data, uint32_t const *source_pitches)
 {
     TRACE("{part} VdpVideoSurfacePutBitsYCbCr surface=%d, source_ycbcr_format=%s",
@@ -951,7 +951,7 @@ fakeVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
 
 static
 VdpStatus
-fakeVdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba_format,
+softVdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba_format,
                                       VdpBool *is_supported, uint32_t *max_width,
                                       uint32_t *max_height)
 {
@@ -970,7 +970,7 @@ fakeVdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
 
 static
 VdpStatus
-fakeVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
+softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
                            uint32_t height, VdpBool frequently_accessed, VdpBitmapSurface *surface)
 {
     TRACE("{full} VdpBitmapSurfaceCreate device=%d, rgba_format=%s, width=%d, height=%d,"
@@ -1005,7 +1005,7 @@ fakeVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
 
 static
 VdpStatus
-fakeVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
+softVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
 {
     TRACE("{full} VdpBitmapSurfaceDestroy surface=%d", surface);
     VdpBitmapSurfaceData *data = handlestorage_get(surface, HANDLETYPE_BITMAP_SURFACE);
@@ -1020,7 +1020,7 @@ fakeVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
 
 static
 VdpStatus
-fakeVdpBitmapSurfaceGetParameters(VdpBitmapSurface surface, VdpRGBAFormat *rgba_format,
+softVdpBitmapSurfaceGetParameters(VdpBitmapSurface surface, VdpRGBAFormat *rgba_format,
                                   uint32_t *width, uint32_t *height, VdpBool *frequently_accessed)
 {
     TRACE1("{zilch} VdpBitmapSurfaceGetParameters");
@@ -1029,7 +1029,7 @@ fakeVdpBitmapSurfaceGetParameters(VdpBitmapSurface surface, VdpRGBAFormat *rgba_
 
 static
 VdpStatus
-fakeVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *source_data,
+softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *source_data,
                                   uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
     TRACE("{part} VdpBitmapSurfacePutBitsNative surface=%d", surface);
@@ -1063,7 +1063,7 @@ fakeVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
 
 static
 VdpStatus
-fakeVdpDeviceDestroy(VdpDevice device)
+softVdpDeviceDestroy(VdpDevice device)
 {
     TRACE("{full} VdpDeviceDestroy device=%d", device);
     void *data = handlestorage_get(device, HANDLETYPE_DEVICE);
@@ -1077,7 +1077,7 @@ fakeVdpDeviceDestroy(VdpDevice device)
 
 static
 VdpStatus
-fakeVdpGetInformationString(char const **information_string)
+softVdpGetInformationString(char const **information_string)
 {
     TRACE1("{full} VdpGetInformationString");
     *information_string = implemetation_description_string;
@@ -1086,7 +1086,7 @@ fakeVdpGetInformationString(char const **information_string)
 
 static
 VdpStatus
-fakeVdpGenerateCSCMatrix(VdpProcamp *procamp, VdpColorStandard standard, VdpCSCMatrix *csc_matrix)
+softVdpGenerateCSCMatrix(VdpProcamp *procamp, VdpColorStandard standard, VdpCSCMatrix *csc_matrix)
 {
     TRACE("{part} VdpGenerateCSCMatrix standard=%d", standard);
     if (NULL == procamp || NULL == csc_matrix)
@@ -1120,7 +1120,7 @@ fakeVdpGenerateCSCMatrix(VdpProcamp *procamp, VdpColorStandard standard, VdpCSCM
 
 static
 VdpStatus
-fakeVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
+softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
                                         VdpRect const *destination_rect,
                                         VdpOutputSurface source_surface, VdpRect const *source_rect,
                                         VdpColor const *colors,
@@ -1161,7 +1161,7 @@ fakeVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
 
 static
 VdpStatus
-fakeVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
+softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
                                         VdpRect const *destination_rect,
                                         VdpBitmapSurface source_surface, VdpRect const *source_rect,
                                         VdpColor const *colors,
@@ -1220,7 +1220,7 @@ fakeVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
 
 static
 VdpStatus
-fakeVdpPreemptionCallbackRegister(VdpDevice device, VdpPreemptionCallback callback, void *context)
+softVdpPreemptionCallbackRegister(VdpDevice device, VdpPreemptionCallback callback, void *context)
 {
     TRACE("{zilch} VdpPreemptionCallbackRegister callback=%p", callback);
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -1228,7 +1228,7 @@ fakeVdpPreemptionCallbackRegister(VdpDevice device, VdpPreemptionCallback callba
 
 static
 VdpStatus
-fakeVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
+softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
                                         VdpPresentationQueueTarget *target)
 {
     TRACE("{part} VdpPresentationQueueTargetCreateX11, device=%d, drawable=%u", device,
@@ -1254,196 +1254,196 @@ fakeVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
 // =========================
 static
 VdpStatus
-fakeVdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_pointer)
+softVdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_pointer)
 {
     TRACE("{full} VdpGetProcAddress, device=%d, function_id=%s", device, reverse_func_id(function_id));
     switch (function_id) {
     case VDP_FUNC_ID_GET_ERROR_STRING:
-        *function_pointer = &fakeVdpGetErrorString;
+        *function_pointer = &softVdpGetErrorString;
         break;
     case VDP_FUNC_ID_GET_PROC_ADDRESS:
-        *function_pointer = &fakeVdpGetProcAddress;
+        *function_pointer = &softVdpGetProcAddress;
         break;
     case VDP_FUNC_ID_GET_API_VERSION:
-        *function_pointer = &fakeVdpGetApiVersion;
+        *function_pointer = &softVdpGetApiVersion;
         break;
     case VDP_FUNC_ID_GET_INFORMATION_STRING:
-        *function_pointer = &fakeVdpGetInformationString;
+        *function_pointer = &softVdpGetInformationString;
         break;
     case VDP_FUNC_ID_DEVICE_DESTROY:
-        *function_pointer = &fakeVdpDeviceDestroy;
+        *function_pointer = &softVdpDeviceDestroy;
         break;
     case VDP_FUNC_ID_GENERATE_CSC_MATRIX:
-        *function_pointer = &fakeVdpGenerateCSCMatrix;
+        *function_pointer = &softVdpGenerateCSCMatrix;
         break;
     case VDP_FUNC_ID_VIDEO_SURFACE_QUERY_CAPABILITIES:
-        *function_pointer = &fakeVdpVideoSurfaceQueryCapabilities;
+        *function_pointer = &softVdpVideoSurfaceQueryCapabilities;
         break;
     case VDP_FUNC_ID_VIDEO_SURFACE_QUERY_GET_PUT_BITS_Y_CB_CR_CAPABILITIES:
-        *function_pointer = &fakeVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities;
+        *function_pointer = &softVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities;
         break;
     case VDP_FUNC_ID_VIDEO_SURFACE_CREATE:
-        *function_pointer = &fakeVdpVideoSurfaceCreate;
+        *function_pointer = &softVdpVideoSurfaceCreate;
         break;
     case VDP_FUNC_ID_VIDEO_SURFACE_DESTROY:
-        *function_pointer = &fakeVdpVideoSurfaceDestroy;
+        *function_pointer = &softVdpVideoSurfaceDestroy;
         break;
     case VDP_FUNC_ID_VIDEO_SURFACE_GET_PARAMETERS:
-        *function_pointer = &fakeVdpVideoSurfaceGetParameters;
+        *function_pointer = &softVdpVideoSurfaceGetParameters;
         break;
     case VDP_FUNC_ID_VIDEO_SURFACE_GET_BITS_Y_CB_CR:
-        *function_pointer = &fakeVdpVideoSurfaceGetBitsYCbCr;
+        *function_pointer = &softVdpVideoSurfaceGetBitsYCbCr;
         break;
     case VDP_FUNC_ID_VIDEO_SURFACE_PUT_BITS_Y_CB_CR:
-        *function_pointer = &fakeVdpVideoSurfacePutBitsYCbCr;
+        *function_pointer = &softVdpVideoSurfacePutBitsYCbCr;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_CAPABILITIES:
-        *function_pointer = &fakeVdpOutputSurfaceQueryCapabilities;
+        *function_pointer = &softVdpOutputSurfaceQueryCapabilities;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_GET_PUT_BITS_NATIVE_CAPABILITIES:
-        *function_pointer = &fakeVdpOutputSurfaceQueryGetPutBitsNativeCapabilities;
+        *function_pointer = &softVdpOutputSurfaceQueryGetPutBitsNativeCapabilities;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_PUT_BITS_INDEXED_CAPABILITIES:
-        *function_pointer = &fakeVdpOutputSurfaceQueryPutBitsIndexedCapabilities;
+        *function_pointer = &softVdpOutputSurfaceQueryPutBitsIndexedCapabilities;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_PUT_BITS_Y_CB_CR_CAPABILITIES:
-        *function_pointer = &fakeVdpOutputSurfaceQueryPutBitsYCbCrCapabilities;
+        *function_pointer = &softVdpOutputSurfaceQueryPutBitsYCbCrCapabilities;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_CREATE:
-        *function_pointer = &fakeVdpOutputSurfaceCreate;
+        *function_pointer = &softVdpOutputSurfaceCreate;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_DESTROY:
-        *function_pointer = &fakeVdpOutputSurfaceDestroy;
+        *function_pointer = &softVdpOutputSurfaceDestroy;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_GET_PARAMETERS:
-        *function_pointer = &fakeVdpOutputSurfaceGetParameters;
+        *function_pointer = &softVdpOutputSurfaceGetParameters;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_GET_BITS_NATIVE:
-        *function_pointer = &fakeVdpOutputSurfaceGetBitsNative;
+        *function_pointer = &softVdpOutputSurfaceGetBitsNative;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_NATIVE:
-        *function_pointer = &fakeVdpOutputSurfacePutBitsNative;
+        *function_pointer = &softVdpOutputSurfacePutBitsNative;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_INDEXED:
-        *function_pointer = &fakeVdpOutputSurfacePutBitsIndexed;
+        *function_pointer = &softVdpOutputSurfacePutBitsIndexed;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_Y_CB_CR:
-        *function_pointer = &fakeVdpOutputSurfacePutBitsYCbCr;
+        *function_pointer = &softVdpOutputSurfacePutBitsYCbCr;
         break;
     case VDP_FUNC_ID_BITMAP_SURFACE_QUERY_CAPABILITIES:
-        *function_pointer = &fakeVdpBitmapSurfaceQueryCapabilities;
+        *function_pointer = &softVdpBitmapSurfaceQueryCapabilities;
         break;
     case VDP_FUNC_ID_BITMAP_SURFACE_CREATE:
-        *function_pointer = &fakeVdpBitmapSurfaceCreate;
+        *function_pointer = &softVdpBitmapSurfaceCreate;
         break;
     case VDP_FUNC_ID_BITMAP_SURFACE_DESTROY:
-        *function_pointer = &fakeVdpBitmapSurfaceDestroy;
+        *function_pointer = &softVdpBitmapSurfaceDestroy;
         break;
     case VDP_FUNC_ID_BITMAP_SURFACE_GET_PARAMETERS:
-        *function_pointer = &fakeVdpBitmapSurfaceGetParameters;
+        *function_pointer = &softVdpBitmapSurfaceGetParameters;
         break;
     case VDP_FUNC_ID_BITMAP_SURFACE_PUT_BITS_NATIVE:
-        *function_pointer = &fakeVdpBitmapSurfacePutBitsNative;
+        *function_pointer = &softVdpBitmapSurfacePutBitsNative;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_RENDER_OUTPUT_SURFACE:
-        *function_pointer = &fakeVdpOutputSurfaceRenderOutputSurface;
+        *function_pointer = &softVdpOutputSurfaceRenderOutputSurface;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_RENDER_BITMAP_SURFACE:
-        *function_pointer = &fakeVdpOutputSurfaceRenderBitmapSurface;
+        *function_pointer = &softVdpOutputSurfaceRenderBitmapSurface;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_RENDER_VIDEO_SURFACE_LUMA:
-        // *function_pointer = &fakeVdpOutputSurfaceRenderVideoSurfaceLuma;
+        // *function_pointer = &softVdpOutputSurfaceRenderVideoSurfaceLuma;
         *function_pointer = NULL;
         break;
     case VDP_FUNC_ID_DECODER_QUERY_CAPABILITIES:
-        *function_pointer = &fakeVdpDecoderQueryCapabilities;
+        *function_pointer = &softVdpDecoderQueryCapabilities;
         break;
     case VDP_FUNC_ID_DECODER_CREATE:
-        *function_pointer = &fakeVdpDecoderCreate;
+        *function_pointer = &softVdpDecoderCreate;
         break;
     case VDP_FUNC_ID_DECODER_DESTROY:
-        *function_pointer = &fakeVdpDecoderDestroy;
+        *function_pointer = &softVdpDecoderDestroy;
         break;
     case VDP_FUNC_ID_DECODER_GET_PARAMETERS:
-        *function_pointer = &fakeVdpDecoderGetParameters;
+        *function_pointer = &softVdpDecoderGetParameters;
         break;
     case VDP_FUNC_ID_DECODER_RENDER:
-        *function_pointer = &fakeVdpDecoderRender;
+        *function_pointer = &softVdpDecoderRender;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_QUERY_FEATURE_SUPPORT:
-        *function_pointer = &fakeVdpVideoMixerQueryFeatureSupport;
+        *function_pointer = &softVdpVideoMixerQueryFeatureSupport;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_QUERY_PARAMETER_SUPPORT:
-        *function_pointer = &fakeVdpVideoMixerQueryParameterSupport;
+        *function_pointer = &softVdpVideoMixerQueryParameterSupport;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_QUERY_ATTRIBUTE_SUPPORT:
-        *function_pointer = &fakeVdpVideoMixerQueryAttributeSupport;
+        *function_pointer = &softVdpVideoMixerQueryAttributeSupport;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_QUERY_PARAMETER_VALUE_RANGE:
-        *function_pointer = &fakeVdpVideoMixerQueryParameterValueRange;
+        *function_pointer = &softVdpVideoMixerQueryParameterValueRange;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_QUERY_ATTRIBUTE_VALUE_RANGE:
-        *function_pointer = &fakeVdpVideoMixerQueryAttributeValueRange;
+        *function_pointer = &softVdpVideoMixerQueryAttributeValueRange;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_CREATE:
-        *function_pointer = &fakeVdpVideoMixerCreate;
+        *function_pointer = &softVdpVideoMixerCreate;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_SET_FEATURE_ENABLES:
-        *function_pointer = &fakeVdpVideoMixerSetFeatureEnables;
+        *function_pointer = &softVdpVideoMixerSetFeatureEnables;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_SET_ATTRIBUTE_VALUES:
-        *function_pointer = &fakeVdpVideoMixerSetAttributeValues;
+        *function_pointer = &softVdpVideoMixerSetAttributeValues;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_GET_FEATURE_SUPPORT:
-        *function_pointer = &fakeVdpVideoMixerGetFeatureSupport;
+        *function_pointer = &softVdpVideoMixerGetFeatureSupport;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_GET_FEATURE_ENABLES:
-        *function_pointer = &fakeVdpVideoMixerGetFeatureEnables;
+        *function_pointer = &softVdpVideoMixerGetFeatureEnables;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_GET_PARAMETER_VALUES:
-        *function_pointer = &fakeVdpVideoMixerGetParameterValues;
+        *function_pointer = &softVdpVideoMixerGetParameterValues;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_GET_ATTRIBUTE_VALUES:
-        *function_pointer = &fakeVdpVideoMixerGetAttributeValues;
+        *function_pointer = &softVdpVideoMixerGetAttributeValues;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_DESTROY:
-        *function_pointer = &fakeVdpVideoMixerDestroy;
+        *function_pointer = &softVdpVideoMixerDestroy;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_RENDER:
-        *function_pointer = &fakeVdpVideoMixerRender;
+        *function_pointer = &softVdpVideoMixerRender;
         break;
     case VDP_FUNC_ID_PRESENTATION_QUEUE_TARGET_DESTROY:
-        *function_pointer = &fakeVdpPresentationQueueTargetDestroy;
+        *function_pointer = &softVdpPresentationQueueTargetDestroy;
         break;
     case VDP_FUNC_ID_PRESENTATION_QUEUE_CREATE:
-        *function_pointer = &fakeVdpPresentationQueueCreate;
+        *function_pointer = &softVdpPresentationQueueCreate;
         break;
     case VDP_FUNC_ID_PRESENTATION_QUEUE_DESTROY:
-        *function_pointer = &fakeVdpPresentationQueueDestroy;
+        *function_pointer = &softVdpPresentationQueueDestroy;
         break;
     case VDP_FUNC_ID_PRESENTATION_QUEUE_SET_BACKGROUND_COLOR:
-        *function_pointer = &fakeVdpPresentationQueueSetBackgroundColor;
+        *function_pointer = &softVdpPresentationQueueSetBackgroundColor;
         break;
     case VDP_FUNC_ID_PRESENTATION_QUEUE_GET_BACKGROUND_COLOR:
-        *function_pointer = &fakeVdpPresentationQueueGetBackgroundColor;
+        *function_pointer = &softVdpPresentationQueueGetBackgroundColor;
         break;
     case VDP_FUNC_ID_PRESENTATION_QUEUE_GET_TIME:
-        *function_pointer = &fakeVdpPresentationQueueGetTime;
+        *function_pointer = &softVdpPresentationQueueGetTime;
         break;
     case VDP_FUNC_ID_PRESENTATION_QUEUE_DISPLAY:
-        *function_pointer = &fakeVdpPresentationQueueDisplay;
+        *function_pointer = &softVdpPresentationQueueDisplay;
         break;
     case VDP_FUNC_ID_PRESENTATION_QUEUE_BLOCK_UNTIL_SURFACE_IDLE:
-        *function_pointer = &fakeVdpPresentationQueueBlockUntilSurfaceIdle;
+        *function_pointer = &softVdpPresentationQueueBlockUntilSurfaceIdle;
         break;
     case VDP_FUNC_ID_PRESENTATION_QUEUE_QUERY_SURFACE_STATUS:
-        *function_pointer = &fakeVdpPresentationQueueQuerySurfaceStatus;
+        *function_pointer = &softVdpPresentationQueueQuerySurfaceStatus;
         break;
     case VDP_FUNC_ID_PREEMPTION_CALLBACK_REGISTER:
-        *function_pointer = &fakeVdpPreemptionCallbackRegister;
+        *function_pointer = &softVdpPreemptionCallbackRegister;
         break;
     case VDP_FUNC_ID_BASE_WINSYS:
-        *function_pointer = &fakeVdpPresentationQueueTargetCreateX11;
+        *function_pointer = &softVdpPresentationQueueTargetCreateX11;
         break;
     default:
         *function_pointer = NULL;
@@ -1471,7 +1471,7 @@ softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
     data->screen = screen;
 
     *device = handlestorage_add(data);
-    *get_proc_address = &fakeVdpGetProcAddress;
+    *get_proc_address = &softVdpGetProcAddress;
 
     return VDP_STATUS_OK;
 }
