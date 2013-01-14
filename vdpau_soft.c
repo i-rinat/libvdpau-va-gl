@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <cairo.h>
 #include <glib.h>
 #include <libswscale/swscale.h>
 #include <stdio.h>
