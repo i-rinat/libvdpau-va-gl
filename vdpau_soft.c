@@ -1455,10 +1455,9 @@ fakeVdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_p
     return VDP_STATUS_OK;
 }
 
-__attribute__ ((visibility("default")))
 VdpStatus
-vdp_imp_device_create_x11(Display *display, int screen, VdpDevice *device,
-                          VdpGetProcAddress **get_proc_address)
+softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
+                       VdpGetProcAddress **get_proc_address)
 {
     TRACE("{full} vdp_imp_device_create_x11 display=%p, screen=%d", display, screen);
     if (NULL == display)
@@ -1475,16 +1474,4 @@ vdp_imp_device_create_x11(Display *display, int screen, VdpDevice *device,
     *get_proc_address = &fakeVdpGetProcAddress;
 
     return VDP_STATUS_OK;
-}
-
-static
-void
-__fake_init(void) __attribute__((constructor));
-
-static
-void
-__fake_init(void)
-{
-    handlestorage_initialize();
-    TRACE1("library initialized");
 }
