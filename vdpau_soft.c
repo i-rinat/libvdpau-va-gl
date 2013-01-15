@@ -1,17 +1,17 @@
+#define _XOPEN_SOURCE
 #include <assert.h>
 #include <cairo.h>
-#include <cairo-xcb.h>
-#include <cairo-xlib.h>
-#include <cairo-xlib-xrender.h>
 #include <glib.h>
 #include <libswscale/swscale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 #include <sys/time.h>
 #include <vdpau/vdpau.h>
 #include <vdpau/vdpau_x11.h>
-#include <xcb/xproto.h>
+#include <X11/extensions/XShm.h>
 #include "reverse-constant.h"
 #include "handle-storage.h"
 
@@ -771,86 +771,59 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     int out_width = cairo_image_surface_get_width(surfaceData->cairo_surface);
     int out_height = cairo_image_surface_get_height(surfaceData->cairo_surface);
 
+/*
+    char *buf = (char*)cairo_image_surface_get_data(surfaceData->cairo_surface);
+    XImage *image = XCreateImage(display, DefaultVisual(display, screen), 24, ZPixmap, 0,
+        buf,
+        out_width, out_height, 32,
+        cairo_image_surface_get_stride(surfaceData->cairo_surface));
 
-    //~ char *buf = (char*)cairo_image_surface_get_data(surfaceData->cairo_surface);
-    //~ XImage *image = XCreateImage(display, DefaultVisual(display, screen), 24, ZPixmap, 0,
-        //~ buf,
-        //~ out_width, out_height, 32,
-        //~ cairo_image_surface_get_stride(surfaceData->cairo_surface));
-//~
-    //~ if (NULL == image) {
-        //~ TRACE1("image become NULL in VdpPresentationQueueDisplay");
-        //~ return VDP_STATUS_RESOURCES;
-    //~ }
-//~
-    //~ XPutImage(display, drawable, DefaultGC(display, screen), image, 0, 0, 0, 0,
-        //~ out_width, out_height);
-//~
-    //~ free(image);
-
-
-    xcb_connection_t *xcb_connection = xcb_connect(NULL, &screen);
-    if (NULL == xcb_connection) {
-        printf("xcb_connect returned NULL\n");
+    if (NULL == image) {
+        TRACE1("image become NULL in VdpPresentationQueueDisplay");
         return VDP_STATUS_RESOURCES;
     }
 
-    xcb_screen_t *xcb_screen = NULL;
-    {
-        const xcb_setup_t *s = xcb_get_setup(xcb_connection);
-        xcb_screen_iterator_t iter;
-        int screen_nbr = screen;
-
-        if (s) {
-            iter = xcb_setup_roots_iterator(s);
-            for (; iter.rem; --screen, xcb_screen_next(&iter))
-                if (0 == screen_nbr) {
-                    xcb_screen = iter.data;
-                    break;
-                }
-        }
-    }
-
-    if (NULL == xcb_screen) {
-        printf("xcb_screen is NULL\n");
-        return VDP_STATUS_RESOURCES;
-    }
-
-    xcb_visualtype_t *visual_type = NULL;
-    if (xcb_screen) {
-        xcb_depth_iterator_t depth_iter;
-        depth_iter = xcb_screen_allowed_depths_iterator (xcb_screen);
-        for (; depth_iter.rem; xcb_depth_next (&depth_iter)) {
-            xcb_visualtype_iterator_t visual_iter;
-
-            visual_iter = xcb_depth_visuals_iterator (depth_iter.data);
-            for (; visual_iter.rem; xcb_visualtype_next (&visual_iter)) {
-                if (xcb_screen->root_visual == visual_iter.data->visual_id) {
-                    visual_type = visual_iter.data;
-                    break;
-                }
-            }
-        }
-    }
-
-    if (NULL == visual_type) {
-        printf("visual_type is NULL\n");
-        return VDP_STATUS_RESOURCES;
-    }
-
-    cairo_surface_t *xsurf = cairo_xcb_surface_create(
-        xcb_connection, drawable,
-        visual_type,
+    XPutImage(display, drawable, DefaultGC(display, screen), image, 0, 0, 0, 0,
         out_width, out_height);
 
-    cairo_t *cr = cairo_create(xsurf);
-    cairo_set_source_surface(cr, surfaceData->cairo_surface, 0, 0);
-    cairo_paint(cr);
-    cairo_destroy(cr);
+    free(image);
+*/
 
-    cairo_surface_destroy(xsurf);
+    XShmSegmentInfo shminfo;
+    XImage *image = XShmCreateImage(display, DefaultVisual(display, screen), 24, ZPixmap, NULL,
+        &shminfo, out_width, out_height);
+    if (NULL == image) {
+        TRACE1("Error creating XImage in SHM");
+        return VDP_STATUS_RESOURCES;
+    }
 
-    xcb_disconnect(xcb_connection);
+    shminfo.shmid = shmget(IPC_PRIVATE, image->bytes_per_line * image->height, IPC_CREAT | 0777);
+    if (shminfo.shmid < 0) {
+        TRACE1("shm error");
+        return VDP_STATUS_RESOURCES;
+    }
+
+    shminfo.shmaddr = shmat(shminfo.shmid, 0, 0);
+    image->data = shminfo.shmaddr;
+
+    shminfo.readOnly = False;
+    // ErrorFlag = 0;
+    // XSetErrorHandler(HandleXError);
+    XShmAttach(display, &shminfo);
+    XSync(display, False);
+
+    shmctl(shminfo.shmid, IPC_RMID, 0);
+
+    memcpy(image->data, cairo_image_surface_get_data(surfaceData->cairo_surface),
+        cairo_image_surface_get_stride(surfaceData->cairo_surface) *
+        cairo_image_surface_get_height(surfaceData->cairo_surface));
+
+    XShmPutImage(display, drawable, DefaultGC(display, screen), image,
+                 0, 0, 0, 0, out_width, out_height, False );
+
+    XShmDetach(display, &shminfo);
+    free(image);
+    shmdt(shminfo.shmaddr);
 
     return VDP_STATUS_OK;
 }
