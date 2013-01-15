@@ -1036,13 +1036,6 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
 
-    uint32_t const stride = (width % 4 == 0) ? width : (width & ~0x3UL) + 4;
-    void *buf = malloc(stride * height * rgba_format_storage_size(rgba_format));
-    if (NULL == buf) {
-        free(data);
-        return VDP_STATUS_RESOURCES;
-    }
-
     //TODO: other format handling
     if (rgba_format != VDP_RGBA_FORMAT_B8G8R8A8)
         return VDP_STATUS_INVALID_RGBA_FORMAT;
