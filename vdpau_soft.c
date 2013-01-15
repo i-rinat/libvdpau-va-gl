@@ -1244,7 +1244,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
                                         VdpOutputSurfaceRenderBlendState const *blend_state,
                                         uint32_t flags)
 {
-    TRACE("{full} VdpOutputSurfaceRenderBitmapSurface destination_surface=%d, source_surface=%d",
+    TRACE("{part} VdpOutputSurfaceRenderBitmapSurface destination_surface=%d, source_surface=%d",
         destination_surface, source_surface);
 #ifndef NDEBUG
     printf("      destination_rect=");
