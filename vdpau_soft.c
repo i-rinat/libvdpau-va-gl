@@ -1091,7 +1091,7 @@ VdpStatus
 softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *source_data,
                                   uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
-    TRACE("{part} VdpBitmapSurfacePutBitsNative surface=%d", surface);
+    TRACE("{full} VdpBitmapSurfacePutBitsNative surface=%d", surface);
 #ifndef NDEBUG
     printf("      destination_rect=");
     if (NULL == destination_rect) printf("NULL");
@@ -1108,11 +1108,13 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
     if (VDP_RGBA_FORMAT_B8G8R8A8 != surfaceData->rgba_format)
         return VDP_STATUS_INVALID_RGBA_FORMAT;
 
-    uint32_t width = cairo_image_surface_get_width(surfaceData->cairo_surface);
-    uint32_t height = cairo_image_surface_get_height(surfaceData->cairo_surface);
-
-    VdpRect rect = {0, 0, width, height};
-    if (NULL != destination_rect) rect = *destination_rect;
+    VdpRect rect = {0, 0, 0, 0};
+    if (destination_rect) {
+        rect = *destination_rect;
+    } else {
+        rect.x1 = cairo_image_surface_get_width(surfaceData->cairo_surface);
+        rect.y1 = cairo_image_surface_get_height(surfaceData->cairo_surface);
+    }
 
     cairo_surface_t *src_surf =
         cairo_image_surface_create_for_data((unsigned char *)(source_data[0]),
@@ -1124,7 +1126,7 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
     }
 
     cairo_t *cr = cairo_create(surfaceData->cairo_surface);
-    cairo_set_source_surface(cr, src_surf, 0, 0);
+    cairo_set_source_surface(cr, src_surf, rect.x0, rect.y0);
     cairo_paint(cr);
     cairo_destroy(cr);
 
