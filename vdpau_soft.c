@@ -1244,7 +1244,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
                                         VdpOutputSurfaceRenderBlendState const *blend_state,
                                         uint32_t flags)
 {
-    TRACE("{dirty impl} VdpOutputSurfaceRenderBitmapSurface destination_surface=%d, source_surface=%d",
+    TRACE("{full} VdpOutputSurfaceRenderBitmapSurface destination_surface=%d, source_surface=%d",
         destination_surface, source_surface);
 #ifndef NDEBUG
     printf("      destination_rect=");
@@ -1278,7 +1278,6 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version)
         return VDP_STATUS_INVALID_VALUE;
 
-    //TODO: stop doing dumb things and use swscale instead
     VdpOutputSurfaceData *dstSurface =
         handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == dstSurface)
@@ -1289,8 +1288,31 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     if (NULL == srcSurface)
         return VDP_STATUS_INVALID_HANDLE;
 
+    VdpRect s_rect = {0, 0, 0, 0};
+    VdpRect d_rect = {0, 0, 0, 0};
+
+    if (source_rect) {
+        s_rect = *source_rect;
+    } else {
+        s_rect.x1 = cairo_image_surface_get_width(srcSurface->cairo_surface);
+        s_rect.y1 = cairo_image_surface_get_height(srcSurface->cairo_surface);
+    }
+
+    if (destination_rect) {
+        d_rect = *destination_rect;
+    } else {
+        d_rect.x1 = cairo_image_surface_get_width(dstSurface->cairo_surface);
+        d_rect.y1 = cairo_image_surface_get_height(dstSurface->cairo_surface);
+    }
+
+    const double scale_x = (d_rect.x1 - d_rect.x0) / (s_rect.x1 - s_rect.x0);
+    const double scale_y = (d_rect.y1 - d_rect.y0) / (s_rect.y1 - s_rect.y0);
+
     cairo_t *cr = cairo_create(dstSurface->cairo_surface);
-    cairo_set_source_surface(cr, srcSurface->cairo_surface, 0, 0);
+    cairo_set_source_surface(cr, srcSurface->cairo_surface,
+        d_rect.x0 - s_rect.x0, d_rect.y0 - s_rect.y0);
+    cairo_scale(cr, scale_x, scale_y);
+    cairo_rectangle(cr, d_rect.x0, d_rect.y0, d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0);
     cairo_paint(cr);
     cairo_destroy(cr);
 
