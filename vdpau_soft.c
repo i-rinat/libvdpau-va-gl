@@ -1205,7 +1205,23 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     printf(", source_rect=");
     if (NULL == source_rect) printf("NULL");
     else printf("(%d,%d,%d,%d)", source_rect->x0, source_rect->y0, source_rect->x1, source_rect->y1);
-    printf("\n      colors=%p, blend_state=%p, flags=%d", colors, blend_state, flags);
+    printf("\n      colors=%p, flags=%d", colors, flags);
+    printf( "\n      blend_state.blend_factor_source_color=%s"
+            "\n      blend_state.blend_factor_destination_color=%s"
+            "\n      blend_state.blend_factor_source_alpha=%s"
+            "\n      blend_state.blend_factor_destination_color=%s"
+            "\n      blend_state.blend_equation_color=%s"
+            "\n      blend_state.blend_equation_alpha=%s"
+            "\n      blend_constant = (%11f, %11f, %11f, %11f)",
+            reverse_blend_factor(blend_state->blend_factor_source_color),
+            reverse_blend_factor(blend_state->blend_factor_destination_color),
+            reverse_blend_factor(blend_state->blend_factor_source_alpha),
+            reverse_blend_factor(blend_state->blend_factor_destination_alpha),
+            reverse_blend_equation(blend_state->blend_equation_color),
+            reverse_blend_equation(blend_state->blend_equation_alpha),
+            blend_state->blend_constant.red, blend_state->blend_constant.green,
+            blend_state->blend_constant.blue, blend_state->blend_constant.alpha
+    );
     printf("\n");
 #endif
 
