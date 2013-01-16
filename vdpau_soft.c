@@ -1234,7 +1234,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     if (NULL == dstSurface)
         return VDP_STATUS_INVALID_HANDLE;
 
-    VdpBitmapSurfaceData *srcSurface =
+    VdpOutputSurfaceData *srcSurface =
         handlestorage_get(source_surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == srcSurface)
         return VDP_STATUS_INVALID_HANDLE;
