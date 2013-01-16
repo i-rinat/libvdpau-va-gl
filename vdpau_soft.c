@@ -27,23 +27,6 @@ char const *implemetation_description_string = "VAAPI/software backend for VDPAU
 
 static
 uint32_t
-rgba_format_storage_size(VdpRGBAFormat rgba_format)
-{
-    switch (rgba_format) {
-    case VDP_RGBA_FORMAT_B8G8R8A8:
-    case VDP_RGBA_FORMAT_R8G8B8A8:
-    case VDP_RGBA_FORMAT_R10G10B10A2:
-    case VDP_RGBA_FORMAT_B10G10R10A2:
-        return 4;
-    case VDP_RGBA_FORMAT_A8:
-        return 1;
-    default:
-        return 4;
-    }
-}
-
-static
-uint32_t
 chroma_storage_size_divider(VdpChromaType chroma_type)
 {
     switch (chroma_type) {
