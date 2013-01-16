@@ -440,6 +440,7 @@ softVdpVideoMixerSetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_coun
 {
     TRACE("{part} VdpVideoMixerSetAttributeValues mixer=%d, attribute_count=%d",
         mixer, attribute_count);
+#ifndef NDEBUG
     for (uint32_t k = 0; k < attribute_count; k ++) {
         TRACE("   attribute %d (%s)", attributes[k], reverse_video_mixer_attributes(attributes[k]));
         if (VDP_VIDEO_MIXER_ATTRIBUTE_CSC_MATRIX == attributes[k]) {
@@ -453,6 +454,7 @@ softVdpVideoMixerSetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_coun
             }
         }
     }
+#endif
 
     return VDP_STATUS_OK;
 }
