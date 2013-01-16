@@ -41,9 +41,13 @@ handlestorage_valid(int handle, HandleType type)
 void *
 handlestorage_get(int handle, HandleType type)
 {
-    return handlestorage_valid(handle, type)
-            ? g_ptr_array_index(vdpHandles, handle)
-            : NULL;
+
+    if (handle < 1 || handle >= vdpHandles->len) return NULL;
+    void *result = g_ptr_array_index(vdpHandles, handle);
+    if (!result) return NULL;
+    if (HANDLETYPE_ANY == type) return result;
+    if (type != ((VdpGenericHandle *)result)->type) result = NULL;
+    return result;
 }
 
 void
