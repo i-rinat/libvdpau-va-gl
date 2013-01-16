@@ -1256,13 +1256,9 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
         d_rect.y1 = cairo_image_surface_get_height(dstSurface->cairo_surface);
     }
 
-    //const double scale_x = (d_rect.x1 - d_rect.x0) / (s_rect.x1 - s_rect.x0);
-    //const double scale_y = (d_rect.y1 - d_rect.y0) / (s_rect.y1 - s_rect.y0);
-
     cairo_t *cr = cairo_create(dstSurface->cairo_surface);
     cairo_set_source_surface(cr, srcSurface->cairo_surface,
         d_rect.x0 - s_rect.x0, d_rect.y0 - s_rect.y0);
-    // cairo_scale(cr, scale_x, scale_y);
     cairo_rectangle(cr, d_rect.x0, d_rect.y0, d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0);
     cairo_paint(cr);
     cairo_destroy(cr);
