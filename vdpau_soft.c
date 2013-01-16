@@ -1239,12 +1239,47 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
         d_rect.y1 = cairo_image_surface_get_height(dstSurface->cairo_surface);
     }
 
-    cairo_t *cr = cairo_create(dstSurface->cairo_surface);
-    cairo_set_source_surface(cr, srcSurface->cairo_surface,
-        d_rect.x0 - s_rect.x0, d_rect.y0 - s_rect.y0);
-    cairo_rectangle(cr, d_rect.x0, d_rect.y0, d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0);
-    cairo_paint(cr);
-    cairo_destroy(cr);
+    if (s_rect.x1 - s_rect.x0 == d_rect.x1 - d_rect.x0 &&
+        s_rect.y1 - s_rect.y0 == d_rect.y1 - d_rect.y0)
+    {
+        // trivial case -- destination and source rectangles have the same width and height
+        cairo_t *cr = cairo_create(dstSurface->cairo_surface);
+        cairo_set_source_surface(cr, srcSurface->cairo_surface,
+            d_rect.x0 - s_rect.x0, d_rect.y0 - s_rect.y0);
+        cairo_rectangle(cr, d_rect.x0, d_rect.y0, d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0);
+        cairo_paint(cr);
+        cairo_destroy(cr);
+    } else {
+        // Scaling needed. First, scale image.
+        cairo_surface_t *scaled_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
+                                            d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0);
+        cairo_surface_flush(scaled_surface);
+        struct SwsContext *sws_ctx =
+            sws_getContext(s_rect.x1 - s_rect.x0, s_rect.y1 - s_rect.y0, PIX_FMT_RGBA,
+                d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0,
+                PIX_FMT_RGBA, SWS_FAST_BILINEAR, NULL, NULL, NULL);
+        cairo_surface_flush(srcSurface->cairo_surface);
+        uint8_t const * const src_planes[] =
+            {cairo_image_surface_get_data(srcSurface->cairo_surface), NULL, NULL, NULL };
+        int src_strides[] =
+            {cairo_image_surface_get_stride(srcSurface->cairo_surface), 0, 0, 0};
+        uint8_t *dst_planes[] = {cairo_image_surface_get_data(scaled_surface), NULL, NULL, NULL};
+        int dst_strides[] = {cairo_image_surface_get_stride(scaled_surface), 0, 0, 0};
+        int res = sws_scale(sws_ctx,
+                            src_planes, src_strides, 0,  s_rect.y1 - s_rect.y0,
+                            dst_planes, dst_strides);
+        cairo_surface_mark_dirty(scaled_surface);
+        sws_freeContext(sws_ctx);
+
+        // then do drawing
+        cairo_t *cr = cairo_create(dstSurface->cairo_surface);
+        cairo_set_source_surface(cr, scaled_surface, 0, 0);
+        cairo_rectangle(cr, d_rect.x0, d_rect.y0, d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0);
+        cairo_paint(cr);
+        cairo_destroy(cr);
+
+        cairo_surface_destroy(scaled_surface);
+    }
 
     return VDP_STATUS_OK;
 }
