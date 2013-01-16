@@ -1119,11 +1119,7 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
     }
 
     cairo_t *cr = cairo_create(surfaceData->cairo_surface);
-    cairo_set_source_rgba(cr, 0, 1, 0, 0);
-    cairo_rectangle(cr, rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0);
-    cairo_fill(cr);
     cairo_set_source_surface(cr, src_surf, rect.x0, rect.y0);
-//    cairo_set_operator(cr, CAIRO_OPERATOR_DIFFERENCE);
     cairo_rectangle(cr, rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0);
     cairo_paint(cr);
     cairo_destroy(cr);
