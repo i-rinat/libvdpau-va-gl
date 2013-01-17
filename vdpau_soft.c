@@ -629,10 +629,10 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
                         dst_planes, dst_strides);
     cairo_surface_mark_dirty(dest_surface->cairo_surface);
     sws_freeContext(sws_ctx);
-    // printf ("res = %d, while height = %d\n", res, source_surface->height);
-    if (res != source_surface->height)
+    if (res != cairo_image_surface_get_height(dest_surface->cairo_surface)) {
+        fprintf(stderr, "scaling failed\n");
         return VDP_STATUS_ERROR;
-
+    }
     return VDP_STATUS_OK;
 }
 
