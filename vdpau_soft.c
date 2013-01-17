@@ -617,7 +617,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     uint8_t const * const src_planes[] =
         { source_surface->y_plane, source_surface->v_plane, source_surface->u_plane, NULL };
     int src_strides[] =
-        {source_surface->stride, source_surface->width/2, source_surface->width/2, 0};
+        {source_surface->stride, source_surface->stride/2, source_surface->stride/2, 0};
     uint8_t *dst_planes[] = {NULL, NULL, NULL, NULL};
     dst_planes[0] = cairo_image_surface_get_data(dest_surface->cairo_surface);
     int dst_strides[] = {0, 0, 0, 0};
@@ -975,14 +975,14 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
     dst = surfaceData->v_plane;     src = source_data[1];
     for (uint32_t k = 0; k < surfaceData->height / 2; k ++) {
         memcpy(dst, src, surfaceData->width / 2);
-        dst += surfaceData->width / 2;
+        dst += surfaceData->stride / 2;
         src += source_pitches[1];
     }
 
     dst = surfaceData->u_plane;     src = source_data[2];
     for (uint32_t k = 0; k < surfaceData->height / 2; k ++) {
         memcpy(dst, src, surfaceData->width/2);
-        dst += surfaceData->width / 2;
+        dst += surfaceData->stride / 2;
         src += source_pitches[2];
     }
 
