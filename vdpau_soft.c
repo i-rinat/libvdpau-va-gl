@@ -1270,11 +1270,17 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
             {cairo_image_surface_get_stride(srcSurface->cairo_surface), 0, 0, 0};
         uint8_t *dst_planes[] = {cairo_image_surface_get_data(scaled_surface), NULL, NULL, NULL};
         int dst_strides[] = {cairo_image_surface_get_stride(scaled_surface), 0, 0, 0};
-        int res = sws_scale(sws_ctx,
+        int lines_scaled = sws_scale(sws_ctx,
                             src_planes, src_strides, 0,  s_rect.y1 - s_rect.y0,
                             dst_planes, dst_strides);
         cairo_surface_mark_dirty(scaled_surface);
         sws_freeContext(sws_ctx);
+
+        if (lines_scaled != s_rect.y1 - s_rect.y0) {
+            fprintf(stderr, "error: can't scale\n");
+            cairo_surface_destroy(scaled_surface);
+            return VDP_STATUS_ERROR;
+        }
 
         // then do drawing
         cairo_t *cr = cairo_create(dstSurface->cairo_surface);
