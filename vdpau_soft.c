@@ -848,8 +848,13 @@ softVdpVideoSurfaceQueryCapabilities(VdpDevice device, VdpChromaType surface_chr
                                      VdpBool *is_supported, uint32_t *max_width,
                                      uint32_t *max_height)
 {
-    TRACE1("{zilch} VdpVideoSurfaceQueryCapabilities");
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE("{part} VdpVideoSurfaceQueryCapabilities device=%d, surface_chroma_type=%s",
+        device, reverse_chroma_type(surface_chroma_type));
+    *is_supported = 1;
+    *max_width = 1920;
+    *max_height = 1080;
+
+    return VDP_STATUS_OK;
 }
 
 static
