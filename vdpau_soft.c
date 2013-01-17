@@ -670,9 +670,10 @@ softVdpPresentationQueueCreate(VdpDevice device,
     data->type = HANDLETYPE_PRESENTATION_QUEUE;
     data->device = device;
     data->presentation_queue_target = presentation_queue_target;
-
+    data->image = NULL;
+    data->prev_width = 0;
+    data->prev_height = 0;
     *presentation_queue = handlestorage_add(data);
-
     return VDP_STATUS_OK;
 }
 
@@ -756,59 +757,53 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     int out_width = cairo_image_surface_get_width(surfaceData->cairo_surface);
     int out_height = cairo_image_surface_get_height(surfaceData->cairo_surface);
 
-/*
-    char *buf = (char*)cairo_image_surface_get_data(surfaceData->cairo_surface);
-    XImage *image = XCreateImage(display, DefaultVisual(display, screen), 24, ZPixmap, 0,
-        buf,
-        out_width, out_height, 32,
-        cairo_image_surface_get_stride(surfaceData->cairo_surface));
+    if (presentationQueueData->prev_width != out_width ||
+        presentationQueueData->prev_height != out_height)
+    {
+        if (presentationQueueData->image) {
+            XShmDetach(display, &presentationQueueData->shminfo);
+            free(presentationQueueData->image);
+            shmdt(presentationQueueData->shminfo.shmaddr);
+        }
+        presentationQueueData->image = NULL;
+    }
+    if (NULL == presentationQueueData->image) {
+        presentationQueueData->image = XShmCreateImage(display, DefaultVisual(display, screen),
+            24, ZPixmap, NULL, &presentationQueueData->shminfo, out_width, out_height);
+        if (NULL == presentationQueueData->image) {
+            TRACE1("Error creating XImage in SHM");
+            return VDP_STATUS_RESOURCES;
+        }
+        presentationQueueData->prev_width = out_width;
+        presentationQueueData->prev_height = out_height;
 
-    if (NULL == image) {
-        TRACE1("image become NULL in VdpPresentationQueueDisplay");
-        return VDP_STATUS_RESOURCES;
+        presentationQueueData->shminfo.shmid =
+            shmget(IPC_PRIVATE,
+            presentationQueueData->image->bytes_per_line * presentationQueueData->image->height,
+            IPC_CREAT | 0777);
+        if (presentationQueueData->shminfo.shmid < 0) {
+            TRACE1("shm error");
+            return VDP_STATUS_RESOURCES;
+        }
+
+        presentationQueueData->shminfo.shmaddr = shmat(presentationQueueData->shminfo.shmid, 0, 0);
+        presentationQueueData->image->data = presentationQueueData->shminfo.shmaddr;
+
+        presentationQueueData->shminfo.readOnly = False;
+        XShmAttach(display, &presentationQueueData->shminfo);
+        XSync(display, False);
+
+        shmctl(presentationQueueData->shminfo.shmid, IPC_RMID, 0);
     }
 
-    XPutImage(display, drawable, DefaultGC(display, screen), image, 0, 0, 0, 0,
-        out_width, out_height);
-
-    free(image);
-*/
-
-    XShmSegmentInfo shminfo;
-    XImage *image = XShmCreateImage(display, DefaultVisual(display, screen), 24, ZPixmap, NULL,
-        &shminfo, out_width, out_height);
-    if (NULL == image) {
-        TRACE1("Error creating XImage in SHM");
-        return VDP_STATUS_RESOURCES;
-    }
-
-    shminfo.shmid = shmget(IPC_PRIVATE, image->bytes_per_line * image->height, IPC_CREAT | 0777);
-    if (shminfo.shmid < 0) {
-        TRACE1("shm error");
-        return VDP_STATUS_RESOURCES;
-    }
-
-    shminfo.shmaddr = shmat(shminfo.shmid, 0, 0);
-    image->data = shminfo.shmaddr;
-
-    shminfo.readOnly = False;
-    // ErrorFlag = 0;
-    // XSetErrorHandler(HandleXError);
-    XShmAttach(display, &shminfo);
-    XSync(display, False);
-
-    shmctl(shminfo.shmid, IPC_RMID, 0);
-
-    memcpy(image->data, cairo_image_surface_get_data(surfaceData->cairo_surface),
+    cairo_surface_flush(surfaceData->cairo_surface);
+    memcpy(presentationQueueData->image->data,
+        cairo_image_surface_get_data(surfaceData->cairo_surface),
         cairo_image_surface_get_stride(surfaceData->cairo_surface) *
         cairo_image_surface_get_height(surfaceData->cairo_surface));
 
-    XShmPutImage(display, drawable, DefaultGC(display, screen), image,
+    XShmPutImage(display, drawable, DefaultGC(display, screen), presentationQueueData->image,
                  0, 0, 0, 0, out_width, out_height, False );
-
-    XShmDetach(display, &shminfo);
-    free(image);
-    shmdt(shminfo.shmaddr);
 
     return VDP_STATUS_OK;
 }

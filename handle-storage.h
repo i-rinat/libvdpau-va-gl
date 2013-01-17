@@ -5,6 +5,7 @@
 #include <cairo.h>
 #include <vdpau/vdpau_x11.h>
 #include <glib.h>
+#include <X11/extensions/XShm.h>
 
 typedef uint32_t    HandleType;
 #define HANDLETYPE_ANY                         (HandleType)0
@@ -36,6 +37,10 @@ typedef struct {
     HandleType type;
     int device;
     int presentation_queue_target;
+    XShmSegmentInfo shminfo;
+    XImage *image;
+    uint32_t prev_width;
+    uint32_t prev_height;
 } VdpPresentationQueueData;
 
 typedef struct {
