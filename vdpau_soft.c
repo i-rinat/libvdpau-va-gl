@@ -1276,7 +1276,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
         cairo_surface_mark_dirty(scaled_surface);
         sws_freeContext(sws_ctx);
 
-        if (lines_scaled != s_rect.y1 - s_rect.y0) {
+        if (lines_scaled != d_rect.y1 - d_rect.y0) {
             fprintf(stderr, "error: can't scale\n");
             cairo_surface_destroy(scaled_surface);
             return VDP_STATUS_ERROR;
