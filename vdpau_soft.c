@@ -865,8 +865,8 @@ softVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(VdpDevice device,
                                                     VdpBool *is_supported)
 {
     TRACE("{part} VdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities device=%d, "
-        "surface_chroma_type=%s, bits_ycbcr_format=%d", device,
-        reverse_chroma_type(surface_chroma_type), bits_ycbcr_format);
+        "surface_chroma_type=%s, bits_ycbcr_format=%s", device,
+        reverse_chroma_type(surface_chroma_type), reverse_ycbcr_format(bits_ycbcr_format));
     *is_supported = 1;
     return VDP_STATUS_OK;
 }
