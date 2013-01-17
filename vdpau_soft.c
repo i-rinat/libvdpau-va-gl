@@ -614,6 +614,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
             cairo_image_surface_get_height(dest_surface->cairo_surface),
             PIX_FMT_RGBA, SWS_POINT, NULL, NULL, NULL);
 
+    cairo_surface_flush(dest_surface->cairo_surface);
     uint8_t const * const src_planes[] =
         { source_surface->y_plane, source_surface->v_plane, source_surface->u_plane, NULL };
     int src_strides[] =
@@ -622,7 +623,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     dst_planes[0] = cairo_image_surface_get_data(dest_surface->cairo_surface);
     int dst_strides[] = {0, 0, 0, 0};
     dst_strides[0] = cairo_image_surface_get_stride(dest_surface->cairo_surface);
-    cairo_surface_flush(dest_surface->cairo_surface);
+
     int res = sws_scale(sws_ctx,
                         src_planes, src_strides, 0, source_surface->height,
                         dst_planes, dst_strides);
