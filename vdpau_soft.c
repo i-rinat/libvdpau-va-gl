@@ -864,8 +864,11 @@ softVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(VdpDevice device,
                                                     VdpYCbCrFormat bits_ycbcr_format,
                                                     VdpBool *is_supported)
 {
-    TRACE1("{zilch} VdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities");
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE("{part} VdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities device=%d, "
+        "surface_chroma_type=%s, bits_ycbcr_format=%d", device,
+        reverse_chroma_type(surface_chroma_type), bits_ycbcr_format);
+    *is_supported = 1;
+    return VDP_STATUS_OK;
 }
 
 static
