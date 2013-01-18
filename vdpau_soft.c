@@ -1446,7 +1446,7 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
         ((unsigned int)drawable));
 
     VdpPresentationQueueTargetData *data =
-        (VdpPresentationQueueTargetData *)malloc(sizeof(VdpPresentationQueueTargetData));
+        (VdpPresentationQueueTargetData *)calloc(1, sizeof(VdpPresentationQueueTargetData));
     if (NULL == data)
         return VDP_STATUS_ERROR;
 
@@ -1673,7 +1673,7 @@ softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
     TRACE("{full} vdp_imp_device_create_x11 display=%p, screen=%d", display, screen);
     if (NULL == display)
         return VDP_STATUS_INVALID_POINTER;
-    VdpDeviceData *data = (VdpDeviceData *)malloc(sizeof(VdpDeviceData));
+    VdpDeviceData *data = (VdpDeviceData *)calloc(1, sizeof(VdpDeviceData));
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
 
