@@ -29,14 +29,14 @@ typedef struct {
 
 typedef struct {
     HandleType type;
-    int device;
+    VdpDevice device;
     Drawable drawable;
 } VdpPresentationQueueTargetData;
 
 typedef struct {
     HandleType type;
-    int device;
-    int presentation_queue_target;
+    VdpDevice device;
+    VdpPresentationQueueTarget presentation_queue_target;
     XShmSegmentInfo shminfo;
     XImage *image;
     uint32_t prev_width;
