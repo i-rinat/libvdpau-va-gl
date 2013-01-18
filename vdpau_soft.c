@@ -780,6 +780,7 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
         }
         presentationQueueData->image = NULL;
     }
+    // create shared memory if there is no any
     if (NULL == presentationQueueData->image) {
         presentationQueueData->image = XShmCreateImage(display, DefaultVisual(display, screen),
             24, ZPixmap, NULL, &presentationQueueData->shminfo, out_width, out_height);
