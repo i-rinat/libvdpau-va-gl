@@ -1261,9 +1261,9 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
                                             d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0);
         cairo_surface_flush(scaled_surface);
         struct SwsContext *sws_ctx =
-            sws_getContext(s_rect.x1 - s_rect.x0, s_rect.y1 - s_rect.y0, PIX_FMT_RGBA,
+            sws_getContext(s_rect.x1 - s_rect.x0, s_rect.y1 - s_rect.y0, PIX_FMT_BGRA,
                 d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0,
-                PIX_FMT_RGBA, SWS_FAST_BILINEAR, NULL, NULL, NULL);
+                PIX_FMT_BGRA, SWS_FAST_BILINEAR, NULL, NULL, NULL);
         cairo_surface_flush(srcSurface->cairo_surface);
         uint8_t const * const src_planes[] =
             {cairo_image_surface_get_data(srcSurface->cairo_surface), NULL, NULL, NULL };
