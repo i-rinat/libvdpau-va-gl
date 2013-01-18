@@ -1110,6 +1110,7 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
     cairo_t *cr = cairo_create(surfaceData->cairo_surface);
     cairo_set_source_surface(cr, src_surf, rect.x0, rect.y0);
     cairo_rectangle(cr, rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0);
+    cairo_clip(cr);
     cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
     cairo_paint(cr);
     cairo_destroy(cr);
@@ -1276,6 +1277,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
         cairo_set_source_surface(cr, srcSurface->cairo_surface,
             d_rect.x0 - s_rect.x0, d_rect.y0 - s_rect.y0);
         cairo_rectangle(cr, d_rect.x0, d_rect.y0, d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0);
+        cairo_clip(cr);
         cairo_set_operator(cr, operator);
         cairo_paint(cr);
         cairo_destroy(cr);
@@ -1312,6 +1314,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
         cairo_t *cr = cairo_create(dstSurface->cairo_surface);
         cairo_set_source_surface(cr, scaled_surface, 0, 0);
         cairo_rectangle(cr, d_rect.x0, d_rect.y0, d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0);
+        cairo_clip(cr);
         cairo_set_operator(cr, operator);
         cairo_paint(cr);
         cairo_destroy(cr);
@@ -1418,6 +1421,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     cairo_set_source_surface(cr, srcSurface->cairo_surface,
         d_rect.x0 - s_rect.x0, d_rect.y0 - s_rect.y0);
     cairo_rectangle(cr, d_rect.x0, d_rect.y0, d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0);
+    cairo_clip(cr);
     cairo_set_operator(cr, operator);
     cairo_paint(cr);
     cairo_destroy(cr);
