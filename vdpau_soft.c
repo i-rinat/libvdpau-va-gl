@@ -1198,7 +1198,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     printf( "\n      blend_state.blend_factor_source_color=%s"
             "\n      blend_state.blend_factor_destination_color=%s"
             "\n      blend_state.blend_factor_source_alpha=%s"
-            "\n      blend_state.blend_factor_destination_color=%s"
+            "\n      blend_state.blend_factor_destination_alpha=%s"
             "\n      blend_state.blend_equation_color=%s"
             "\n      blend_state.blend_equation_alpha=%s"
             "\n      blend_constant = (%11f, %11f, %11f, %11f)",
@@ -1321,7 +1321,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     printf( "\n      blend_state.blend_factor_source_color=%s"
             "\n      blend_state.blend_factor_destination_color=%s"
             "\n      blend_state.blend_factor_source_alpha=%s"
-            "\n      blend_state.blend_factor_destination_color=%s"
+            "\n      blend_state.blend_factor_destination_alpha=%s"
             "\n      blend_state.blend_equation_color=%s"
             "\n      blend_state.blend_equation_alpha=%s"
             "\n      blend_constant = (%11f, %11f, %11f, %11f)",
