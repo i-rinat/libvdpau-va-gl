@@ -231,17 +231,18 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
 {
     TRACE("{part} VdpOutputSurfaceCreate device=%d, rgba_format=%s, width=%d, height=%d",
         device, reverse_rgba_format(rgba_format), width, height);
-    if (! handlestorage_valid(device, HANDLETYPE_DEVICE))
+
+    VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
+    if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
 
+    //TODO: figure out reasonable limits
     if (width > 4096 || height > 4096)
         return VDP_STATUS_INVALID_SIZE;
 
-
+    //TODO: other formats
     if (VDP_RGBA_FORMAT_B8G8R8A8 != rgba_format) {
-#ifndef NDEBUG
-        printf("  unsupported RGBA format\n");
-#endif
+        fprintf(stderr, "error: unsupported rgba format: %s\n", reverse_rgba_format(rgba_format));
         return VDP_STATUS_INVALID_RGBA_FORMAT;
     }
 
@@ -250,7 +251,7 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
         return VDP_STATUS_RESOURCES;
 
     data->type = HANDLETYPE_OUTPUT_SURFACE;
-    data->device = device;
+    data->device = deviceData;
     data->rgba_format = rgba_format;
     data->cairo_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
     if (CAIRO_STATUS_SUCCESS != cairo_surface_status(data->cairo_surface)) {
@@ -403,7 +404,8 @@ softVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
     }
 #endif
 
-    if (!handlestorage_valid(device, HANDLETYPE_DEVICE))
+    VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
+    if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
 
     VdpVideoMixerData *data = (VdpVideoMixerData *)calloc(1, sizeof(VdpVideoMixerData));
@@ -411,7 +413,7 @@ softVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
         return VDP_STATUS_RESOURCES;
 
     data->type = HANDLETYPE_VIDEO_MIXER;
-    data->device = device;
+    data->device = deviceData;
 
     *mixer = handlestorage_add(data);
 
@@ -425,10 +427,12 @@ softVdpVideoMixerSetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
                                    VdpBool const *feature_enables)
 {
     TRACE("{part} VdpVideoMixerSetFeatureEnables mixer=%d, feature_count=%d", mixer, feature_count);
+#ifndef NDEBUG
     for (uint32_t k = 0; k < feature_count; k ++) {
-        TRACE("   feature %d %s (%s)", features[k], feature_enables[k] ? "enabled" : "disabled",
+        printf("      feature %d %s (%s)\n", features[k], feature_enables[k] ? "enabled" : "disabled",
             reverse_video_mixer_feature(features[k]));
     }
+#endif
     return VDP_STATUS_OK;
 }
 
@@ -442,7 +446,8 @@ softVdpVideoMixerSetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_coun
         mixer, attribute_count);
 #ifndef NDEBUG
     for (uint32_t k = 0; k < attribute_count; k ++) {
-        TRACE("   attribute %d (%s)", attributes[k], reverse_video_mixer_attributes(attributes[k]));
+        printf("   attribute %d (%s)\n", attributes[k],
+            reverse_video_mixer_attributes(attributes[k]));
         if (VDP_VIDEO_MIXER_ATTRIBUTE_CSC_MATRIX == attributes[k]) {
             VdpCSCMatrix *matrix = (VdpCSCMatrix *)(attribute_values[k]);
             for (uint32_t j1 = 0; j1 < 3; j1 ++) {
@@ -526,7 +531,6 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
                         uint32_t layer_count, VdpLayer const *layers)
 {
     TRACE1("{part} VdpVideoMixerRender");
-
 #ifndef NDEBUG
     VdpRect const *rect;
     printf("      mixer=%d, background_surface=%d,", mixer, background_surface);
@@ -597,7 +601,6 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
 #endif
 
     //TODO: handle rectangles
-
     VdpVideoSurfaceData *source_surface =
         handlestorage_get(video_surface_current, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == source_surface)
@@ -642,6 +645,7 @@ softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_qu
 {
     TRACE("{full} VdpPresentationQueueTargetDestroy presentation_queue_target=%d",
         presentation_queue_target);
+
     void *data = handlestorage_get(presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
@@ -659,22 +663,25 @@ softVdpPresentationQueueCreate(VdpDevice device,
 {
     TRACE("{part} VdpPresentationQueueCreate device=%d, presentation_queue_target=%d",
         device, presentation_queue_target);
+    VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
+    if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
+
+    VdpPresentationQueueTargetData *targetData =
+        handlestorage_get(presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET);
+    if (NULL == targetData) return VDP_STATUS_INVALID_HANDLE;
+
     VdpPresentationQueueData *data =
         (VdpPresentationQueueData *)calloc(1, sizeof(VdpPresentationQueueData));
-    if (NULL == data)
-        return VDP_STATUS_RESOURCES;
-    if (!handlestorage_valid(device, HANDLETYPE_DEVICE))
-        return VDP_STATUS_INVALID_HANDLE;
-    if (!handlestorage_valid(presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET))
-        return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == data) return VDP_STATUS_RESOURCES;
 
     data->type = HANDLETYPE_PRESENTATION_QUEUE;
-    data->device = device;
-    data->presentation_queue_target = presentation_queue_target;
+    data->device = deviceData;
+    data->target = targetData;
     data->image = NULL;
     data->prev_width = 0;
     data->prev_height = 0;
     *presentation_queue = handlestorage_add(data);
+
     return VDP_STATUS_OK;
 }
 
@@ -685,16 +692,10 @@ softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
     TRACE("{full} VdpPresentationQueueDestroy presentation_queue=%d", presentation_queue);
     VdpPresentationQueueData *data =
         handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
-    if (NULL == data)
-        return VDP_STATUS_INVALID_HANDLE;
-
-    VdpPresentationQueueTargetData *target =
-        handlestorage_get(data->presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET);
-
-    VdpDeviceData *device = handlestorage_get(target->device, HANDLETYPE_DEVICE);
+    if (NULL == data) return VDP_STATUS_INVALID_HANDLE;
 
     if (data->image) {
-        XShmDetach(device->display, &data->shminfo);
+        XShmDetach(data->target->device->display, &data->shminfo);
         free(data->image);
         shmdt(data->shminfo.shmaddr);
     }
@@ -746,77 +747,64 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     VdpOutputSurfaceData *surfaceData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == surfaceData) return VDP_STATUS_INVALID_HANDLE;
 
-    VdpPresentationQueueData *presentationQueueData =
+    VdpPresentationQueueData *presentationQueue =
         handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
+    if (NULL == presentationQueue) return VDP_STATUS_INVALID_HANDLE;
 
-    if (NULL == presentationQueueData) return VDP_STATUS_INVALID_HANDLE;
-
-    VdpPresentationQueueTargetData *presentationQueueTargetData =
-        handlestorage_get(presentationQueueData->presentation_queue_target,
-        HANDLETYPE_PRESENTATION_QUEUE_TARGET);
-
-    if (NULL == presentationQueueTargetData) return VDP_STATUS_INVALID_HANDLE;
-
-    Drawable drawable = presentationQueueTargetData->drawable;
-
-    VdpDeviceData *deviceData =
-        handlestorage_get(presentationQueueTargetData->device, HANDLETYPE_DEVICE);
-
-    if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
-
-    Display *display = deviceData->display;
-    int screen = deviceData->screen;
+    Drawable drawable = presentationQueue->target->drawable;
+    Display *display = presentationQueue->target->device->display;
+    int screen = presentationQueue->target->device->screen;
 
     int out_width = cairo_image_surface_get_width(surfaceData->cairo_surface);
     int out_height = cairo_image_surface_get_height(surfaceData->cairo_surface);
 
-    if (presentationQueueData->prev_width != out_width ||
-        presentationQueueData->prev_height != out_height)
+    if (presentationQueue->prev_width != out_width ||
+        presentationQueue->prev_height != out_height)
     {
-        if (presentationQueueData->image) {
-            XShmDetach(display, &presentationQueueData->shminfo);
-            free(presentationQueueData->image);
-            shmdt(presentationQueueData->shminfo.shmaddr);
+        if (presentationQueue->image) {
+            XShmDetach(display, &presentationQueue->shminfo);
+            free(presentationQueue->image);
+            shmdt(presentationQueue->shminfo.shmaddr);
         }
-        presentationQueueData->image = NULL;
+        presentationQueue->image = NULL;
     }
     // create shared memory if there is no any
-    if (NULL == presentationQueueData->image) {
-        presentationQueueData->image = XShmCreateImage(display, DefaultVisual(display, screen),
-            24, ZPixmap, NULL, &presentationQueueData->shminfo, out_width, out_height);
-        if (NULL == presentationQueueData->image) {
+    if (NULL == presentationQueue->image) {
+        presentationQueue->image = XShmCreateImage(display, DefaultVisual(display, screen),
+            24, ZPixmap, NULL, &presentationQueue->shminfo, out_width, out_height);
+        if (NULL == presentationQueue->image) {
             TRACE1("Error creating XImage in SHM");
             return VDP_STATUS_RESOURCES;
         }
-        presentationQueueData->prev_width = out_width;
-        presentationQueueData->prev_height = out_height;
+        presentationQueue->prev_width = out_width;
+        presentationQueue->prev_height = out_height;
 
-        presentationQueueData->shminfo.shmid =
+        presentationQueue->shminfo.shmid =
             shmget(IPC_PRIVATE,
-            presentationQueueData->image->bytes_per_line * presentationQueueData->image->height,
+            presentationQueue->image->bytes_per_line * presentationQueue->image->height,
             IPC_CREAT | 0777);
-        if (presentationQueueData->shminfo.shmid < 0) {
+        if (presentationQueue->shminfo.shmid < 0) {
             TRACE1("shm error");
             return VDP_STATUS_RESOURCES;
         }
 
-        presentationQueueData->shminfo.shmaddr = shmat(presentationQueueData->shminfo.shmid, 0, 0);
-        presentationQueueData->image->data = presentationQueueData->shminfo.shmaddr;
+        presentationQueue->shminfo.shmaddr = shmat(presentationQueue->shminfo.shmid, 0, 0);
+        presentationQueue->image->data = presentationQueue->shminfo.shmaddr;
 
-        presentationQueueData->shminfo.readOnly = False;
-        XShmAttach(display, &presentationQueueData->shminfo);
+        presentationQueue->shminfo.readOnly = False;
+        XShmAttach(display, &presentationQueue->shminfo);
         XSync(display, False);
 
-        shmctl(presentationQueueData->shminfo.shmid, IPC_RMID, 0);
+        shmctl(presentationQueue->shminfo.shmid, IPC_RMID, 0);
     }
 
     cairo_surface_flush(surfaceData->cairo_surface);
-    memcpy(presentationQueueData->image->data,
+    memcpy(presentationQueue->image->data,
         cairo_image_surface_get_data(surfaceData->cairo_surface),
         cairo_image_surface_get_stride(surfaceData->cairo_surface) *
         cairo_image_surface_get_height(surfaceData->cairo_surface));
 
-    XShmPutImage(display, drawable, DefaultGC(display, screen), presentationQueueData->image,
+    XShmPutImage(display, drawable, DefaultGC(display, screen), presentationQueue->image,
                  0, 0, 0, 0, out_width, out_height, False );
 
     return VDP_STATUS_OK;
@@ -893,7 +881,8 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
     TRACE("{part} VdpVideoSurfaceCreate, device=%d, chroma_type=%s, width=%d, height=%d",
         device, reverse_chroma_type(chroma_type), width, height);
 
-    if (! handlestorage_valid(device, HANDLETYPE_DEVICE))
+    VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
+    if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
 
     VdpVideoSurfaceData *data = (VdpVideoSurfaceData *)calloc(1, sizeof(VdpVideoSurfaceData));
@@ -901,9 +890,8 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
         return VDP_STATUS_RESOURCES;
 
     uint32_t const stride = (width % 4 == 0) ? width : (width & ~0x3UL) + 4;
-
     data->type = HANDLETYPE_VIDEO_SURFACE;
-    data->device = device;
+    data->device = deviceData;
     data->chroma_type = chroma_type;
     data->width = width;
     data->stride = stride;
@@ -1030,6 +1018,7 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     TRACE("{full} VdpBitmapSurfaceCreate device=%d, rgba_format=%s, width=%d, height=%d,"
         "frequently_accessed=%d", device, reverse_rgba_format(rgba_format), width, height,
         frequently_accessed);
+
     VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -1050,7 +1039,7 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     }
 
     data->type = HANDLETYPE_BITMAP_SURFACE;
-    data->device = device;
+    data->device = deviceData;
     data->rgba_format = rgba_format;
 
     *surface = handlestorage_add(data);
@@ -1458,16 +1447,17 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
     TRACE("{part} VdpPresentationQueueTargetCreateX11, device=%d, drawable=%u", device,
         ((unsigned int)drawable));
 
+    VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
+    if (NULL == deviceData)
+        return VDP_STATUS_INVALID_HANDLE;
+
     VdpPresentationQueueTargetData *data =
         (VdpPresentationQueueTargetData *)calloc(1, sizeof(VdpPresentationQueueTargetData));
     if (NULL == data)
-        return VDP_STATUS_ERROR;
-
-    if (!handlestorage_valid(device, HANDLETYPE_DEVICE))
-        return VDP_STATUS_INVALID_HANDLE;
+        return VDP_STATUS_RESOURCES;
 
     data->type = HANDLETYPE_PRESENTATION_QUEUE_TARGET;
-    data->device = device;
+    data->device = deviceData;
     data->drawable = drawable;
 
     *target = handlestorage_add(data);

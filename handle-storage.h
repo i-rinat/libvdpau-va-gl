@@ -29,14 +29,14 @@ typedef struct {
 
 typedef struct {
     HandleType type;
-    VdpDevice device;
+    VdpDeviceData *device;
     Drawable drawable;
 } VdpPresentationQueueTargetData;
 
 typedef struct {
     HandleType type;
-    VdpDevice device;
-    VdpPresentationQueueTarget presentation_queue_target;
+    VdpDeviceData *device;
+    VdpPresentationQueueTargetData *target;
     XShmSegmentInfo shminfo;
     XImage *image;
     uint32_t prev_width;
@@ -45,19 +45,19 @@ typedef struct {
 
 typedef struct {
     HandleType type;
-    VdpDevice device;
+    VdpDeviceData *device;
 } VdpVideoMixerData;
 
 typedef struct {
     HandleType type;
-    VdpDevice device;
+    VdpDeviceData *device;
     VdpRGBAFormat rgba_format;
     cairo_surface_t *cairo_surface;
 } VdpOutputSurfaceData;
 
 typedef struct {
     HandleType type;
-    VdpDevice device;
+    VdpDeviceData *device;
     VdpChromaType chroma_type;
     uint32_t width;
     uint32_t stride;
@@ -69,7 +69,7 @@ typedef struct {
 
 typedef struct {
     HandleType type;
-    VdpDevice device;
+    VdpDeviceData *device;
     VdpRGBAFormat rgba_format;
     cairo_surface_t *cairo_surface;
 } VdpBitmapSurfaceData;
