@@ -683,9 +683,21 @@ VdpStatus
 softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 {
     TRACE("{full} VdpPresentationQueueDestroy presentation_queue=%d", presentation_queue);
-    void *data = handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
+    VdpPresentationQueueData *data =
+        handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
+
+    VdpPresentationQueueTargetData *target =
+        handlestorage_get(data->presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET);
+
+    VdpDeviceData *device = handlestorage_get(target->device, HANDLETYPE_DEVICE);
+
+    if (data->image) {
+        XShmDetach(device->display, &data->shminfo);
+        free(data->image);
+        shmdt(data->shminfo.shmaddr);
+    }
 
     free(data);
     handlestorage_expunge(presentation_queue);
