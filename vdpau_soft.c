@@ -198,8 +198,9 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                      VdpPictureInfo const *picture_info, uint32_t bitstream_buffer_count,
                      VdpBitstreamBuffer const *bitstream_buffers)
 {
-    TRACE1("{zilch} VdpDecoderRender");
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE("{WIP} VdpDecoderRender decoder=%d, target=%d, picture_info=%p, "
+        "bitstream_buffer_count=%d", decoder, target, picture_info, bitstream_buffer_count);
+    return VDP_STATUS_OK;
 }
 
 static
