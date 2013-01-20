@@ -13,5 +13,6 @@ const char * reverse_ycbcr_format(VdpYCbCrFormat ycbcr_format);
 const char * reverser_video_mixer_picture_structure(VdpVideoMixerPictureStructure s);
 const char * reverse_blend_factor(VdpOutputSurfaceRenderBlendFactor blend_factor);
 const char * reverse_blend_equation(VdpOutputSurfaceRenderBlendEquation blend_equation);
+const char * reverse_decoder_profile(VdpDecoderProfile profile);
 
 #endif /* REVERSE_CONSTANT_H_ */
