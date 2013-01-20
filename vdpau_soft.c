@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <cairo.h>
 #include <glib.h>
+#include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
 #include <stdio.h>
 #include <stdlib.h>
