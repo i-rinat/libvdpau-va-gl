@@ -968,8 +968,9 @@ VdpStatus
 softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destination_ycbcr_format,
                                 void *const *destination_data, uint32_t const *destination_pitches)
 {
-    TRACE1("{zilch} VdpVideoSurfaceGetBitsYCbCr");
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE("{WIP} VdpVideoSurfaceGetBitsYCbCr surface=%d, destination_ycbcr_format=%s",
+        surface, reverse_ycbcr_format(destination_ycbcr_format));
+    return VDP_STATUS_OK;
 }
 
 static
