@@ -16,6 +16,7 @@ typedef uint32_t    HandleType;
 #define HANDLETYPE_OUTPUT_SURFACE              (HandleType)5
 #define HANDLETYPE_VIDEO_SURFACE               (HandleType)6
 #define HANDLETYPE_BITMAP_SURFACE              (HandleType)7
+#define HANDLETYPE_DECODER                     (HandleType)8
 
 typedef struct {
     HandleType type;
@@ -73,6 +74,15 @@ typedef struct {
     VdpRGBAFormat rgba_format;
     cairo_surface_t *cairo_surface;
 } VdpBitmapSurfaceData;
+
+typedef struct {
+    HandleType type;
+    VdpDeviceData *device;
+    VdpDecoderProfile profile;
+    uint32_t width;
+    uint32_t height;
+    uint32_t max_references;
+} VdpDecoderData;
 
 void handlestorage_initialize(void);
 int handlestorage_add(void *data);

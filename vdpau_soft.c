@@ -150,16 +150,37 @@ VdpStatus
 softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width, uint32_t height,
                      uint32_t max_references, VdpDecoder *decoder)
 {
-    TRACE1("{zilch} VdpDecoderCreate");
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE("{full} VdpDecoderCreate device=%d, profile=%s, width=%d, height=%d, max_references=%d",
+        device, reverse_decoder_profile(profile), width, height, max_references);
+
+    VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
+    if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
+
+    VdpDecoderData *data = calloc(1, sizeof(VdpDecoderData));
+    if (NULL == data) return VDP_STATUS_RESOURCES;
+
+    data->type = HANDLETYPE_DECODER;
+    data->device = deviceData;
+    data->profile = profile;
+    data->width = width;
+    data->height = height;
+    data->max_references = max_references;
+
+    *decoder = handlestorage_add(data);
+    return VDP_STATUS_OK;
 }
 
 static
 VdpStatus
 softVdpDecoderDestroy(VdpDecoder decoder)
 {
-    TRACE1("{zilch} VdpDecoderDestroy");
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    TRACE("{full} VdpDecoderDestroy decoder=%d", decoder);
+    VdpDecoderData *data = handlestorage_get(decoder, HANDLETYPE_DECODER);
+    if (NULL == data) return VDP_STATUS_INVALID_HANDLE;
+
+    free(data);
+
+    return VDP_STATUS_OK;
 }
 
 static
