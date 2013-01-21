@@ -75,14 +75,6 @@ typedef struct {
     cairo_surface_t *cairo_surface;
 } VdpBitmapSurfaceData;
 
-typedef struct {
-    HandleType type;
-    VdpDeviceData *device;
-    VdpDecoderProfile profile;
-    uint32_t width;
-    uint32_t height;
-    uint32_t max_references;
-} VdpDecoderData;
 
 void handlestorage_initialize(void);
 int handlestorage_add(void *data);

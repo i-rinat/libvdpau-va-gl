@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 2.6)
 add_definitions(-std=c99 -Wall -fvisibility=hidden -ggdb)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(SOMELIBS vdpau glib-2.0 libswscale cairo libavcodec REQUIRED)
+pkg_check_modules(SOMELIBS vdpau glib-2.0 libswscale cairo REQUIRED)
 
 link_directories (
 	${SOMELIBS_LIBRARY_DIRS}
