@@ -431,3 +431,31 @@ reverse_status(VdpStatus status)
         return "Unknown VDP error";
     }
 }
+
+const char *
+reverse_indexed_format(VdpIndexedFormat indexed_format)
+{
+    switch (indexed_format) {
+    case VDP_INDEXED_FORMAT_A4I4:
+        return "VDP_INDEXED_FORMAT_A4I4";
+    case VDP_INDEXED_FORMAT_I4A4:
+        return "VDP_INDEXED_FORMAT_I4A4";
+    case VDP_INDEXED_FORMAT_A8I8:
+        return "VDP_INDEXED_FORMAT_A8I8";
+    case VDP_INDEXED_FORMAT_I8A8:
+        return "VDP_INDEXED_FORMAT_I8A8";
+    default:
+        return "Unknown indexed format";
+    }
+}
+
+const char *
+reverse_color_table_format(VdpColorTableFormat color_table_format)
+{
+    switch (color_table_format) {
+    case VDP_COLOR_TABLE_FORMAT_B8G8R8X8:
+        return "VDP_COLOR_TABLE_FORMAT_B8G8R8X8";
+    default:
+        return "Unknown color table format";
+    }
+}
