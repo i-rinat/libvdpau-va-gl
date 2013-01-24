@@ -604,9 +604,12 @@ void
 traceVdpGenerateCSCMatrix(const char *impl_state, VdpProcamp *procamp, VdpColorStandard standard,
                           VdpCSCMatrix *csc_matrix)
 {
-    fprintf(tlog, "%s%s VdpGenerateCSCMatrix brightness=%f, contrast=%f, saturation=%f, "
-        "standard=%s\n", trace_header, impl_state, procamp->brightness, procamp->contrast,
-        procamp->saturation, reverse_color_standard(standard));
+    fprintf(tlog, "%s%s VdpGenerateCSCMatrix ", trace_header, impl_state);
+    if (procamp) {
+        fprintf(tlog, "brightness=%f, contrast=%f, saturation=%f, ", procamp->brightness,
+            procamp->contrast, procamp->saturation);
+    }
+    fprintf(tlog, "standard=%s\n", reverse_color_standard(standard));
 }
 
 void
