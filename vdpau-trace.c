@@ -25,6 +25,12 @@ traceSetHeader(const char *header, const char *header_blank)
     trace_header_blank = header_blank;
 }
 
+void
+traceTrace1(const char *buf)
+{
+    fprintf(tlog, "%s", buf);
+}
+
 static
 const char *
 rect2string(VdpRect const *rect)
