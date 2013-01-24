@@ -1,7 +1,7 @@
 #include <vdpau/vdpau.h>
 #include <stdio.h>
 #include "handle-storage.h"
-#include "vdpau_soft.h"
+#include "vdpau-soft.h"
 
 __attribute__((constructor))
 static

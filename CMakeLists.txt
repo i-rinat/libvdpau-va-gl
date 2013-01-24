@@ -14,8 +14,8 @@ include_directories (
 )
 
 add_library (vdpau_fake SHARED
-	vdpau_soft.c
-	vdpau_entry.c
+	vdpau-soft.c
+	vdpau-entry.c
 	reverse-constant.c
 	handle-storage.c
 )
