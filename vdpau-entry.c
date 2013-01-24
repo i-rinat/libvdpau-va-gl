@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "handle-storage.h"
 #include "vdpau-soft.h"
+#include "vdpau-trace.h"
 
 __attribute__((constructor))
 static
@@ -9,9 +10,10 @@ void
 library_constructor(void)
 {
     handlestorage_initialize();
-#ifndef NDEBUG
-    printf("Software VDPAU backend library initialized\n");
-#endif
+
+    // initialize tracer
+    traceSetTarget(stdout);
+    traceTrace1("Software VDPAU backend library initialized\n");
 }
 
 __attribute__ ((visibility("default")))
