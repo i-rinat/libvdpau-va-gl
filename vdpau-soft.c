@@ -368,7 +368,7 @@ softVdpVideoMixerSetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_coun
 #ifndef NDEBUG
     for (uint32_t k = 0; k < attribute_count; k ++) {
         printf("   attribute %d (%s)\n", attributes[k],
-            reverse_video_mixer_attributes(attributes[k]));
+            reverse_video_mixer_attribute(attributes[k]));
         if (VDP_VIDEO_MIXER_ATTRIBUTE_CSC_MATRIX == attributes[k]) {
             VdpCSCMatrix *matrix = (VdpCSCMatrix *)(attribute_values[k]);
             for (uint32_t j1 = 0; j1 < 3; j1 ++) {

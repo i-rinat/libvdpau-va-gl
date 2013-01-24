@@ -174,7 +174,7 @@ reverse_video_mixer_feature(VdpVideoMixerFeature mixer_feature)
 }
 
 const char *
-reverse_video_mixer_attributes(VdpVideoMixerAttribute attr)
+reverse_video_mixer_attribute(VdpVideoMixerAttribute attr)
 {
     switch (attr) {
     case VDP_VIDEO_MIXER_ATTRIBUTE_BACKGROUND_COLOR:
