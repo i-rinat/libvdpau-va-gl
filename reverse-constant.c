@@ -459,3 +459,35 @@ reverse_color_table_format(VdpColorTableFormat color_table_format)
         return "Unknown color table format";
     }
 }
+
+const char *
+reverse_video_mixer_parameter(VdpVideoMixerParameter parameter)
+{
+    switch (parameter) {
+    case VDP_VIDEO_MIXER_PARAMETER_VIDEO_SURFACE_WIDTH:
+        return "VDP_VIDEO_MIXER_PARAMETER_VIDEO_SURFACE_WIDTH";
+    case VDP_VIDEO_MIXER_PARAMETER_VIDEO_SURFACE_HEIGHT:
+        return "VDP_VIDEO_MIXER_PARAMETER_VIDEO_SURFACE_HEIGHT";
+    case VDP_VIDEO_MIXER_PARAMETER_CHROMA_TYPE:
+        return "VDP_VIDEO_MIXER_PARAMETER_CHROMA_TYPE";
+    case VDP_VIDEO_MIXER_PARAMETER_LAYERS:
+        return "VDP_VIDEO_MIXER_PARAMETER_LAYERS";
+    default:
+        return "Unknown video mixer parameter";
+    }
+}
+
+const char *
+reverse_color_standard(VdpColorStandard color_standard)
+{
+    switch (color_standard) {
+    case VDP_COLOR_STANDARD_ITUR_BT_601:
+        return "VDP_COLOR_STANDARD_ITUR_BT_601";
+    case VDP_COLOR_STANDARD_ITUR_BT_709:
+        return "VDP_COLOR_STANDARD_ITUR_BT_709";
+    case VDP_COLOR_STANDARD_SMPTE_240M:
+        return "VDP_COLOR_STANDARD_SMPTE_240M";
+    default:
+        return "Unknown color standard";
+    }
+}
