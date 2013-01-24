@@ -14,6 +14,7 @@
 #include <X11/extensions/XShm.h>
 #include "reverse-constant.h"
 #include "handle-storage.h"
+#include "vdpau-trace.h"
 
 #ifndef NDEBUG
     #define TRACE(str, ...)  printf("[VDPSOFT] " str "\n", __VA_ARGS__)
