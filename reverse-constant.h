@@ -4,6 +4,7 @@
 
 #include <vdpau/vdpau.h>
 
+const char * reverse_status(VdpStatus status);
 const char * reverse_func_id(VdpFuncId func_id);
 const char * reverse_video_mixer_feature(VdpVideoMixerFeature mixer_feature);
 const char * reverse_video_mixer_attributes(VdpVideoMixerAttribute attr);
