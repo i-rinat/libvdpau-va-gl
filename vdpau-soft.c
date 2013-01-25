@@ -17,7 +17,8 @@
 #include "vdpau-trace.h"
 
 
-char const *implemetation_description_string = "VAAPI/software backend for VDPAU";
+static char const *
+implemetation_description_string = "software (cairo/libswscale) backend for VDPAU";
 
 typedef struct {
     HandleType type;
