@@ -19,6 +19,60 @@
 
 char const *implemetation_description_string = "VAAPI/software backend for VDPAU";
 
+typedef struct {
+    HandleType type;
+    Display *display;
+    int screen;
+} VdpDeviceData;
+
+typedef struct {
+    HandleType type;
+    VdpDeviceData *device;
+    Drawable drawable;
+} VdpPresentationQueueTargetData;
+
+typedef struct {
+    HandleType type;
+    VdpDeviceData *device;
+    VdpPresentationQueueTargetData *target;
+    XShmSegmentInfo shminfo;
+    XImage *image;
+    uint32_t prev_width;
+    uint32_t prev_height;
+} VdpPresentationQueueData;
+
+typedef struct {
+    HandleType type;
+    VdpDeviceData *device;
+} VdpVideoMixerData;
+
+typedef struct {
+    HandleType type;
+    VdpDeviceData *device;
+    VdpRGBAFormat rgba_format;
+    cairo_surface_t *cairo_surface;
+} VdpOutputSurfaceData;
+
+typedef struct {
+    HandleType type;
+    VdpDeviceData *device;
+    VdpChromaType chroma_type;
+    uint32_t width;
+    uint32_t stride;
+    uint32_t height;
+    void *y_plane;
+    void *v_plane;
+    void *u_plane;
+} VdpVideoSurfaceData;
+
+typedef struct {
+    HandleType type;
+    VdpDeviceData *device;
+    VdpRGBAFormat rgba_format;
+    cairo_surface_t *cairo_surface;
+} VdpBitmapSurfaceData;
+
+// ====================
 static
 uint32_t
 chroma_storage_size_divider(VdpChromaType chroma_type)

@@ -22,60 +22,6 @@ typedef struct {
     HandleType type;
 } VdpGenericHandle;
 
-typedef struct {
-    HandleType type;
-    Display *display;
-    int screen;
-} VdpDeviceData;
-
-typedef struct {
-    HandleType type;
-    VdpDeviceData *device;
-    Drawable drawable;
-} VdpPresentationQueueTargetData;
-
-typedef struct {
-    HandleType type;
-    VdpDeviceData *device;
-    VdpPresentationQueueTargetData *target;
-    XShmSegmentInfo shminfo;
-    XImage *image;
-    uint32_t prev_width;
-    uint32_t prev_height;
-} VdpPresentationQueueData;
-
-typedef struct {
-    HandleType type;
-    VdpDeviceData *device;
-} VdpVideoMixerData;
-
-typedef struct {
-    HandleType type;
-    VdpDeviceData *device;
-    VdpRGBAFormat rgba_format;
-    cairo_surface_t *cairo_surface;
-} VdpOutputSurfaceData;
-
-typedef struct {
-    HandleType type;
-    VdpDeviceData *device;
-    VdpChromaType chroma_type;
-    uint32_t width;
-    uint32_t stride;
-    uint32_t height;
-    void *y_plane;
-    void *v_plane;
-    void *u_plane;
-} VdpVideoSurfaceData;
-
-typedef struct {
-    HandleType type;
-    VdpDeviceData *device;
-    VdpRGBAFormat rgba_format;
-    cairo_surface_t *cairo_surface;
-} VdpBitmapSurfaceData;
-
-
 void handlestorage_initialize(void);
 int handlestorage_add(void *data);
 int handlestorage_valid(int handle, HandleType type);
