@@ -353,8 +353,13 @@ static
 VdpStatus
 vaVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_target)
 {
-    traceVdpPresentationQueueTargetDestroy("{zilch}", presentation_queue_target);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    traceVdpPresentationQueueTargetDestroy("{full}", presentation_queue_target);
+    VdpPresentationQueueTargetData *data =
+        handlestorage_get(presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET);
+    if (NULL == data) return VDP_STATUS_INVALID_HANDLE;
+    handlestorage_expunge(presentation_queue_target);
+    free(data);
+    return VDP_STATUS_OK;
 }
 
 static
@@ -557,8 +562,13 @@ static
 VdpStatus
 vaVdpDeviceDestroy(VdpDevice device)
 {
-    traceVdpDeviceDestroy("{zilch}", device);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    traceVdpDeviceDestroy("{full}", device);
+    VdpDeviceData *data = handlestorage_get(device, HANDLETYPE_DEVICE);
+    if (NULL == data)
+        return VDP_STATUS_INVALID_HANDLE;
+    handlestorage_expunge(device);
+    free(data);
+    return VDP_STATUS_OK;
 }
 
 static
@@ -629,7 +639,7 @@ vaVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
 
-    data->type = HANDLETYPE_PRESENTATION_QUEUE;
+    data->type = HANDLETYPE_PRESENTATION_QUEUE_TARGET;
     data->device = deviceData;
     data->drawable = drawable;
 
