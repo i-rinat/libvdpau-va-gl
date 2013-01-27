@@ -20,7 +20,9 @@ typedef struct {
 } VdpPresentationQueueTargetData;
 
 typedef struct {
-    HandleType      type;
+    HandleType                      type;
+    VdpDeviceData                   *device;
+    VdpPresentationQueueTargetData  *target;
 } VdpPresentationQueueData;
 
 // ===============
@@ -367,17 +369,42 @@ VdpStatus
 vaVdpPresentationQueueCreate(VdpDevice device, VdpPresentationQueueTarget presentation_queue_target,
                              VdpPresentationQueue *presentation_queue)
 {
-    traceVdpPresentationQueueCreate("{zilch}", device, presentation_queue_target,
+    traceVdpPresentationQueueCreate("{full}", device, presentation_queue_target,
         presentation_queue);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+
+    VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
+    if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
+
+    VdpPresentationQueueTargetData *targetData =
+        handlestorage_get(presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET);
+    if (NULL == targetData) return VDP_STATUS_INVALID_HANDLE;
+
+    if (targetData->device != deviceData) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+
+    VdpPresentationQueueData *data = calloc(1, sizeof(VdpPresentationQueueData));
+    if (NULL == data) return VDP_STATUS_RESOURCES;
+
+    data->type = HANDLETYPE_PRESENTATION_QUEUE;
+    data->device = deviceData;
+    data->target = targetData;
+
+    *presentation_queue = handlestorage_add(data);
+
+    return VDP_STATUS_OK;
 }
 
 static
 VdpStatus
 vaVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 {
-    traceVdpPresentationQueueDestroy("{zilch}", presentation_queue);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    traceVdpPresentationQueueDestroy("{full}", presentation_queue);
+
+    VdpPresentationQueueData *data =
+        handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
+    if (NULL == data) return VDP_STATUS_INVALID_HANDLE;
+    handlestorage_expunge(presentation_queue);
+    free(data);
+    return VDP_STATUS_OK;
 }
 
 static
