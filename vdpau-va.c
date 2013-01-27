@@ -13,6 +13,18 @@ typedef struct {
     int         screen;
 } VdpDeviceData;
 
+typedef struct {
+    HandleType      type;
+    VdpDeviceData   *device;
+    Drawable        drawable;
+} VdpPresentationQueueTargetData;
+
+typedef struct {
+    HandleType      type;
+} VdpPresentationQueueData;
+
+// ===============
+
 static
 const char *
 vaVdpGetErrorString(VdpStatus status)
@@ -607,8 +619,22 @@ VdpStatus
 vaVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
                                       VdpPresentationQueueTarget *target)
 {
-    traceVdpPresentationQueueTargetCreateX11("{zilch}", device, drawable, target);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    traceVdpPresentationQueueTargetCreateX11("{full}", device, drawable, target);
+
+    VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
+    if (NULL == deviceData)
+        return VDP_STATUS_INVALID_HANDLE;
+
+    VdpPresentationQueueTargetData *data = calloc(1, sizeof(VdpPresentationQueueTargetData));
+    if (NULL == data)
+        return VDP_STATUS_RESOURCES;
+
+    data->type = HANDLETYPE_PRESENTATION_QUEUE;
+    data->device = deviceData;
+    data->drawable = drawable;
+
+    *target = handlestorage_add(data);
+    return VDP_STATUS_OK;
 }
 
 static
