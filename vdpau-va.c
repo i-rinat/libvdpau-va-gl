@@ -32,8 +32,8 @@ vaVdpGetApiVersion(uint32_t *api_version)
 static
 VdpStatus
 vaVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, VdpBool *is_supported,
-                                uint32_t *max_level, uint32_t *max_macroblocks,
-                                uint32_t *max_width, uint32_t *max_height)
+                              uint32_t *max_level, uint32_t *max_macroblocks,
+                              uint32_t *max_width, uint32_t *max_height)
 {
     traceVdpDecoderQueryCapabilities("{zilch}", device, profile, is_supported, max_level,
         max_macroblocks, max_width, max_height);
@@ -43,7 +43,7 @@ vaVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, VdpBo
 static
 VdpStatus
 vaVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width, uint32_t height,
-                     uint32_t max_references, VdpDecoder *decoder)
+                   uint32_t max_references, VdpDecoder *decoder)
 {
     traceVdpDecoderCreate("{zilch}", device, profile, width, height, max_references, decoder);
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -60,7 +60,7 @@ vaVdpDecoderDestroy(VdpDecoder decoder)
 static
 VdpStatus
 vaVdpDecoderGetParameters(VdpDecoder decoder, VdpDecoderProfile *profile,
-                            uint32_t *width, uint32_t *height)
+                          uint32_t *width, uint32_t *height)
 {
     traceVdpDecoderGetParameters("{zilch}", decoder, profile, width, height);
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -68,9 +68,8 @@ vaVdpDecoderGetParameters(VdpDecoder decoder, VdpDecoderProfile *profile,
 
 static
 VdpStatus
-vaVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
-                     VdpPictureInfo const *picture_info, uint32_t bitstream_buffer_count,
-                     VdpBitstreamBuffer const *bitstream_buffers)
+vaVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target, VdpPictureInfo const *picture_info,
+                   uint32_t bitstream_buffer_count, VdpBitstreamBuffer const *bitstream_buffers)
 {
     traceVdpDecoderRender("{zilch}", decoder, target, picture_info, bitstream_buffer_count,
         bitstream_buffers);
@@ -80,8 +79,8 @@ vaVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
 static
 VdpStatus
 vaVdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba_format,
-                                      VdpBool *is_supported, uint32_t *max_width,
-                                      uint32_t *max_height)
+                                    VdpBool *is_supported, uint32_t *max_width,
+                                    uint32_t *max_height)
 {
     traceVdpOutputSurfaceQueryCapabilities("{zilch}", device, surface_rgba_format, is_supported,
         max_width, max_height);
@@ -91,8 +90,8 @@ vaVdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba
 static
 VdpStatus
 vaVdpOutputSurfaceQueryGetPutBitsNativeCapabilities(VdpDevice device,
-                                                      VdpRGBAFormat surface_rgba_format,
-                                                      VdpBool *is_supported)
+                                                    VdpRGBAFormat surface_rgba_format,
+                                                    VdpBool *is_supported)
 {
     traceVdpOutputSurfaceQueryGetPutBitsNativeCapabilities("{zilch}", device, surface_rgba_format,
         is_supported);
@@ -102,10 +101,10 @@ vaVdpOutputSurfaceQueryGetPutBitsNativeCapabilities(VdpDevice device,
 static
 VdpStatus
 vaVdpOutputSurfaceQueryPutBitsIndexedCapabilities(VdpDevice device,
-                                                    VdpRGBAFormat surface_rgba_format,
-                                                    VdpIndexedFormat bits_indexed_format,
-                                                    VdpColorTableFormat color_table_format,
-                                                    VdpBool *is_supported)
+                                                  VdpRGBAFormat surface_rgba_format,
+                                                  VdpIndexedFormat bits_indexed_format,
+                                                  VdpColorTableFormat color_table_format,
+                                                  VdpBool *is_supported)
 {
     traceVdpOutputSurfaceQueryPutBitsIndexedCapabilities("{zilch}", device, surface_rgba_format,
         bits_indexed_format, color_table_format, is_supported);
@@ -114,10 +113,9 @@ vaVdpOutputSurfaceQueryPutBitsIndexedCapabilities(VdpDevice device,
 
 static
 VdpStatus
-vaVdpOutputSurfaceQueryPutBitsYCbCrCapabilities(VdpDevice device,
-                                                  VdpRGBAFormat surface_rgba_format,
-                                                  VdpYCbCrFormat bits_ycbcr_format,
-                                                  VdpBool *is_supported)
+vaVdpOutputSurfaceQueryPutBitsYCbCrCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba_format,
+                                                VdpYCbCrFormat bits_ycbcr_format,
+                                                VdpBool *is_supported)
 {
     traceVdpOutputSurfaceQueryPutBitsYCbCrCapabilities("{zilch}", device, surface_rgba_format,
         bits_ycbcr_format, is_supported);
@@ -127,7 +125,7 @@ vaVdpOutputSurfaceQueryPutBitsYCbCrCapabilities(VdpDevice device,
 static
 VdpStatus
 vaVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
-                           uint32_t height, VdpOutputSurface *surface)
+                         uint32_t height, VdpOutputSurface *surface)
 {
     traceVdpOutputSurfaceCreate("{zilch}", device, rgba_format, width, height, surface);
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -144,7 +142,7 @@ vaVdpOutputSurfaceDestroy(VdpOutputSurface surface)
 static
 VdpStatus
 vaVdpOutputSurfaceGetParameters(VdpOutputSurface surface, VdpRGBAFormat *rgba_format,
-                                  uint32_t *width, uint32_t *height)
+                                uint32_t *width, uint32_t *height)
 {
     traceVdpOutputSurfaceGetParameters("{zilch}", surface, rgba_format, width, height);
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -153,8 +151,7 @@ vaVdpOutputSurfaceGetParameters(VdpOutputSurface surface, VdpRGBAFormat *rgba_fo
 static
 VdpStatus
 vaVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *source_rect,
-                                  void *const *destination_data,
-                                  uint32_t const *destination_pitches)
+                                void *const *destination_data, uint32_t const *destination_pitches)
 {
     traceVdpOutputSurfaceGetBitsNative("{zilch}", surface, source_rect, destination_data,
         destination_pitches);
@@ -164,7 +161,7 @@ vaVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *source_
 static
 VdpStatus
 vaVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *source_data,
-                                  uint32_t const *source_pitches, VdpRect const *destination_rect)
+                                uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
     traceVdpOutputSurfacePutBitsNative("{zilch}", surface, source_data, source_pitches,
         destination_rect);
@@ -174,9 +171,9 @@ vaVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *sou
 static
 VdpStatus
 vaVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat source_indexed_format,
-                                   void const *const *source_data, uint32_t const *source_pitch,
-                                   VdpRect const *destination_rect,
-                                   VdpColorTableFormat color_table_format, void const *color_table)
+                                 void const *const *source_data, uint32_t const *source_pitch,
+                                 VdpRect const *destination_rect,
+                                 VdpColorTableFormat color_table_format, void const *color_table)
 {
     traceVdpOutputSurfacePutBitsIndexed("{zilch}", surface, source_indexed_format, source_data,
         source_pitch, destination_rect, color_table_format, color_table);
@@ -186,8 +183,8 @@ vaVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat sour
 static
 VdpStatus
 vaVdpOutputSurfacePutBitsYCbCr(VdpOutputSurface surface, VdpYCbCrFormat source_ycbcr_format,
-                                 void const *const *source_data, uint32_t const *source_pitches,
-                                 VdpRect const *destination_rect, VdpCSCMatrix const *csc_matrix)
+                               void const *const *source_data, uint32_t const *source_pitches,
+                               VdpRect const *destination_rect, VdpCSCMatrix const *csc_matrix)
 {
     traceVdpOutputSurfacePutBitsYCbCr("{zilch}", surface, source_ycbcr_format, source_data,
         source_pitches, destination_rect, csc_matrix);
@@ -197,7 +194,7 @@ vaVdpOutputSurfacePutBitsYCbCr(VdpOutputSurface surface, VdpYCbCrFormat source_y
 static
 VdpStatus
 vaVdpVideoMixerQueryFeatureSupport(VdpDevice device, VdpVideoMixerFeature feature,
-                                     VdpBool *is_supported)
+                                   VdpBool *is_supported)
 {
     traceVdpVideoMixerQueryFeatureSupport("{zilch}", device, feature, is_supported);
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -206,7 +203,7 @@ vaVdpVideoMixerQueryFeatureSupport(VdpDevice device, VdpVideoMixerFeature featur
 static
 VdpStatus
 vaVdpVideoMixerQueryParameterSupport(VdpDevice device, VdpVideoMixerParameter parameter,
-                                       VdpBool *is_supported)
+                                     VdpBool *is_supported)
 {
     traceVdpVideoMixerQueryParameterSupport("{zilch}", device, parameter, is_supported);
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -215,7 +212,7 @@ vaVdpVideoMixerQueryParameterSupport(VdpDevice device, VdpVideoMixerParameter pa
 static
 VdpStatus
 vaVdpVideoMixerQueryAttributeSupport(VdpDevice device, VdpVideoMixerAttribute attribute,
-                                       VdpBool *is_supported)
+                                     VdpBool *is_supported)
 {
     traceVdpVideoMixerQueryAttributeSupport("{zilch}", device, attribute, is_supported);
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -224,7 +221,7 @@ vaVdpVideoMixerQueryAttributeSupport(VdpDevice device, VdpVideoMixerAttribute at
 static
 VdpStatus
 vaVdpVideoMixerQueryParameterValueRange(VdpDevice device, VdpVideoMixerParameter parameter,
-                                          void *min_value, void *max_value)
+                                        void *min_value, void *max_value)
 {
     traceVdpVideoMixerQueryParameterValueRange("{zilch}", device, parameter, min_value, max_value);
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -233,7 +230,7 @@ vaVdpVideoMixerQueryParameterValueRange(VdpDevice device, VdpVideoMixerParameter
 static
 VdpStatus
 vaVdpVideoMixerQueryAttributeValueRange(VdpDevice device, VdpVideoMixerAttribute attribute,
-                                          void *min_value, void *max_value)
+                                        void *min_value, void *max_value)
 {
     traceVdpVideoMixerQueryAttributeValueRange("{zilch}", device, attribute, min_value, max_value);
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -242,9 +239,9 @@ vaVdpVideoMixerQueryAttributeValueRange(VdpDevice device, VdpVideoMixerAttribute
 static
 VdpStatus
 vaVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
-                        VdpVideoMixerFeature const *features, uint32_t parameter_count,
-                        VdpVideoMixerParameter const *parameters,
-                        void const *const *parameter_values, VdpVideoMixer *mixer)
+                      VdpVideoMixerFeature const *features, uint32_t parameter_count,
+                      VdpVideoMixerParameter const *parameters,
+                      void const *const *parameter_values, VdpVideoMixer *mixer)
 {
     traceVdpVideoMixerCreate("{zilch}", device, feature_count, features, parameter_count, parameters,
         parameter_values, mixer);
@@ -254,8 +251,8 @@ vaVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
 static
 VdpStatus
 vaVdpVideoMixerSetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
-                                   VdpVideoMixerFeature const *features,
-                                   VdpBool const *feature_enables)
+                                 VdpVideoMixerFeature const *features,
+                                 VdpBool const *feature_enables)
 {
     traceVdpVideoMixerSetFeatureEnables("{zilch}", mixer, feature_count, features, feature_enables);
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -264,8 +261,8 @@ vaVdpVideoMixerSetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
 static
 VdpStatus
 vaVdpVideoMixerSetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_count,
-                                    VdpVideoMixerAttribute const *attributes,
-                                    void const *const *attribute_values)
+                                  VdpVideoMixerAttribute const *attributes,
+                                  void const *const *attribute_values)
 {
     traceVdpVideoMixerSetAttributeValues("{zilch}", mixer, attribute_count, attributes,
         attribute_values);
@@ -275,7 +272,7 @@ vaVdpVideoMixerSetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_count,
 static
 VdpStatus
 vaVdpVideoMixerGetFeatureSupport(VdpVideoMixer mixer, uint32_t feature_count,
-                                   VdpVideoMixerFeature const *features, VdpBool *feature_supports)
+                                 VdpVideoMixerFeature const *features, VdpBool *feature_supports)
 {
     traceVdpVideoMixerGetFeatureSupport("{zilch}", mixer, feature_count, features,
         feature_supports);
@@ -285,7 +282,7 @@ vaVdpVideoMixerGetFeatureSupport(VdpVideoMixer mixer, uint32_t feature_count,
 static
 VdpStatus
 vaVdpVideoMixerGetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
-                                   VdpVideoMixerFeature const *features, VdpBool *feature_enables)
+                                 VdpVideoMixerFeature const *features, VdpBool *feature_enables)
 {
     traceVdpVideoMixerGetFeatureEnables("{zilch}", mixer, feature_count, features, feature_enables);
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -294,8 +291,8 @@ vaVdpVideoMixerGetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
 static
 VdpStatus
 vaVdpVideoMixerGetParameterValues(VdpVideoMixer mixer, uint32_t parameter_count,
-                                    VdpVideoMixerParameter const *parameters,
-                                    void *const *parameter_values)
+                                  VdpVideoMixerParameter const *parameters,
+                                  void *const *parameter_values)
 {
     traceVdpVideoMixerGetParameterValues("{zilch}", mixer, parameter_count, parameters,
         parameter_values);
@@ -305,8 +302,8 @@ vaVdpVideoMixerGetParameterValues(VdpVideoMixer mixer, uint32_t parameter_count,
 static
 VdpStatus
 vaVdpVideoMixerGetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_count,
-                                    VdpVideoMixerAttribute const *attributes,
-                                    void *const *attribute_values)
+                                  VdpVideoMixerAttribute const *attributes,
+                                  void *const *attribute_values)
 {
     traceVdpVideoMixerGetAttributeValues("{zilch}", mixer, attribute_count, attributes,
         attribute_values);
@@ -324,15 +321,14 @@ vaVdpVideoMixerDestroy(VdpVideoMixer mixer)
 static
 VdpStatus
 vaVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface,
-                        VdpRect const *background_source_rect,
-                        VdpVideoMixerPictureStructure current_picture_structure,
-                        uint32_t video_surface_past_count,
-                        VdpVideoSurface const *video_surface_past,
-                        VdpVideoSurface video_surface_current, uint32_t video_surface_future_count,
-                        VdpVideoSurface const *video_surface_future,
-                        VdpRect const *video_source_rect, VdpOutputSurface destination_surface,
-                        VdpRect const *destination_rect, VdpRect const *destination_video_rect,
-                        uint32_t layer_count, VdpLayer const *layers)
+                      VdpRect const *background_source_rect,
+                      VdpVideoMixerPictureStructure current_picture_structure,
+                      uint32_t video_surface_past_count, VdpVideoSurface const *video_surface_past,
+                      VdpVideoSurface video_surface_current, uint32_t video_surface_future_count,
+                      VdpVideoSurface const *video_surface_future, VdpRect const *video_source_rect,
+                      VdpOutputSurface destination_surface, VdpRect const *destination_rect,
+                      VdpRect const *destination_video_rect, uint32_t layer_count,
+                      VdpLayer const *layers)
 {
     traceVdpVideoMixerRender("{zilch}", mixer, background_surface, background_source_rect,
         current_picture_structure, video_surface_past_count, video_surface_past,
@@ -351,9 +347,8 @@ vaVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queu
 
 static
 VdpStatus
-vaVdpPresentationQueueCreate(VdpDevice device,
-                               VdpPresentationQueueTarget presentation_queue_target,
-                               VdpPresentationQueue *presentation_queue)
+vaVdpPresentationQueueCreate(VdpDevice device, VdpPresentationQueueTarget presentation_queue_target,
+                             VdpPresentationQueue *presentation_queue)
 {
     traceVdpPresentationQueueCreate("{zilch}", device, presentation_queue_target,
         presentation_queue);
@@ -371,7 +366,7 @@ vaVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 static
 VdpStatus
 vaVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_queue,
-                                           VdpColor *const background_color)
+                                         VdpColor *const background_color)
 {
     traceVdpPresentationQueueSetBackgroundColor("{zilch}", presentation_queue, background_color);
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -380,7 +375,7 @@ vaVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_queue
 static
 VdpStatus
 vaVdpPresentationQueueGetBackgroundColor(VdpPresentationQueue presentation_queue,
-                                           VdpColor *background_color)
+                                         VdpColor *background_color)
 {
     traceVdpPresentationQueueGetBackgroundColor("{zilch}", presentation_queue, background_color);
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -388,8 +383,7 @@ vaVdpPresentationQueueGetBackgroundColor(VdpPresentationQueue presentation_queue
 
 static
 VdpStatus
-vaVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue,
-                                VdpTime *current_time)
+vaVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue, VdpTime *current_time)
 {
     traceVdpPresentationQueueGetTime("{zilch}", presentation_queue, current_time);
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -398,19 +392,19 @@ vaVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue,
 static
 VdpStatus
 vaVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSurface surface,
-                                uint32_t clip_width, uint32_t clip_height,
-                                VdpTime earliest_presentation_time)
+                              uint32_t clip_width, uint32_t clip_height,
+                              VdpTime earliest_presentation_time)
 {
-    traceVdpPresentationQueueDisplay("{zilch}", presentation_queue, surface, clip_width, clip_height,
-        earliest_presentation_time);
+    traceVdpPresentationQueueDisplay("{zilch}", presentation_queue, surface, clip_width,
+        clip_height, earliest_presentation_time);
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
 static
 VdpStatus
 vaVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_queue,
-                                              VdpOutputSurface surface,
-                                              VdpTime *first_presentation_time)
+                                            VdpOutputSurface surface,
+                                            VdpTime *first_presentation_time)
 
 {
     traceVdpPresentationQueueBlockUntilSurfaceIdle("{zilch}", presentation_queue, surface,
@@ -421,9 +415,9 @@ vaVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_qu
 static
 VdpStatus
 vaVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_queue,
-                                           VdpOutputSurface surface,
-                                           VdpPresentationQueueStatus *status,
-                                           VdpTime *first_presentation_time)
+                                         VdpOutputSurface surface,
+                                         VdpPresentationQueueStatus *status,
+                                         VdpTime *first_presentation_time)
 {
     traceVdpPresentationQueueQuerySurfaceStatus("{zilch}", presentation_queue, surface,
         status, first_presentation_time);
@@ -433,8 +427,7 @@ vaVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_queue
 static
 VdpStatus
 vaVdpVideoSurfaceQueryCapabilities(VdpDevice device, VdpChromaType surface_chroma_type,
-                                     VdpBool *is_supported, uint32_t *max_width,
-                                     uint32_t *max_height)
+                                   VdpBool *is_supported, uint32_t *max_width, uint32_t *max_height)
 {
     traceVdpVideoSurfaceQueryCapabilities("{zilch}", device, surface_chroma_type, is_supported,
         max_width, max_height);
@@ -444,9 +437,9 @@ vaVdpVideoSurfaceQueryCapabilities(VdpDevice device, VdpChromaType surface_chrom
 static
 VdpStatus
 vaVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(VdpDevice device,
-                                                    VdpChromaType surface_chroma_type,
-                                                    VdpYCbCrFormat bits_ycbcr_format,
-                                                    VdpBool *is_supported)
+                                                  VdpChromaType surface_chroma_type,
+                                                  VdpYCbCrFormat bits_ycbcr_format,
+                                                  VdpBool *is_supported)
 {
     traceVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities("{zilch}", device, surface_chroma_type,
         bits_ycbcr_format, is_supported);
@@ -456,7 +449,7 @@ vaVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(VdpDevice device,
 static
 VdpStatus
 vaVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t width,
-                          uint32_t height, VdpVideoSurface *surface)
+                        uint32_t height, VdpVideoSurface *surface)
 {
     traceVdpVideoSurfaceCreate("{zilch}", device, chroma_type, width, height, surface);
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -473,7 +466,7 @@ vaVdpVideoSurfaceDestroy(VdpVideoSurface surface)
 static
 VdpStatus
 vaVdpVideoSurfaceGetParameters(VdpVideoSurface surface, VdpChromaType *chroma_type,
-                                 uint32_t *width, uint32_t *height)
+                               uint32_t *width, uint32_t *height)
 {
     traceVdpVideoSurfaceGetParameters("{zilch}", surface, chroma_type, width, height);
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -492,7 +485,7 @@ vaVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destinatio
 static
 VdpStatus
 vaVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_ycbcr_format,
-                                void const *const *source_data, uint32_t const *source_pitches)
+                              void const *const *source_data, uint32_t const *source_pitches)
 {
     traceVdpVideoSurfacePutBitsYCbCr("{zilch}", surface, source_ycbcr_format, source_data,
         source_pitches);
@@ -502,8 +495,8 @@ vaVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_ycb
 static
 VdpStatus
 vaVdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba_format,
-                                      VdpBool *is_supported, uint32_t *max_width,
-                                      uint32_t *max_height)
+                                    VdpBool *is_supported, uint32_t *max_width,
+                                    uint32_t *max_height)
 {
     traceVdpBitmapSurfaceQueryCapabilities("{zilch}", device, surface_rgba_format, is_supported,
         max_width, max_height);
@@ -513,7 +506,7 @@ vaVdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba
 static
 VdpStatus
 vaVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
-                           uint32_t height, VdpBool frequently_accessed, VdpBitmapSurface *surface)
+                         uint32_t height, VdpBool frequently_accessed, VdpBitmapSurface *surface)
 {
     traceVdpBitmapSurfaceCreate("{zilch}", device, rgba_format, width, height, frequently_accessed,
         surface);
@@ -531,7 +524,7 @@ vaVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
 static
 VdpStatus
 vaVdpBitmapSurfaceGetParameters(VdpBitmapSurface surface, VdpRGBAFormat *rgba_format,
-                                  uint32_t *width, uint32_t *height, VdpBool *frequently_accessed)
+                                uint32_t *width, uint32_t *height, VdpBool *frequently_accessed)
 {
     traceVdpBitmapSurfaceGetParameters("{zilch}", surface, rgba_format, width, height,
         frequently_accessed);
@@ -541,7 +534,7 @@ vaVdpBitmapSurfaceGetParameters(VdpBitmapSurface surface, VdpRGBAFormat *rgba_fo
 static
 VdpStatus
 vaVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *source_data,
-                                  uint32_t const *source_pitches, VdpRect const *destination_rect)
+                                uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
     traceVdpBitmapSurfacePutBitsNative("{zilch}", surface, source_data, source_pitches,
         destination_rect);
@@ -576,11 +569,11 @@ vaVdpGenerateCSCMatrix(VdpProcamp *procamp, VdpColorStandard standard, VdpCSCMat
 static
 VdpStatus
 vaVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
-                                        VdpRect const *destination_rect,
-                                        VdpOutputSurface source_surface, VdpRect const *source_rect,
-                                        VdpColor const *colors,
-                                        VdpOutputSurfaceRenderBlendState const *blend_state,
-                                        uint32_t flags)
+                                      VdpRect const *destination_rect,
+                                      VdpOutputSurface source_surface, VdpRect const *source_rect,
+                                      VdpColor const *colors,
+                                      VdpOutputSurfaceRenderBlendState const *blend_state,
+                                      uint32_t flags)
 {
     traceVdpOutputSurfaceRenderOutputSurface("{zilch}", destination_surface, destination_rect,
         source_surface, source_rect, colors, blend_state, flags);
@@ -590,11 +583,11 @@ vaVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
 static
 VdpStatus
 vaVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
-                                        VdpRect const *destination_rect,
-                                        VdpBitmapSurface source_surface, VdpRect const *source_rect,
-                                        VdpColor const *colors,
-                                        VdpOutputSurfaceRenderBlendState const *blend_state,
-                                        uint32_t flags)
+                                      VdpRect const *destination_rect,
+                                      VdpBitmapSurface source_surface, VdpRect const *source_rect,
+                                      VdpColor const *colors,
+                                      VdpOutputSurfaceRenderBlendState const *blend_state,
+                                      uint32_t flags)
 {
     traceVdpOutputSurfaceRenderBitmapSurface("{zilch}", destination_surface, destination_rect,
         source_surface, source_rect, colors, blend_state, flags);
@@ -612,7 +605,7 @@ vaVdpPreemptionCallbackRegister(VdpDevice device, VdpPreemptionCallback callback
 static
 VdpStatus
 vaVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
-                                        VdpPresentationQueueTarget *target)
+                                      VdpPresentationQueueTarget *target)
 {
     traceVdpPresentationQueueTargetCreateX11("{zilch}", device, drawable, target);
     return VDP_STATUS_NO_IMPLEMENTATION;
@@ -824,7 +817,7 @@ vaVdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_poi
 
 VdpStatus
 vaVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
-                       VdpGetProcAddress **get_proc_address)
+                     VdpGetProcAddress **get_proc_address)
 {
     traceVdpDeviceCreateX11("{full}", display, screen, device, get_proc_address);
 
