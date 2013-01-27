@@ -7,6 +7,12 @@
 
 static char const *implemetation_description_string = "VAAPI backend for VDPAU";
 
+typedef struct {
+    HandleType  type;
+    Display     *display;
+    int         screen;
+} VdpDeviceData;
+
 static
 const char *
 vaVdpGetErrorString(VdpStatus status)
@@ -820,6 +826,17 @@ VdpStatus
 vaVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
                        VdpGetProcAddress **get_proc_address)
 {
-    traceVdpDeviceCreateX11("{zilch}", display, screen, device, get_proc_address);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    traceVdpDeviceCreateX11("{full}", display, screen, device, get_proc_address);
+
+    VdpDeviceData *data = calloc(1, sizeof(VdpDeviceData));
+    if (NULL == data)
+        return VDP_STATUS_RESOURCES;
+
+    data->type =    HANDLETYPE_DEVICE;
+    data->display = display;
+    data->screen =  screen;
+
+    *device = handlestorage_add(data);
+    *get_proc_address = &vaVdpGetProcAddress;
+    return VDP_STATUS_OK;
 }
