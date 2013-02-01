@@ -647,7 +647,7 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
         presentationQueue->image = XShmCreateImage(display, DefaultVisual(display, screen),
             24, ZPixmap, NULL, &presentationQueue->shminfo, out_width, out_height);
         if (NULL == presentationQueue->image) {
-            traceTrace1("Error creating XImage in SHM");
+            traceTrace("Error creating XImage in SHM");
             return VDP_STATUS_RESOURCES;
         }
         presentationQueue->prev_width = out_width;
@@ -658,7 +658,7 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
             presentationQueue->image->bytes_per_line * presentationQueue->image->height,
             IPC_CREAT | 0777);
         if (presentationQueue->shminfo.shmid < 0) {
-            traceTrace1("shm error");
+            traceTrace("shm error");
             return VDP_STATUS_RESOURCES;
         }
 
@@ -1111,7 +1111,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
         operator = CAIRO_OPERATOR_OVER;
     } else {
         fprintf(stderr, "can't select operator\n");
-        traceTrace1("error: can't select operator for softVdpOutputSurfaceRenderOutputSurface\n");
+        traceTrace("error: can't select operator for softVdpOutputSurfaceRenderOutputSurface\n");
         return VDP_STATUS_INVALID_BLEND_FACTOR;
     }
 
@@ -1229,7 +1229,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
         operator = CAIRO_OPERATOR_OVER;
     } else {
         fprintf(stderr, "can't select operator\n");
-        traceTrace1("error: can't select operator for softVdpOutputSurfaceRenderBitmapSurface\n");
+        traceTrace("error: can't select operator for softVdpOutputSurfaceRenderBitmapSurface\n");
         return VDP_STATUS_INVALID_BLEND_FACTOR;
     }
 

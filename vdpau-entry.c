@@ -14,7 +14,7 @@ library_constructor(void)
 
     // initialize tracer
     traceSetTarget(stdout);
-    traceTrace1("Software VDPAU backend library initialized\n");
+    traceTrace("Software VDPAU backend library initialized\n");
 }
 
 __attribute__ ((visibility("default")))

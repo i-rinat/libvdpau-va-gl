@@ -13,7 +13,7 @@ void
 traceSetHeader(const char *header, const char *header_blank);
 
 void
-traceTrace1(const char *buf);
+traceTrace(const char *buf, ...);
 
 void
 traceVdpGetErrorString(const char *impl_state, VdpStatus status);

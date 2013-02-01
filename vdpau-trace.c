@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdarg.h>
 #include "vdpau-trace.h"
 #include "reverse-constant.h"
 
@@ -26,9 +27,13 @@ traceSetHeader(const char *header, const char *header_blank)
 }
 
 void
-traceTrace1(const char *buf)
+traceTrace(const char *fmt, ...)
 {
-    fprintf(tlog, "%s", buf);
+    va_list args;
+    fprintf(tlog, "%s", trace_header);
+    va_start(args, fmt);
+    vfprintf(tlog, fmt, args);
+    va_end(args);
 }
 
 static
