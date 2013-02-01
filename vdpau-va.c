@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <vdpau/vdpau.h>
 #include <vdpau/vdpau_x11.h>
+#include <va/va.h>
+#include <va/va_x11.h>
 #include "reverse-constant.h"
 #include "handle-storage.h"
 #include "vdpau-trace.h"
@@ -10,6 +12,7 @@ static char const *implemetation_description_string = "VAAPI backend for VDPAU";
 typedef struct {
     HandleType  type;
     Display     *display;
+    VADisplay   va_dpy;
     int         screen;
 } VdpDeviceData;
 
@@ -594,6 +597,7 @@ vaVdpDeviceDestroy(VdpDevice device)
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
     handlestorage_expunge(device);
+    vaTerminate(data->va_dpy);
     free(data);
     return VDP_STATUS_OK;
 }
@@ -884,6 +888,14 @@ vaVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
 {
     traceVdpDeviceCreateX11("{full}", display, screen, device, get_proc_address);
 
+    VADisplay va_dpy = vaGetDisplay(display);
+    int ver_major;
+    int ver_minor;
+    VAStatus res = vaInitialize(va_dpy, &ver_major, &ver_minor);
+    if (VA_STATUS_SUCCESS != res)
+        return VDP_STATUS_ERROR;
+    traceTrace(" version %d.%d\n", ver_major, ver_minor);
+
     VdpDeviceData *data = calloc(1, sizeof(VdpDeviceData));
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
@@ -891,6 +903,7 @@ vaVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
     data->type =    HANDLETYPE_DEVICE;
     data->display = display;
     data->screen =  screen;
+    data->va_dpy =  va_dpy;
 
     *device = handlestorage_add(data);
     *get_proc_address = &vaVdpGetProcAddress;
