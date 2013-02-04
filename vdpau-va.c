@@ -37,6 +37,15 @@ typedef struct {
     uint32_t        height;
 } VdpOutputSurfaceData;
 
+typedef struct {
+    HandleType      type;
+    VdpDeviceData  *device;
+    VdpRGBAFormat   rgba_format;
+    VAImage         va_img;
+    uint32_t        width;
+    uint32_t        height;
+} VdpBitmapSurfaceData;
+
 // ===============
 
 static
@@ -615,17 +624,69 @@ VdpStatus
 vaVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
                          uint32_t height, VdpBool frequently_accessed, VdpBitmapSurface *surface)
 {
-    traceVdpBitmapSurfaceCreate("{zilch}", device, rgba_format, width, height, frequently_accessed,
+    traceVdpBitmapSurfaceCreate("{part}", device, rgba_format, width, height, frequently_accessed,
         surface);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    VAStatus status;
+    VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
+    if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
+
+    VAImageFormat *formats = calloc(sizeof(VAImageFormat),
+                                    vaMaxNumSubpictureFormats(deviceData->va_dpy));
+    if (NULL == formats) return VDP_STATUS_RESOURCES;
+    unsigned int num_formats;
+    status = vaQuerySubpictureFormats(deviceData->va_dpy, formats, NULL, &num_formats);
+    if (VA_STATUS_SUCCESS != status) {
+        traceTrace("vaVdpBitmapSurfaceCreate, error querying formats, status %d\n", status);
+        free(formats);
+        return VDP_STATUS_ERROR;
+    }
+
+    VAImageFormat *fmt = NULL;
+    for (unsigned int k = 0; k < num_formats; k ++) {
+        // TODO: check for other formats
+        if (formats[k].fourcc == VA_FOURCC('B','G','R','A')) {
+            fmt = &formats[k];
+            break;
+        }
+    }
+    if (NULL == fmt)
+        return VDP_STATUS_ERROR;
+
+    VAImage va_img;
+    status = vaCreateImage(deviceData->va_dpy, fmt, width, height, &va_img);
+    if (VA_STATUS_SUCCESS != status) {
+        traceTrace("vaVdpBitmapSurfaceCreate, can't create surface, status %d\n", status);
+        return VDP_STATUS_ERROR;
+    }
+
+    VdpBitmapSurfaceData *data = calloc(1, sizeof(VdpBitmapSurfaceData));
+    if (NULL == data) return VDP_STATUS_RESOURCES;
+
+    data->type = HANDLETYPE_BITMAP_SURFACE;
+    data->device = deviceData;
+    data->rgba_format = rgba_format;
+    data->width = width;
+    data->height = height;
+    data->va_img = va_img;
+
+    *surface = handlestorage_add(data);
+
+    return VDP_STATUS_OK;
 }
 
 static
 VdpStatus
 vaVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
 {
-    traceVdpBitmapSurfaceDestroy("{zilch}", surface);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    traceVdpBitmapSurfaceDestroy("{full}", surface);
+    VAStatus status;
+    VdpBitmapSurfaceData *data = handlestorage_get(surface, HANDLETYPE_BITMAP_SURFACE);
+    if (NULL == data) return VDP_STATUS_INVALID_HANDLE;
+    status = vaDestroyImage(data->device->va_dpy, data->va_img.image_id);
+    if (VA_STATUS_SUCCESS != status) return VDP_STATUS_ERROR;
+    handlestorage_expunge(surface);
+    free(data);
+    return VDP_STATUS_OK;
 }
 
 static
