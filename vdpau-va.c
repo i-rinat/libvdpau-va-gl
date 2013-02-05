@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <vdpau/vdpau.h>
 #include <vdpau/vdpau_x11.h>
 #include <va/va.h>
@@ -704,9 +705,34 @@ VdpStatus
 vaVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *source_data,
                                 uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
-    traceVdpBitmapSurfacePutBitsNative("{zilch}", surface, source_data, source_pitches,
+    traceVdpBitmapSurfacePutBitsNative("{WIP}", surface, source_data, source_pitches,
         destination_rect);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    VAStatus status;
+    VdpBitmapSurfaceData *surfaceData = handlestorage_get(surface, HANDLETYPE_BITMAP_SURFACE);
+    if (NULL == surfaceData) return VDP_STATUS_INVALID_HANDLE;
+
+    VdpRect rect = {0, 0, surfaceData->width, surfaceData->height};
+    if (NULL != destination_rect) rect = *destination_rect;
+
+    char *va_image_buf;
+    status = vaMapBuffer(surfaceData->device->va_dpy,
+                         surfaceData->va_img.buf, (void **)&va_image_buf);
+    if (status != VA_STATUS_SUCCESS) {
+        traceTrace("vaMapBuffer returned %d at %s:%d\n", status, __FILE__, __LINE__);
+        return VDP_STATUS_ERROR;
+    }
+
+    char *dst_ptr = va_image_buf + 4 * (surfaceData->width * rect.y0 + rect.x0);
+    char const *src_ptr = source_data[0];
+    for (unsigned int k = 0; k < rect.y1 - rect.y0; k ++) {
+        memcpy(dst_ptr, src_ptr, (rect.x1 - rect.x0) * 4);
+        src_ptr += source_pitches[0];
+        dst_ptr += surfaceData->width * 4;
+    }
+
+    vaUnmapBuffer(surfaceData->device->va_dpy, surfaceData->va_img.buf);
+
+    return VDP_STATUS_OK;
 }
 
 static
