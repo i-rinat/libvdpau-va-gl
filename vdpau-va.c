@@ -789,9 +789,38 @@ vaVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
                                       VdpOutputSurfaceRenderBlendState const *blend_state,
                                       uint32_t flags)
 {
-    traceVdpOutputSurfaceRenderBitmapSurface("{zilch}", destination_surface, destination_rect,
+    traceVdpOutputSurfaceRenderBitmapSurface("{WIP}", destination_surface, destination_rect,
         source_surface, source_rect, colors, blend_state, flags);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+
+    VdpOutputSurfaceData *dstSurfData =
+        handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
+    VdpBitmapSurfaceData *srcSurfData =
+        handlestorage_get(source_surface, HANDLETYPE_BITMAP_SURFACE);
+    if (NULL == dstSurfData || NULL == srcSurfData) return VDP_STATUS_INVALID_HANDLE;
+    if (dstSurfData->device != srcSurfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+    VdpDeviceData *deviceData = srcSurfData->device;
+    VAStatus status;
+
+    // TODO: now assuming full copy
+    char *src_buf;
+    char *dst_buf;
+    status = vaMapBuffer(deviceData->va_dpy, srcSurfData->va_img.buf, (void **)&src_buf);
+    if (VA_STATUS_SUCCESS != status) {
+        traceTrace("error: map buffer at %s:%d\n", __FILE__, __LINE__);
+        return VDP_STATUS_ERROR;
+    }
+    status = vaMapBuffer(deviceData->va_dpy, dstSurfData->va_img.buf, (void **)&dst_buf);
+    if (VA_STATUS_SUCCESS != status) {
+        traceTrace("error: map buffer at %s:%d\n", __FILE__, __LINE__);
+        return VDP_STATUS_ERROR;
+    }
+
+    memcpy(dst_buf, src_buf, srcSurfData->width * srcSurfData->height * 4);
+
+    vaUnmapBuffer(deviceData->va_dpy, srcSurfData->va_img.buf);
+    vaUnmapBuffer(deviceData->va_dpy, dstSurfData->va_img.buf);
+
+    return VDP_STATUS_OK;
 }
 
 static
