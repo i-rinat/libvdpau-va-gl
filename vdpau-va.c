@@ -512,9 +512,98 @@ vaVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutput
                               uint32_t clip_width, uint32_t clip_height,
                               VdpTime earliest_presentation_time)
 {
-    traceVdpPresentationQueueDisplay("{zilch}", presentation_queue, surface, clip_width,
+    traceVdpPresentationQueueDisplay("{WIP}", presentation_queue, surface, clip_width,
         clip_height, earliest_presentation_time);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    VdpPresentationQueueData *presentationQueueData =
+        handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
+    VdpOutputSurfaceData *surfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
+    if (NULL == presentationQueueData || NULL == surfData) return VDP_STATUS_INVALID_HANDLE;
+    if (presentationQueueData->device != surfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+    VdpDeviceData *deviceData = surfData->device;
+    VADisplay va_dpy = deviceData->va_dpy;
+
+    VASurfaceID va_surf;
+    VAImage va_img;
+    VAStatus status = vaCreateSurfaces(deviceData->va_dpy, surfData->width, surfData->height,
+                                       VA_RT_FORMAT_YUV420, 1, &va_surf);
+    if (VA_STATUS_SUCCESS != status) {
+        traceTrace("error: can't create surface at %s:%d\n", __FILE__, __LINE__);
+        return VDP_STATUS_ERROR;
+    }
+
+    VAImageFormat *formats = calloc(sizeof(VAImageFormat),
+                                    vaMaxNumSubpictureFormats(deviceData->va_dpy));
+    if (NULL == formats) return VDP_STATUS_RESOURCES;
+    unsigned int num_formats;
+    status = vaQuerySubpictureFormats(deviceData->va_dpy, formats, NULL, &num_formats);
+    if (VA_STATUS_SUCCESS != status) {
+        traceTrace("vaVdpOutputSurfaceCreate, error querying formats, status %d\n", status);
+        free(formats);
+        return VDP_STATUS_ERROR;
+    }
+
+    VAImageFormat *fmt = NULL;
+    for (unsigned int k = 0; k < num_formats; k ++) {
+        if (formats[k].fourcc == VA_FOURCC('B','G','R','A')) {
+            fmt = &formats[k];
+            break;
+        }
+    }
+    if (NULL == fmt)
+        return VDP_STATUS_ERROR;
+
+    status = vaCreateImage(va_dpy, fmt, surfData->width, surfData->height, &va_img);
+    if (VA_STATUS_SUCCESS != status) {
+        traceTrace("error: vaCreateImage at %s:%d\n", __FILE__, __LINE__);
+        return VDP_STATUS_ERROR;
+    }
+
+    VASubpictureID subpic;
+    status = vaCreateSubpicture(va_dpy, va_img.image_id, &subpic);
+    if (VA_STATUS_SUCCESS != status) {
+        traceTrace("error: vaCreateSubpicture->%d at %s:%d\n", status, __FILE__, __LINE__);
+        return VDP_STATUS_ERROR;
+    }
+
+    status = vaAssociateSubpicture(va_dpy, subpic, &va_surf, 1,
+                                   0, 0, surfData->width, surfData->height,
+                                   0, 0, surfData->width, surfData->height,
+                                   0);
+    if (VA_STATUS_SUCCESS != status) {
+        traceTrace("error: vaAssociateSubpicture at %s:%d\n", __FILE__, __LINE__);
+        return VDP_STATUS_ERROR;
+    }
+
+    char *src_buf;
+    char *dst_buf;
+    status = vaMapBuffer(va_dpy, surfData->va_img.buf, (void**)&src_buf);
+    status = vaMapBuffer(va_dpy, va_img.buf, (void**)&dst_buf);
+    memcpy(dst_buf, src_buf, va_img.data_size);
+    status = vaUnmapBuffer(va_dpy, surfData->va_img.buf);
+    status = vaUnmapBuffer(va_dpy, va_img.buf);
+
+    // TODO: figure out how to do it without hacks
+    VAImage q;
+    vaDeriveImage(va_dpy, va_surf, &q);
+    vaDestroyImage(va_dpy, q.image_id);
+
+    status = vaPutSurface(deviceData->va_dpy, va_surf, presentationQueueData->target->drawable,
+                          0, 0, surfData->width, surfData->height,
+                          0, 0, surfData->width, surfData->height,
+                          NULL, 0, VA_FRAME_PICTURE);
+    if (VA_STATUS_SUCCESS != status) {
+        traceTrace("error: vaPutSurface at %s:%d\n", __FILE__, __LINE__);
+        return VDP_STATUS_ERROR;
+    }
+
+    vaDeassociateSubpicture(va_dpy, subpic, &va_surf, 1);
+    vaDestroySubpicture(va_dpy, subpic);
+    vaDestroyImage(va_dpy, va_img.image_id);
+
+    vaDestroySurfaces(va_dpy, &va_surf, 1);
+
+//    fprintf(stderr, "=-=-=-=-=-=-\n");
+    return VDP_STATUS_OK;
 }
 
 static
