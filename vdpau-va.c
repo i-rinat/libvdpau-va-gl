@@ -165,6 +165,39 @@ vaVdpOutputSurfaceQueryPutBitsYCbCrCapabilities(VdpDevice device, VdpRGBAFormat 
 }
 
 static
+VAImageFormat *
+vaGetVAImageFormatForVdpRGBAFormat(VADisplay va_dpy, VdpRGBAFormat rgba_format)
+{
+    VAImageFormat *formats = calloc(sizeof(VAImageFormat), vaMaxNumSubpictureFormats(va_dpy));
+    if (NULL == formats) return NULL;
+    unsigned int num_formats;
+    VAStatus status = vaQuerySubpictureFormats(va_dpy, formats, NULL, &num_formats);
+    if (VA_STATUS_SUCCESS != status) {
+        free(formats);
+        return NULL;
+    }
+
+    VAImageFormat *fmt = NULL;
+    for (unsigned int k = 0; k < num_formats; k ++) {
+        // TODO: check for other formats
+        if (VDP_RGBA_FORMAT_B8G8R8A8 == rgba_format) {
+            if (formats[k].fourcc == VA_FOURCC('B','G','R','A')) {
+                fmt = &formats[k];
+                break;
+            }
+        }
+    }
+
+    VAImageFormat *retvalue = NULL;
+    if (fmt) {
+        retvalue = malloc(sizeof(VAImageFormat));
+        *retvalue = *fmt;
+    }
+    free(formats);
+    return retvalue;
+}
+
+static
 VdpStatus
 vaVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
                          uint32_t height, VdpOutputSurface *surface)
