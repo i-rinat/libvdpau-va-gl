@@ -8,6 +8,12 @@
 #include "handle-storage.h"
 #include "vdpau-trace.h"
 
+#define failOnErrorWithRetval(fn_name, status, retval)    \
+    if (VA_STATUS_SUCCESS != status) { \
+        traceTrace(fn_name " failed with %d at %s:%d\n", status, __FILE__, __LINE__); \
+        return retval; \
+    }
+
 static char const *implemetation_description_string = "VAAPI backend for VDPAU";
 
 typedef struct {
