@@ -39,7 +39,10 @@ typedef struct {
     HandleType      type;
     VdpDeviceData  *device;
     VdpRGBAFormat   rgba_format;
+    VASurfaceID     va_surf;
+    VAImage         va_derived_image;
     VAImage         va_img;
+    VASubpictureID  va_subpic;
     uint32_t        width;
     uint32_t        height;
 } VdpOutputSurfaceData;
@@ -207,43 +210,49 @@ vaVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t w
     VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
 
-    VAImageFormat *formats = calloc(sizeof(VAImageFormat),
-                                    vaMaxNumSubpictureFormats(deviceData->va_dpy));
-    if (NULL == formats) return VDP_STATUS_RESOURCES;
-    unsigned int num_formats;
-    status = vaQuerySubpictureFormats(deviceData->va_dpy, formats, NULL, &num_formats);
-    if (VA_STATUS_SUCCESS != status) {
-        traceTrace("vaVdpOutputSurfaceCreate, error querying formats, status %d\n", status);
-        free(formats);
-        return VDP_STATUS_ERROR;
-    }
-
-    VAImageFormat *fmt = NULL;
-    for (unsigned int k = 0; k < num_formats; k ++) {
-        if (formats[k].fourcc == VA_FOURCC('B','G','R','A')) {
-            fmt = &formats[k];
-            break;
-        }
-    }
-    if (NULL == fmt)
-        return VDP_STATUS_ERROR;
-
-    VAImage va_img;
-    status = vaCreateImage(deviceData->va_dpy, fmt, width, height, &va_img);
-    if (VA_STATUS_SUCCESS != status) {
-        traceTrace("vaVdpOutputSurfaceCreate, can't create surface, status %d\n", status);
-        return VDP_STATUS_ERROR;
-    }
-
     VdpOutputSurfaceData *data = calloc(1, sizeof(VdpOutputSurfaceData));
     if (NULL == data) return VDP_STATUS_RESOURCES;
+
+    status = vaCreateSurfaces(deviceData->va_dpy, width, height, VA_RT_FORMAT_YUV420, 1,
+                              &data->va_surf);
+    if (VA_STATUS_SUCCESS != status) {
+        free(data);
+        traceTrace("vaCreateSurfaces failed with code %d at %s:%d\n", status, __FILE__, __LINE__);
+        return VDP_STATUS_ERROR;
+    }
+
+    // FIXME: I don't undestand why I must derive image from surface in order it to be displayed
+    //        This seems like some kind of misunderstanding of library.
+    status = vaDeriveImage(deviceData->va_dpy, data->va_surf, &data->va_derived_image);
+    if (VA_STATUS_SUCCESS != status) {
+        free(data);
+        return VDP_STATUS_ERROR;
+    }
+
+    VAImageFormat *fmt = vaGetVAImageFormatForVdpRGBAFormat(deviceData->va_dpy, rgba_format);
+    if (NULL == fmt) {
+        free(data);
+        return VDP_STATUS_INVALID_RGBA_FORMAT;
+    }
+
+    status = vaCreateImage(deviceData->va_dpy, fmt, width, height, &data->va_img);
+    free(fmt);
+    if (VA_STATUS_SUCCESS != status) {
+        free(data);
+        return VDP_STATUS_ERROR;
+    }
+
+    status = vaCreateSubpicture(deviceData->va_dpy, data->va_img.image_id, &data->va_subpic);
+    if (VA_STATUS_SUCCESS != status) {
+        free(data);
+        return VDP_STATUS_ERROR;
+    }
 
     data->type = HANDLETYPE_OUTPUT_SURFACE;
     data->device = deviceData;
     data->rgba_format = rgba_format;
     data->width = width;
     data->height = height;
-    data->va_img = va_img;
 
     *surface = handlestorage_add(data);
 
@@ -258,10 +267,25 @@ vaVdpOutputSurfaceDestroy(VdpOutputSurface surface)
     VAStatus status;
     VdpOutputSurfaceData *data = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == data) return VDP_STATUS_INVALID_HANDLE;
+
+    status = vaDeassociateSubpicture(data->device->va_dpy, data->va_subpic, &data->va_surf, 1);
+    if (VA_STATUS_SUCCESS != status) return VDP_STATUS_ERROR;
+
+    status = vaDestroySubpicture(data->device->va_dpy, data->va_subpic);
+    if (VA_STATUS_SUCCESS != status) return VDP_STATUS_ERROR;
+
     status = vaDestroyImage(data->device->va_dpy, data->va_img.image_id);
     if (VA_STATUS_SUCCESS != status) return VDP_STATUS_ERROR;
+
+    status = vaDestroyImage(data->device->va_dpy, data->va_derived_image.image_id);
+    if (VA_STATUS_SUCCESS != status) return VDP_STATUS_ERROR;
+
+    status = vaDestroySurfaces(data->device->va_dpy, &data->va_surf, 1);
+    if (VA_STATUS_SUCCESS != status) return VDP_STATUS_ERROR;
+
     handlestorage_expunge(surface);
     free(data);
+
     return VDP_STATUS_OK;
 }
 
@@ -559,89 +583,17 @@ vaVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutput
     if (NULL == presentationQueueData || NULL == surfData) return VDP_STATUS_INVALID_HANDLE;
     if (presentationQueueData->device != surfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     VdpDeviceData *deviceData = surfData->device;
-    VADisplay va_dpy = deviceData->va_dpy;
 
-    VASurfaceID va_surf;
-    VAImage va_img;
-    VAStatus status = vaCreateSurfaces(deviceData->va_dpy, surfData->width, surfData->height,
-                                       VA_RT_FORMAT_YUV420, 1, &va_surf);
-    if (VA_STATUS_SUCCESS != status) {
-        traceTrace("error: can't create surface at %s:%d\n", __FILE__, __LINE__);
-        return VDP_STATUS_ERROR;
-    }
-
-    VAImageFormat *formats = calloc(sizeof(VAImageFormat),
-                                    vaMaxNumSubpictureFormats(deviceData->va_dpy));
-    if (NULL == formats) return VDP_STATUS_RESOURCES;
-    unsigned int num_formats;
-    status = vaQuerySubpictureFormats(deviceData->va_dpy, formats, NULL, &num_formats);
-    if (VA_STATUS_SUCCESS != status) {
-        traceTrace("vaVdpOutputSurfaceCreate, error querying formats, status %d\n", status);
-        free(formats);
-        return VDP_STATUS_ERROR;
-    }
-
-    VAImageFormat *fmt = NULL;
-    for (unsigned int k = 0; k < num_formats; k ++) {
-        if (formats[k].fourcc == VA_FOURCC('B','G','R','A')) {
-            fmt = &formats[k];
-            break;
-        }
-    }
-    if (NULL == fmt)
-        return VDP_STATUS_ERROR;
-
-    status = vaCreateImage(va_dpy, fmt, surfData->width, surfData->height, &va_img);
-    if (VA_STATUS_SUCCESS != status) {
-        traceTrace("error: vaCreateImage at %s:%d\n", __FILE__, __LINE__);
-        return VDP_STATUS_ERROR;
-    }
-
-    VASubpictureID subpic;
-    status = vaCreateSubpicture(va_dpy, va_img.image_id, &subpic);
-    if (VA_STATUS_SUCCESS != status) {
-        traceTrace("error: vaCreateSubpicture->%d at %s:%d\n", status, __FILE__, __LINE__);
-        return VDP_STATUS_ERROR;
-    }
-
-    status = vaAssociateSubpicture(va_dpy, subpic, &va_surf, 1,
+    VAStatus status = vaPutSurface(deviceData->va_dpy, surfData->va_surf,
+                                   presentationQueueData->target->drawable,
                                    0, 0, surfData->width, surfData->height,
                                    0, 0, surfData->width, surfData->height,
-                                   0);
-    if (VA_STATUS_SUCCESS != status) {
-        traceTrace("error: vaAssociateSubpicture at %s:%d\n", __FILE__, __LINE__);
-        return VDP_STATUS_ERROR;
-    }
-
-    char *src_buf;
-    char *dst_buf;
-    status = vaMapBuffer(va_dpy, surfData->va_img.buf, (void**)&src_buf);
-    status = vaMapBuffer(va_dpy, va_img.buf, (void**)&dst_buf);
-    memcpy(dst_buf, src_buf, va_img.data_size);
-    status = vaUnmapBuffer(va_dpy, surfData->va_img.buf);
-    status = vaUnmapBuffer(va_dpy, va_img.buf);
-
-    // TODO: figure out how to do it without hacks
-    VAImage q;
-    vaDeriveImage(va_dpy, va_surf, &q);
-    vaDestroyImage(va_dpy, q.image_id);
-
-    status = vaPutSurface(deviceData->va_dpy, va_surf, presentationQueueData->target->drawable,
-                          0, 0, surfData->width, surfData->height,
-                          0, 0, surfData->width, surfData->height,
-                          NULL, 0, VA_FRAME_PICTURE);
+                                   NULL, 0, VA_FRAME_PICTURE);
     if (VA_STATUS_SUCCESS != status) {
         traceTrace("error: vaPutSurface at %s:%d\n", __FILE__, __LINE__);
         return VDP_STATUS_ERROR;
     }
 
-    vaDeassociateSubpicture(va_dpy, subpic, &va_surf, 1);
-    vaDestroySubpicture(va_dpy, subpic);
-    vaDestroyImage(va_dpy, va_img.image_id);
-
-    vaDestroySurfaces(va_dpy, &va_surf, 1);
-
-//    fprintf(stderr, "=-=-=-=-=-=-\n");
     return VDP_STATUS_OK;
 }
 
@@ -927,26 +879,24 @@ vaVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     if (NULL == dstSurfData || NULL == srcSurfData) return VDP_STATUS_INVALID_HANDLE;
     if (dstSurfData->device != srcSurfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     VdpDeviceData *deviceData = srcSurfData->device;
+    VADisplay va_dpy = deviceData->va_dpy;
     VAStatus status;
 
-    // TODO: now assuming full copy
-    char *src_buf;
-    char *dst_buf;
-    status = vaMapBuffer(deviceData->va_dpy, srcSurfData->va_img.buf, (void **)&src_buf);
-    if (VA_STATUS_SUCCESS != status) {
-        traceTrace("error: map buffer at %s:%d\n", __FILE__, __LINE__);
-        return VDP_STATUS_ERROR;
-    }
-    status = vaMapBuffer(deviceData->va_dpy, dstSurfData->va_img.buf, (void **)&dst_buf);
-    if (VA_STATUS_SUCCESS != status) {
-        traceTrace("error: map buffer at %s:%d\n", __FILE__, __LINE__);
-        return VDP_STATUS_ERROR;
-    }
+    // TODO: handle rectangles
+    status = vaAssociateSubpicture(deviceData->va_dpy, dstSurfData->va_subpic,
+                                   &dstSurfData->va_surf, 1,
+                                   0, 0, srcSurfData->width, srcSurfData->height,
+                                   0, 0, dstSurfData->width, dstSurfData->height,
+                                   0);
+    failOnErrorWithRetval("vaAssociateSubpicture", status, VDP_STATUS_ERROR);
 
-    memcpy(dst_buf, src_buf, srcSurfData->width * srcSurfData->height * 4);
-
-    vaUnmapBuffer(deviceData->va_dpy, srcSurfData->va_img.buf);
-    vaUnmapBuffer(deviceData->va_dpy, dstSurfData->va_img.buf);
+    char *buf_src, *buf_dst;
+    vaMapBuffer(va_dpy, srcSurfData->va_img.buf, (void**)&buf_src);
+    vaMapBuffer(va_dpy, dstSurfData->va_img.buf, (void**)&buf_dst);
+    // raw copy
+    memcpy(buf_dst, buf_src, srcSurfData->va_img.data_size);
+    vaUnmapBuffer(va_dpy, srcSurfData->va_img.buf);
+    vaUnmapBuffer(va_dpy, dstSurfData->va_img.buf);
 
     return VDP_STATUS_OK;
 }
