@@ -601,8 +601,20 @@ vaVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_qu
                                             VdpTime *first_presentation_time)
 
 {
-    traceVdpPresentationQueueBlockUntilSurfaceIdle("{zilch}", presentation_queue, surface,
+    traceVdpPresentationQueueBlockUntilSurfaceIdle("{full}", presentation_queue, surface,
         first_presentation_time);
+    VdpOutputSurfaceData *surfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
+    VdpPresentationQueueData *presentationQueueData =
+        handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
+    if (NULL == surfData || NULL == presentationQueueData)
+        return VDP_STATUS_INVALID_HANDLE;
+    if (surfData->device != presentationQueueData->device)
+        return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+    VdpDeviceData *deviceData = surfData->device;
+
+    VAStatus status = vaSyncSurface(deviceData->va_dpy, surfData->va_surf);
+    failOnErrorWithRetval("vaSyncSurface", status, VDP_STATUS_ERROR);
+
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
