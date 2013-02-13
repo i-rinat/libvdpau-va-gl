@@ -67,6 +67,8 @@ typedef struct {
     uint32_t        width;
     uint32_t        height;
     VdpChromaType   chroma_type;
+    VASurfaceID     va_surf;
+    VAImage         va_derived_img;
 } VdpVideoSurfaceData;
 
 // ===============
@@ -703,6 +705,19 @@ vaVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t wi
     data->height = height;
     data->chroma_type = chroma_type;
 
+    VAStatus status = vaCreateSurfaces(deviceData->va_dpy, width, height, VA_RT_FORMAT_YUV420,
+                                       1, &data->va_surf);
+    if (VA_STATUS_SUCCESS != status) {
+        free(data);
+        return VDP_STATUS_ERROR;
+    }
+
+    status = vaDeriveImage(deviceData->va_dpy, data->va_surf, &data->va_derived_img);
+    if (VA_STATUS_SUCCESS != status) {
+        free(data);
+        return VDP_STATUS_ERROR;
+    }
+
     *surface = handlestorage_add(data);
 
     return VDP_STATUS_OK;
@@ -715,6 +730,10 @@ vaVdpVideoSurfaceDestroy(VdpVideoSurface surface)
     traceVdpVideoSurfaceDestroy("{full}", surface);
     VdpVideoSurfaceData *surfData = handlestorage_get(surface, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == surfData) return VDP_STATUS_INVALID_HANDLE;
+
+    // ignore errors
+    vaDestroyImage(surfData->device->va_dpy, surfData->va_derived_img.image_id);
+    vaDestroySurfaces(surfData->device->va_dpy, &surfData->va_surf, 1);
 
     handlestorage_expunge(surface);
     free(surfData);
@@ -746,9 +765,26 @@ VdpStatus
 vaVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_ycbcr_format,
                               void const *const *source_data, uint32_t const *source_pitches)
 {
-    traceVdpVideoSurfacePutBitsYCbCr("{zilch}", surface, source_ycbcr_format, source_data,
+    traceVdpVideoSurfacePutBitsYCbCr("{part}", surface, source_ycbcr_format, source_data,
         source_pitches);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    VdpVideoSurfaceData *surfData = handlestorage_get(surface, HANDLETYPE_VIDEO_SURFACE);
+    if (NULL == surfData) return VDP_STATUS_INVALID_HANDLE;
+    VADisplay va_dpy = surfData->device->va_dpy;
+
+    if (VDP_YCBCR_FORMAT_YV12 != source_ycbcr_format)
+        return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
+
+    char *dstBuf;
+    VAStatus status = vaMapBuffer(va_dpy, surfData->va_derived_img.buf, (void **)&dstBuf);
+    failOnErrorWithRetval("vaMapBuffer", status, VDP_STATUS_ERROR);
+
+    // FIXME: now assuming data not aligned. Add generic code path.
+    memcpy(dstBuf, source_data[0], surfData->width * surfData->height);
+
+    status = vaUnmapBuffer(va_dpy, surfData->va_derived_img.buf);
+    failOnErrorWithRetval("vaUnmapBuffer", status, VDP_STATUS_ERROR);
+
+    return VDP_STATUS_OK;
 }
 
 static
