@@ -56,6 +56,11 @@ typedef struct {
     uint32_t        height;
 } VdpBitmapSurfaceData;
 
+typedef struct {
+    HandleType      type;
+    VdpDeviceData  *device;
+} VdpVideoMixerData;
+
 // ===============
 
 static
@@ -393,9 +398,19 @@ vaVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
                       VdpVideoMixerParameter const *parameters,
                       void const *const *parameter_values, VdpVideoMixer *mixer)
 {
-    traceVdpVideoMixerCreate("{zilch}", device, feature_count, features, parameter_count, parameters,
+    traceVdpVideoMixerCreate("{part}", device, feature_count, features, parameter_count, parameters,
         parameter_values, mixer);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
+    if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
+
+    // TODO: handle parameters and features
+    VdpVideoMixerData *data = calloc(1, sizeof(VdpVideoMixerData));
+    data->type = HANDLETYPE_VIDEO_MIXER;
+    data->device = deviceData;
+
+    *mixer = handlestorage_add(data);
+
+    return VDP_STATUS_OK;
 }
 
 static
@@ -464,8 +479,14 @@ static
 VdpStatus
 vaVdpVideoMixerDestroy(VdpVideoMixer mixer)
 {
-    traceVdpVideoMixerDestroy("{zilch}", mixer);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    traceVdpVideoMixerDestroy("{full}", mixer);
+    VdpVideoMixerData *mixerData = handlestorage_get(mixer, HANDLETYPE_VIDEO_MIXER);
+    if (NULL == mixerData) return VDP_STATUS_INVALID_HANDLE;
+
+    handlestorage_expunge(mixer);
+    free(mixerData);
+
+    return VDP_STATUS_OK;
 }
 
 static
