@@ -575,7 +575,7 @@ vaVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutput
                               uint32_t clip_width, uint32_t clip_height,
                               VdpTime earliest_presentation_time)
 {
-    traceVdpPresentationQueueDisplay("{WIP}", presentation_queue, surface, clip_width,
+    traceVdpPresentationQueueDisplay("{full}", presentation_queue, surface, clip_width,
         clip_height, earliest_presentation_time);
     VdpPresentationQueueData *presentationQueueData =
         handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
@@ -589,10 +589,7 @@ vaVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutput
                                    0, 0, surfData->width, surfData->height,
                                    0, 0, surfData->width, surfData->height,
                                    NULL, 0, VA_FRAME_PICTURE);
-    if (VA_STATUS_SUCCESS != status) {
-        traceTrace("error: vaPutSurface at %s:%d\n", __FILE__, __LINE__);
-        return VDP_STATUS_ERROR;
-    }
+    failOnErrorWithRetval("vaPutSurface", status, VDP_STATUS_ERROR);
 
     return VDP_STATUS_OK;
 }
