@@ -511,11 +511,41 @@ vaVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface,
                       VdpRect const *destination_video_rect, uint32_t layer_count,
                       VdpLayer const *layers)
 {
-    traceVdpVideoMixerRender("{zilch}", mixer, background_surface, background_source_rect,
+    traceVdpVideoMixerRender("{dirty}", mixer, background_surface, background_source_rect,
         current_picture_structure, video_surface_past_count, video_surface_past,
         video_surface_current, video_surface_future_count, video_surface_future, video_source_rect,
         destination_surface, destination_rect, destination_video_rect, layer_count, layers);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+
+    VdpVideoMixerData *videoMixerData = handlestorage_get(mixer, HANDLETYPE_VIDEO_MIXER);
+    VdpOutputSurfaceData *dstSurfData =
+        handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
+    VdpVideoSurfaceData *srcSurfData =
+        handlestorage_get(video_surface_current, HANDLETYPE_VIDEO_SURFACE);
+    if (NULL == videoMixerData || NULL == dstSurfData || NULL == srcSurfData)
+        return VDP_STATUS_INVALID_HANDLE;
+    if (videoMixerData->device != dstSurfData->device
+        || videoMixerData->device != srcSurfData->device)
+    {
+        return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+    }
+    VADisplay va_dpy = videoMixerData->device->va_dpy;
+    VAStatus status;
+
+    // TODO: fix this dirty implementation
+    char *dstBuf, *srcBuf;
+    status = vaMapBuffer(va_dpy, dstSurfData->va_derived_image.buf, (void  **)&dstBuf);
+    failOnErrorWithRetval("vaMapBuffer", status, VDP_STATUS_ERROR);
+    status = vaMapBuffer(va_dpy, srcSurfData->va_derived_image.buf, (void  **)&srcBuf);
+    failOnErrorWithRetval("vaMapBuffer", status, VDP_STATUS_ERROR);
+
+    memcpy(dstBuf, srcBuf, srcSurfData->va_derived_image.data_size);
+
+    status = vaUnmapBuffer(va_dpy, dstSurfData->va_derived_image.buf);
+    failOnErrorWithRetval("vaUnmapBuffer", status, VDP_STATUS_ERROR);
+    status = vaUnmapBuffer(va_dpy, srcSurfData->va_derived_image.buf);
+    failOnErrorWithRetval("vaUnmapBuffer", status, VDP_STATUS_ERROR);
+
+    return VDP_STATUS_OK;
 }
 
 static
