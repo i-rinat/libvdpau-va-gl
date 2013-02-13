@@ -68,7 +68,7 @@ typedef struct {
     uint32_t        height;
     VdpChromaType   chroma_type;
     VASurfaceID     va_surf;
-    VAImage         va_derived_img;
+    VAImage         va_derived_image;
 } VdpVideoSurfaceData;
 
 // ===============
@@ -712,7 +712,7 @@ vaVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t wi
         return VDP_STATUS_ERROR;
     }
 
-    status = vaDeriveImage(deviceData->va_dpy, data->va_surf, &data->va_derived_img);
+    status = vaDeriveImage(deviceData->va_dpy, data->va_surf, &data->va_derived_image);
     if (VA_STATUS_SUCCESS != status) {
         free(data);
         return VDP_STATUS_ERROR;
@@ -732,7 +732,7 @@ vaVdpVideoSurfaceDestroy(VdpVideoSurface surface)
     if (NULL == surfData) return VDP_STATUS_INVALID_HANDLE;
 
     // ignore errors
-    vaDestroyImage(surfData->device->va_dpy, surfData->va_derived_img.image_id);
+    vaDestroyImage(surfData->device->va_dpy, surfData->va_derived_image.image_id);
     vaDestroySurfaces(surfData->device->va_dpy, &surfData->va_surf, 1);
 
     handlestorage_expunge(surface);
@@ -775,13 +775,13 @@ vaVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_ycb
         return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
 
     char *dstBuf;
-    VAStatus status = vaMapBuffer(va_dpy, surfData->va_derived_img.buf, (void **)&dstBuf);
+    VAStatus status = vaMapBuffer(va_dpy, surfData->va_derived_image.buf, (void **)&dstBuf);
     failOnErrorWithRetval("vaMapBuffer", status, VDP_STATUS_ERROR);
 
     // FIXME: now assuming data not aligned. Add generic code path.
     memcpy(dstBuf, source_data[0], surfData->width * surfData->height);
 
-    status = vaUnmapBuffer(va_dpy, surfData->va_derived_img.buf);
+    status = vaUnmapBuffer(va_dpy, surfData->va_derived_image.buf);
     failOnErrorWithRetval("vaUnmapBuffer", status, VDP_STATUS_ERROR);
 
     return VDP_STATUS_OK;
