@@ -782,7 +782,7 @@ VdpStatus
 vaVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *source_data,
                                 uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
-    traceVdpBitmapSurfacePutBitsNative("{WIP}", surface, source_data, source_pitches,
+    traceVdpBitmapSurfacePutBitsNative("{full}", surface, source_data, source_pitches,
         destination_rect);
     VAStatus status;
     VdpBitmapSurfaceData *surfaceData = handlestorage_get(surface, HANDLETYPE_BITMAP_SURFACE);
@@ -790,6 +790,10 @@ vaVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *sou
 
     VdpRect rect = {0, 0, surfaceData->width, surfaceData->height};
     if (NULL != destination_rect) rect = *destination_rect;
+
+    // TODO: handle other formats
+    if (VDP_RGBA_FORMAT_B8G8R8A8 != surfaceData->rgba_format)
+        return VDP_STATUS_INVALID_RGBA_FORMAT;
 
     char *va_image_buf;
     status = vaMapBuffer(surfaceData->device->va_dpy,
@@ -799,12 +803,18 @@ vaVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *sou
         return VDP_STATUS_ERROR;
     }
 
-    char *dst_ptr = va_image_buf + 4 * (surfaceData->width * rect.y0 + rect.x0);
-    char const *src_ptr = source_data[0];
-    for (unsigned int k = 0; k < rect.y1 - rect.y0; k ++) {
-        memcpy(dst_ptr, src_ptr, (rect.x1 - rect.x0) * 4);
-        src_ptr += source_pitches[0];
-        dst_ptr += surfaceData->width * 4;
+    if (0 == rect.x0 && 0 == rect.y0 && source_pitches[0] == surfaceData->width * 4) {
+        // can copy with single memcpy
+        memcpy(va_image_buf, source_data[0], surfaceData->va_img.data_size);
+    } else {
+        // fall back to generic code
+        char *dst_ptr = va_image_buf + 4 * (surfaceData->width * rect.y0 + rect.x0);
+        char const *src_ptr = source_data[0];
+        for (unsigned int k = 0; k < rect.y1 - rect.y0; k ++) {
+            memcpy(dst_ptr, src_ptr, (rect.x1 - rect.x0) * 4);
+            src_ptr += source_pitches[0];
+            dst_ptr += surfaceData->width * 4;
+        }
     }
 
     vaUnmapBuffer(surfaceData->device->va_dpy, surfaceData->va_img.buf);
