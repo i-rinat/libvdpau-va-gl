@@ -45,7 +45,7 @@ rect2string(VdpRect const *rect)
     static int i_ptr = 0;
     i_ptr = (i_ptr + 1) % 8;
     char *buf = &bufs[i_ptr][0];
-    if (NULL == 0) {
+    if (NULL == rect) {
         snprintf(buf, 100, "NULL");
     } else {
         snprintf(buf, 100, "(%d,%d,%d,%d)", rect->x0, rect->y0, rect->x1, rect->y1);
