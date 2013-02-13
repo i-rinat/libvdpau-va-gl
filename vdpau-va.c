@@ -61,6 +61,14 @@ typedef struct {
     VdpDeviceData  *device;
 } VdpVideoMixerData;
 
+typedef struct {
+    HandleType      type;
+    VdpDeviceData  *device;
+    uint32_t        width;
+    uint32_t        height;
+    VdpChromaType   chroma_type;
+} VdpVideoSurfaceData;
+
 // ===============
 
 static
@@ -678,16 +686,40 @@ VdpStatus
 vaVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t width,
                         uint32_t height, VdpVideoSurface *surface)
 {
-    traceVdpVideoSurfaceCreate("{zilch}", device, chroma_type, width, height, surface);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    traceVdpVideoSurfaceCreate("{part}", device, chroma_type, width, height, surface);
+    VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
+    if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
+
+    // TODO: Do I need other chroma types?
+    if (VDP_CHROMA_TYPE_420 != chroma_type)
+        return VDP_STATUS_INVALID_CHROMA_TYPE;
+
+    VdpVideoSurfaceData *data = calloc(1, sizeof(VdpVideoSurfaceData));
+    if (NULL == data) return VDP_STATUS_RESOURCES;
+
+    data->type = HANDLETYPE_VIDEO_SURFACE;
+    data->device = deviceData;
+    data->width = width;
+    data->height = height;
+    data->chroma_type = chroma_type;
+
+    *surface = handlestorage_add(data);
+
+    return VDP_STATUS_OK;
 }
 
 static
 VdpStatus
 vaVdpVideoSurfaceDestroy(VdpVideoSurface surface)
 {
-    traceVdpVideoSurfaceDestroy("{zilch}", surface);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    traceVdpVideoSurfaceDestroy("{full}", surface);
+    VdpVideoSurfaceData *surfData = handlestorage_get(surface, HANDLETYPE_VIDEO_SURFACE);
+    if (NULL == surfData) return VDP_STATUS_INVALID_HANDLE;
+
+    handlestorage_expunge(surface);
+    free(surfData);
+
+    return VDP_STATUS_OK;
 }
 
 static
