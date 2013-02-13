@@ -866,7 +866,7 @@ vaVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
                                       VdpOutputSurfaceRenderBlendState const *blend_state,
                                       uint32_t flags)
 {
-    traceVdpOutputSurfaceRenderBitmapSurface("{WIP}", destination_surface, destination_rect,
+    traceVdpOutputSurfaceRenderBitmapSurface("{part}", destination_surface, destination_rect,
         source_surface, source_rect, colors, blend_state, flags);
 
     VdpOutputSurfaceData *dstSurfData =
@@ -879,19 +879,25 @@ vaVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     VADisplay va_dpy = deviceData->va_dpy;
     VAStatus status;
 
-    // TODO: handle rectangles
+    VdpRect dst_rect = {0, 0, dstSurfData->width, dstSurfData->height};
+    VdpRect src_rect = {0, 0, srcSurfData->width, srcSurfData->height};
+    if (destination_rect) dst_rect = *destination_rect;
+    if (source_rect) src_rect = *source_rect;
+
+    // TODO: handle blend_options
     status = vaAssociateSubpicture(deviceData->va_dpy, dstSurfData->va_subpic,
-                                   &dstSurfData->va_surf, 1,
-                                   0, 0, srcSurfData->width, srcSurfData->height,
-                                   0, 0, dstSurfData->width, dstSurfData->height,
-                                   0);
+                    &dstSurfData->va_surf, 1,
+                    src_rect.x0, src_rect.y0, src_rect.x1 - src_rect.x0, src_rect.y1 - src_rect.y0,
+                    dst_rect.x0, dst_rect.y0, dst_rect.x1 - dst_rect.x0, dst_rect.y1 - dst_rect.y0,
+                    0);
     failOnErrorWithRetval("vaAssociateSubpicture", status, VDP_STATUS_ERROR);
 
     char *buf_src, *buf_dst;
     vaMapBuffer(va_dpy, srcSurfData->va_img.buf, (void**)&buf_src);
     vaMapBuffer(va_dpy, dstSurfData->va_img.buf, (void**)&buf_dst);
-    // raw copy
+
     memcpy(buf_dst, buf_src, srcSurfData->va_img.data_size);
+
     vaUnmapBuffer(va_dpy, srcSurfData->va_img.buf);
     vaUnmapBuffer(va_dpy, dstSurfData->va_img.buf);
 
