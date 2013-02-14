@@ -814,12 +814,13 @@ VdpStatus
 vaVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_ycbcr_format,
                               void const *const *source_data, uint32_t const *source_pitches)
 {
-    traceVdpVideoSurfacePutBitsYCbCr("{part}", surface, source_ycbcr_format, source_data,
+    traceVdpVideoSurfacePutBitsYCbCr("{full}", surface, source_ycbcr_format, source_data,
         source_pitches);
     VdpVideoSurfaceData *surfData = handlestorage_get(surface, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == surfData) return VDP_STATUS_INVALID_HANDLE;
     VADisplay va_dpy = surfData->device->va_dpy;
 
+    // TODO: what with other formats?
     if (VDP_YCBCR_FORMAT_YV12 != source_ycbcr_format)
         return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
 
@@ -827,8 +828,20 @@ vaVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_ycb
     VAStatus status = vaMapBuffer(va_dpy, surfData->va_derived_image.buf, (void **)&dstBuf);
     failOnErrorWithRetval("vaMapBuffer", status, VDP_STATUS_ERROR);
 
-    // FIXME: now assuming data not aligned. Add generic code path.
-    memcpy(dstBuf, source_data[0], surfData->width * surfData->height);
+    const int width = surfData->va_derived_image.width;
+    const int height = surfData->va_derived_image.height;
+    const char *srcPtr = source_data[0];
+
+    for (unsigned int k = 0; k < height; k ++, dstBuf += width, srcPtr += source_pitches[0])
+        memcpy(dstBuf, srcPtr, width);
+
+    srcPtr = source_data[2];
+    for (unsigned int k = 0; k < height/2; k ++, dstBuf += width/2, srcPtr += source_pitches[2])
+        memcpy(dstBuf, srcPtr, width/2);
+
+    srcPtr = source_data[1];
+    for (unsigned int k = 0; k < height/2; k ++, dstBuf += width/2, srcPtr += source_pitches[1])
+        memcpy(dstBuf, srcPtr, width/2);
 
     status = vaUnmapBuffer(va_dpy, surfData->va_derived_image.buf);
     failOnErrorWithRetval("vaUnmapBuffer", status, VDP_STATUS_ERROR);
