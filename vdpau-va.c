@@ -74,6 +74,23 @@ typedef struct {
 // ===============
 
 static
+void
+workaround_missing_data_size_of_derived_image(VAImage *va_img)
+{
+    switch (va_img->format.fourcc) {
+    case VA_FOURCC_YV12:
+        va_img->data_size = va_img->height * va_img->pitches[0]
+                            + va_img->height/2 * (va_img->pitches[1] + va_img->pitches[2]);
+        return;
+    default:
+        fprintf(stderr, "no workaround for %c%c%c%c\n", va_img->format.fourcc & 0xff,
+            (va_img->format.fourcc >> 8) & 0xff, (va_img->format.fourcc >> 16) & 0xff,
+            (va_img->format.fourcc >> 24) & 0xff);
+        return;
+    }
+}
+
+static
 const char *
 vaVdpGetErrorString(VdpStatus status)
 {
@@ -239,6 +256,7 @@ vaVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t w
     // FIXME: I don't undestand why I must derive image from surface in order it to be displayed
     //        This seems like some kind of misunderstanding of library.
     status = vaDeriveImage(deviceData->va_dpy, data->va_surf, &data->va_derived_image);
+    workaround_missing_data_size_of_derived_image(&data->va_derived_image);
     if (VA_STATUS_SUCCESS != status) {
         free(data);
         return VDP_STATUS_ERROR;
@@ -743,6 +761,7 @@ vaVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t wi
     }
 
     status = vaDeriveImage(deviceData->va_dpy, data->va_surf, &data->va_derived_image);
+    workaround_missing_data_size_of_derived_image(&data->va_derived_image);
     if (VA_STATUS_SUCCESS != status) {
         free(data);
         return VDP_STATUS_ERROR;
