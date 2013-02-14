@@ -993,9 +993,33 @@ vaVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
                                       VdpOutputSurfaceRenderBlendState const *blend_state,
                                       uint32_t flags)
 {
-    traceVdpOutputSurfaceRenderOutputSurface("{zilch}", destination_surface, destination_rect,
+    traceVdpOutputSurfaceRenderOutputSurface("{dirty}", destination_surface, destination_rect,
         source_surface, source_rect, colors, blend_state, flags);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+
+    VdpOutputSurfaceData *dstSurfData =
+        handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
+    VdpOutputSurfaceData *srcSurfData =
+        handlestorage_get(source_surface, HANDLETYPE_OUTPUT_SURFACE);
+    if (NULL == dstSurfData || NULL == srcSurfData) return VDP_STATUS_INVALID_HANDLE;
+    if (dstSurfData->device != srcSurfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+    VADisplay va_dpy = dstSurfData->device->va_dpy;
+    VAStatus status;
+
+    // TODO: fix this dirty implementation
+    char *dstBuf, *srcBuf;
+    status = vaMapBuffer(va_dpy, dstSurfData->va_derived_image.buf, (void  **)&dstBuf);
+    failOnErrorWithRetval("vaMapBuffer", status, VDP_STATUS_ERROR);
+    status = vaMapBuffer(va_dpy, srcSurfData->va_derived_image.buf, (void  **)&srcBuf);
+    failOnErrorWithRetval("vaMapBuffer", status, VDP_STATUS_ERROR);
+
+    memcpy(dstBuf, srcBuf, srcSurfData->va_derived_image.data_size);
+
+    status = vaUnmapBuffer(va_dpy, dstSurfData->va_derived_image.buf);
+    failOnErrorWithRetval("vaUnmapBuffer", status, VDP_STATUS_ERROR);
+    status = vaUnmapBuffer(va_dpy, srcSurfData->va_derived_image.buf);
+    failOnErrorWithRetval("vaUnmapBuffer", status, VDP_STATUS_ERROR);
+
+    return VDP_STATUS_OK;
 }
 
 static
