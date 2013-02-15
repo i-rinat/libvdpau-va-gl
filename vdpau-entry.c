@@ -24,10 +24,10 @@ vdp_imp_device_create_x11(Display *display, int screen, VdpDevice *device,
 {
     // Select appropriate sub-backend. For now only software backend available.
     if (1) {
-        //return softVdpDeviceCreateX11(display, screen, device, get_proc_address);
+        return softVdpDeviceCreateX11(display, screen, device, get_proc_address);
 
         // use VA-API
-        traceSetHeader("[VDPVA]", "       ");
-        return vaVdpDeviceCreateX11(display, screen, device, get_proc_address);
+        //traceSetHeader("[VDPVA]", "       ");
+        //return vaVdpDeviceCreateX11(display, screen, device, get_proc_address);
     }
 }
