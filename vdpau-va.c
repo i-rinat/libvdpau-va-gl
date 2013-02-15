@@ -1043,12 +1043,6 @@ vaVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     if (source_rect) srcRect = *source_rect;
     if (destination_rect) dstRect = *destination_rect;
 
-    status = vaAssociateSubpicture(va_dpy, srcSurfData->va_subpic, &srcSurfData->va_surf, 1,
-                        srcRect.x0, srcRect.y0, srcRect.x1 - srcRect.x0, srcRect.y1 - srcRect.y0,
-                        srcRect.x0, srcRect.y0, srcRect.x1 - srcRect.x0, srcRect.y1 - srcRect.y0,
-                        0);
-    failOnErrorWithRetval("vaAssociateSubpicture", status, VDP_STATUS_ERROR);
-
     status = vaAssociateSubpicture(va_dpy, dstSurfData->va_subpic, &dstSurfData->va_surf, 1,
                         srcRect.x0, srcRect.y0, srcRect.x1 - srcRect.x0, srcRect.y1 - srcRect.y0,
                         dstRect.x0, dstRect.y0, dstRect.x1 - dstRect.x0, dstRect.y1 - dstRect.y0,
@@ -1058,14 +1052,14 @@ vaVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     char *dstBuf, *srcBuf;
     status = vaMapBuffer(va_dpy, dstSurfData->va_img.buf, (void  **)&dstBuf);
     failOnErrorWithRetval("vaMapBuffer", status, VDP_STATUS_ERROR);
-    status = vaMapBuffer(va_dpy, srcSurfData->va_img.buf, (void  **)&srcBuf);
+    status = vaMapBuffer(va_dpy, srcSurfData->va_derived_image.buf, (void  **)&srcBuf);
     failOnErrorWithRetval("vaMapBuffer", status, VDP_STATUS_ERROR);
 
-    memcpy(dstBuf, srcBuf, 4 * (srcRect.x1 - srcRect.x0) * (srcRect.y1 - srcRect.y0));
+    memcpy(dstBuf, srcBuf, dataSizeForVAImage(&srcSurfData->va_derived_image));
 
     status = vaUnmapBuffer(va_dpy, dstSurfData->va_img.buf);
     failOnErrorWithRetval("vaUnmapBuffer", status, VDP_STATUS_ERROR);
-    status = vaUnmapBuffer(va_dpy, srcSurfData->va_img.buf);
+    status = vaUnmapBuffer(va_dpy, srcSurfData->va_derived_image.buf);
     failOnErrorWithRetval("vaUnmapBuffer", status, VDP_STATUS_ERROR);
 
     return VDP_STATUS_OK;
