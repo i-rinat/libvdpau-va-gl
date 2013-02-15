@@ -1110,6 +1110,7 @@ vaVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     vaMapBuffer(va_dpy, srcSurfData->va_img.buf, (void**)&buf_src);
     vaMapBuffer(va_dpy, dstSurfData->va_img.buf, (void**)&buf_dst);
 
+    // TODO: handle source rectangles. Now they are full-frame, so plain memcpy works just fine.
     memcpy(buf_dst, buf_src, dataSizeForVAImage(&srcSurfData->va_img));
 
     vaUnmapBuffer(va_dpy, srcSurfData->va_img.buf);
