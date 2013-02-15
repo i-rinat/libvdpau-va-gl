@@ -74,19 +74,21 @@ typedef struct {
 // ===============
 
 static
-void
-workaround_missing_data_size_of_derived_image(VAImage *va_img)
+int
+dataSizeForVAImage(VAImage *va_img)
 {
     switch (va_img->format.fourcc) {
     case VA_FOURCC_YV12:
-        va_img->data_size = va_img->height * va_img->pitches[0]
-                            + va_img->height/2 * (va_img->pitches[1] + va_img->pitches[2]);
-        return;
+        return va_img->height * va_img->pitches[0] +
+                va_img->height/2 * (va_img->pitches[1] + va_img->pitches[2]);
+    case VA_FOURCC_BGRA:
+    case VA_FOURCC_RGBA:
+        return va_img->width * va_img->height * 4;
     default:
-        fprintf(stderr, "no workaround for %c%c%c%c\n", va_img->format.fourcc & 0xff,
+        fprintf(stderr, "no dataSizeForVAImage for %c%c%c%c\n", va_img->format.fourcc & 0xff,
             (va_img->format.fourcc >> 8) & 0xff, (va_img->format.fourcc >> 16) & 0xff,
             (va_img->format.fourcc >> 24) & 0xff);
-        return;
+        return 0;
     }
 }
 
@@ -256,7 +258,6 @@ vaVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t w
     // FIXME: I don't undestand why I must derive image from surface in order it to be displayed
     //        This seems like some kind of misunderstanding of library.
     status = vaDeriveImage(deviceData->va_dpy, data->va_surf, &data->va_derived_image);
-    workaround_missing_data_size_of_derived_image(&data->va_derived_image);
     if (VA_STATUS_SUCCESS != status) {
         free(data);
         return VDP_STATUS_ERROR;
@@ -556,7 +557,7 @@ vaVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface,
     status = vaMapBuffer(va_dpy, srcSurfData->va_derived_image.buf, (void  **)&srcBuf);
     failOnErrorWithRetval("vaMapBuffer", status, VDP_STATUS_ERROR);
 
-    memcpy(dstBuf, srcBuf, srcSurfData->va_derived_image.data_size);
+    memcpy(dstBuf, srcBuf, dataSizeForVAImage(&srcSurfData->va_derived_image));
 
     status = vaUnmapBuffer(va_dpy, dstSurfData->va_derived_image.buf);
     failOnErrorWithRetval("vaUnmapBuffer", status, VDP_STATUS_ERROR);
@@ -761,7 +762,6 @@ vaVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t wi
     }
 
     status = vaDeriveImage(deviceData->va_dpy, data->va_surf, &data->va_derived_image);
-    workaround_missing_data_size_of_derived_image(&data->va_derived_image);
     if (VA_STATUS_SUCCESS != status) {
         free(data);
         return VDP_STATUS_ERROR;
@@ -968,7 +968,7 @@ vaVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *sou
 
     if (0 == rect.x0 && 0 == rect.y0 && source_pitches[0] == surfaceData->width * 4) {
         // can copy with single memcpy
-        memcpy(va_image_buf, source_data[0], surfaceData->va_img.data_size);
+        memcpy(va_image_buf, source_data[0], dataSizeForVAImage(&surfaceData->va_img));
     } else {
         // fall back to generic code
         char *dst_ptr = va_image_buf + 4 * (surfaceData->width * rect.y0 + rect.x0);
@@ -1110,7 +1110,7 @@ vaVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     vaMapBuffer(va_dpy, srcSurfData->va_img.buf, (void**)&buf_src);
     vaMapBuffer(va_dpy, dstSurfData->va_img.buf, (void**)&buf_dst);
 
-    memcpy(buf_dst, buf_src, srcSurfData->va_img.data_size);
+    memcpy(buf_dst, buf_src, dataSizeForVAImage(&srcSurfData->va_img));
 
     vaUnmapBuffer(va_dpy, srcSurfData->va_img.buf);
     vaUnmapBuffer(va_dpy, dstSurfData->va_img.buf);
