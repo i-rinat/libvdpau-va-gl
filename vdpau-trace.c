@@ -432,7 +432,8 @@ traceVdpVideoMixerRender(const char *impl_state, VdpVideoMixer mixer,
         if (0 != k) fprintf(tlog, ",");
         fprintf(tlog, "%d", video_surface_past[k]);
     }
-    fprintf(tlog, "], video_surface_current=%d, video_surface_future=[", video_surface_current);
+    fprintf(tlog, "],\n%s      video_surface_current=%d, video_surface_future=[",
+        trace_header_blank, video_surface_current);
     for (uint32_t k = 0; k < video_surface_future_count; k ++) {
         if (0 != k) fprintf(tlog, ",");
         fprintf(tlog, "%d", video_surface_future[k]);
@@ -622,9 +623,9 @@ traceVdpBitmapSurfaceCreate(const char *impl_state, VdpDevice device, VdpRGBAFor
                             VdpBitmapSurface *surface)
 {
     if (!enabled) return;
-    fprintf(tlog, "%s%s VdpBitmapSurfaceCreate device=%d, rgba_format=%s, width=%d, height=%d, "
-        "frequently_accessed=%d\n", trace_header, impl_state, device,
-        reverse_rgba_format(rgba_format), width, height, frequently_accessed);
+    fprintf(tlog, "%s%s VdpBitmapSurfaceCreate device=%d, rgba_format=%s, width=%d, height=%d,\n"
+        "%s      frequently_accessed=%d\n", trace_header, impl_state, device,
+        reverse_rgba_format(rgba_format), width, height, trace_header_blank, frequently_accessed);
 }
 
 void
@@ -692,10 +693,10 @@ traceVdpOutputSurfaceRenderOutputSurface(const char *impl_state,
 {
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpOutputSurfaceRenderOutputSurface destination_surface=%d, "
-        "destination_rect=%s, source_surface=%d, source_rect=%s\n", trace_header, impl_state,
-        destination_surface, rect2string(destination_rect),
-        source_surface, rect2string(source_rect));
-    fprintf(tlog, "%s      colors=%p, flags=%d\n", trace_header_blank, colors, flags);
+        "destination_rect=%s,\n", trace_header, impl_state,
+        destination_surface, rect2string(destination_rect));
+    fprintf(tlog, "%s      source_surface=%d, source_rect=%s, colors=%p, flags=%d\n",
+        trace_header_blank, source_surface, rect2string(source_rect), colors, flags);
     fprintf(tlog,   "%s      blend_state.blend_factor_source_color=%s\n"
                     "%s      blend_state.blend_factor_destination_color=%s\n"
                     "%s      blend_state.blend_factor_source_alpha=%s\n"
@@ -725,10 +726,10 @@ traceVdpOutputSurfaceRenderBitmapSurface(const char *impl_state,
 {
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpOutputSurfaceRenderBitmapSurface destination_surface=%d, "
-        "destination_rect=%s, source_surface=%d, source_rect=%s\n", trace_header, impl_state,
-        destination_surface, rect2string(destination_rect),
-        source_surface, rect2string(source_rect));
-    fprintf(tlog, "%s      colors=%p, flags=%d\n", trace_header_blank, colors, flags);
+        "destination_rect=%s,\n", trace_header, impl_state,
+        destination_surface, rect2string(destination_rect));
+    fprintf(tlog, "%s      source_surface=%d, source_rect=%s, colors=%p, flags=%d\n",
+        trace_header_blank, source_surface, rect2string(source_rect), colors, flags);
     fprintf(tlog,   "%s      blend_state.blend_factor_source_color=%s\n"
                     "%s      blend_state.blend_factor_destination_color=%s\n"
                     "%s      blend_state.blend_factor_source_alpha=%s\n"
