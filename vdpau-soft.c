@@ -12,6 +12,9 @@
 #include <vdpau/vdpau.h>
 #include <vdpau/vdpau_x11.h>
 #include <X11/extensions/XShm.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <GL/glx.h>
 #include "reverse-constant.h"
 #include "handle-storage.h"
 #include "vdpau-trace.h"
@@ -21,9 +24,10 @@ static char const *
 implemetation_description_string = "software (cairo/libswscale) backend for VDPAU";
 
 typedef struct {
-    HandleType type;
-    Display *display;
-    int screen;
+    HandleType  type;
+    Display    *display;
+    int         screen;
+    GLXContext  glc;
 } VdpDeviceData;
 
 typedef struct {
@@ -999,9 +1003,13 @@ softVdpDeviceDestroy(VdpDevice device)
 {
     traceVdpDeviceDestroy("{full}", device);
 
-    void *data = handlestorage_get(device, HANDLETYPE_DEVICE);
+    VdpDeviceData *data = handlestorage_get(device, HANDLETYPE_DEVICE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
+
+    // TODO: Is it right to reset context? App using its own will not be happy with reset.
+    glXMakeCurrent(data->display, None, NULL);
+    glXDestroyContext(data->display, data->glc);
 
     free(data);
     handlestorage_expunge(device);
@@ -1498,6 +1506,17 @@ softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
     data->type = HANDLETYPE_DEVICE;
     data->display = display;
     data->screen = screen;
+
+    // initialize OpenGL context
+    GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
+    XVisualInfo *vi;
+    vi = glXChooseVisual(display, screen, att);
+    if (NULL == vi) {
+        traceTrace("error: glXChooseVisual\n");
+        return VDP_STATUS_ERROR;
+    }
+
+    data->glc = glXCreateContext(display, vi, NULL, GL_TRUE);
 
     *device = handlestorage_add(data);
     *get_proc_address = &softVdpGetProcAddress;
