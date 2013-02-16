@@ -4,6 +4,9 @@
 #include "reverse-constant.h"
 
 void
+traceEnableTracing(int flag);
+
+void
 traceSetTarget(FILE *target);
 
 void
