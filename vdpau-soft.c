@@ -1075,7 +1075,6 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version)
         return VDP_STATUS_INVALID_VALUE;
 
-    //TODO: stop doing dumb things and use swscale instead
     VdpOutputSurfaceData *dstSurface =
         handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == dstSurface)
