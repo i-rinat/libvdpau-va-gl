@@ -1081,15 +1081,15 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version)
         return VDP_STATUS_INVALID_VALUE;
 
-    VdpOutputSurfaceData *dstSurface =
+    VdpOutputSurfaceData *dstSurfData =
         handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
-    if (NULL == dstSurface)
-        return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == dstSurfData) return VDP_STATUS_INVALID_HANDLE;
 
-    VdpOutputSurfaceData *srcSurface =
+    VdpOutputSurfaceData *srcSurfData =
         handlestorage_get(source_surface, HANDLETYPE_OUTPUT_SURFACE);
-    if (NULL == srcSurface)
-        return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == srcSurfData) return VDP_STATUS_INVALID_HANDLE;
+    if (srcSurfData->device != dstSurfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+    VdpDeviceData *deviceData = srcSurfData->device;
 
     VdpRect s_rect = {0, 0, 0, 0};
     VdpRect d_rect = {0, 0, 0, 0};
@@ -1097,17 +1097,18 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     if (source_rect) {
         s_rect = *source_rect;
     } else {
-        s_rect.x1 = cairo_image_surface_get_width(srcSurface->cairo_surface);
-        s_rect.y1 = cairo_image_surface_get_height(srcSurface->cairo_surface);
+        s_rect.x1 = cairo_image_surface_get_width(srcSurfData->cairo_surface);
+        s_rect.y1 = cairo_image_surface_get_height(srcSurfData->cairo_surface);
     }
 
     if (destination_rect) {
         d_rect = *destination_rect;
     } else {
-        d_rect.x1 = cairo_image_surface_get_width(dstSurface->cairo_surface);
-        d_rect.y1 = cairo_image_surface_get_height(dstSurface->cairo_surface);
+        d_rect.x1 = cairo_image_surface_get_width(dstSurfData->cairo_surface);
+        d_rect.y1 = cairo_image_surface_get_height(dstSurfData->cairo_surface);
     }
 
+    /*
     // select cairo operator
     int operator = -1;
     if (VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE == blend_state->blend_factor_source_color &&
@@ -1180,6 +1181,80 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
 
         cairo_surface_destroy(scaled_surface);
     }
+    */
+
+    // just to be sure
+    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+
+    const int dstWidth = cairo_image_surface_get_width(dstSurfData->cairo_surface);
+    const int dstHeight = cairo_image_surface_get_height(dstSurfData->cairo_surface);
+    const int srcWidth = cairo_image_surface_get_width(srcSurfData->cairo_surface);
+    const int srcHeight = cairo_image_surface_get_height(srcSurfData->cairo_surface);
+
+    GLuint renderbuffer_id;
+    glGenRenderbuffers(1, &renderbuffer_id);
+    glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer_id);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA, dstWidth, dstHeight);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER,
+        renderbuffer_id);
+    GLenum gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
+        fprintf(stderr, "framebuffer not ready, %d, %s\n", gl_status, gluErrorString(gl_status));
+        return VDP_STATUS_ERROR;
+    }
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, dstWidth-1, 0, dstHeight-1, -1.0f, 1.0f);
+    glEnable(GL_TEXTURE_2D);
+
+    GLuint textures[2];
+    glGenTextures(2, textures);
+
+    glBindTexture(GL_TEXTURE_2D, textures[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+        cairo_image_surface_get_width(dstSurfData->cairo_surface),
+        cairo_image_surface_get_height(dstSurfData->cairo_surface),
+        0, GL_BGRA, GL_UNSIGNED_BYTE, cairo_image_surface_get_data(dstSurfData->cairo_surface));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(0, 0);
+    glTexCoord2f(1.0f, 0.0f); glVertex2f(dstWidth-1, 0);
+    glTexCoord2f(1.0f, 1.0f); glVertex2f(dstWidth-1, dstHeight-1);
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(0, dstHeight-1);
+    glEnd();
+
+    glBindTexture(GL_TEXTURE_2D, textures[1]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+        cairo_image_surface_get_width(srcSurfData->cairo_surface),
+        cairo_image_surface_get_height(srcSurfData->cairo_surface),
+        0, GL_BGRA, GL_UNSIGNED_BYTE, cairo_image_surface_get_data(srcSurfData->cairo_surface));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
+    glScalef(1.0f/srcWidth, 1.0f/srcHeight, 1.0f);
+
+    glBegin(GL_QUADS);
+    glTexCoord2i(s_rect.x0,   s_rect.y0);   glVertex2f(d_rect.x0,   d_rect.y0);
+    glTexCoord2i(s_rect.x1-1, s_rect.y0);   glVertex2f(d_rect.x1-1, d_rect.y0);
+    glTexCoord2i(s_rect.x1-1, s_rect.y1-1); glVertex2f(d_rect.x1-1, d_rect.y1-1);
+    glTexCoord2i(s_rect.x0,   s_rect.y1-1); glVertex2f(d_rect.x0,   d_rect.y1-1);
+    glEnd();
+
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+    glReadPixels(0, 0, dstWidth, dstHeight, GL_BGRA, GL_UNSIGNED_BYTE,
+        cairo_image_surface_get_data(dstSurfData->cairo_surface));
+    cairo_surface_mark_dirty(dstSurfData->cairo_surface);
+
+    glDeleteTextures(2, textures);
+    glDeleteRenderbuffers(1, &renderbuffer_id);
 
     return VDP_STATUS_OK;
 }
