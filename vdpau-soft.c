@@ -12,6 +12,7 @@
 #include <vdpau/vdpau.h>
 #include <vdpau/vdpau_x11.h>
 #include <X11/extensions/XShm.h>
+#define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glx.h>
@@ -28,6 +29,8 @@ typedef struct {
     Display    *display;
     int         screen;
     GLXContext  glc;
+    Window      root;
+    GLuint      fbo_id;
 } VdpDeviceData;
 
 typedef struct {
@@ -1008,6 +1011,9 @@ softVdpDeviceDestroy(VdpDevice device)
         return VDP_STATUS_INVALID_HANDLE;
 
     // TODO: Is it right to reset context? App using its own will not be happy with reset.
+    glXMakeCurrent(data->display, data->root, data->glc);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDeleteFramebuffers(1, &data->fbo_id);
     glXMakeCurrent(data->display, None, NULL);
     glXDestroyContext(data->display, data->glc);
 
@@ -1516,6 +1522,18 @@ softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
     }
 
     data->glc = glXCreateContext(display, vi, NULL, GL_TRUE);
+    data->root = DefaultRootWindow(display);
+
+    glXMakeCurrent(display, data->root, data->glc);
+    glGenFramebuffers(1, &data->fbo_id);
+    glBindFramebuffer(GL_FRAMEBUFFER, data->fbo_id);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
     *device = handlestorage_add(data);
     *get_proc_address = &softVdpGetProcAddress;
