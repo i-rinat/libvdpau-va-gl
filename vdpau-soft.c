@@ -1289,64 +1289,6 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version)
         return VDP_STATUS_INVALID_VALUE;
 
-/*
-    VdpOutputSurfaceData *dstSurface =
-        handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
-    if (NULL == dstSurface)
-        return VDP_STATUS_INVALID_HANDLE;
-
-    VdpBitmapSurfaceData *srcSurface =
-        handlestorage_get(source_surface, HANDLETYPE_BITMAP_SURFACE);
-    if (NULL == srcSurface)
-        return VDP_STATUS_INVALID_HANDLE;
-
-    VdpRect s_rect = {0, 0, 0, 0};
-    VdpRect d_rect = {0, 0, 0, 0};
-
-    if (source_rect) {
-        s_rect = *source_rect;
-    } else {
-        s_rect.x1 = cairo_image_surface_get_width(srcSurface->cairo_surface);
-        s_rect.y1 = cairo_image_surface_get_height(srcSurface->cairo_surface);
-    }
-
-    if (destination_rect) {
-        d_rect = *destination_rect;
-    } else {
-        d_rect.x1 = cairo_image_surface_get_width(dstSurface->cairo_surface);
-        d_rect.y1 = cairo_image_surface_get_height(dstSurface->cairo_surface);
-    }
-
-    // select cairo operator
-    int operator = -1;
-    if (VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE == blend_state->blend_factor_source_color &&
-        VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO == blend_state->blend_factor_destination_color &&
-        VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD == blend_state->blend_equation_color)
-    {
-        operator = CAIRO_OPERATOR_SOURCE;
-    } else
-    if (VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE == blend_state->blend_factor_source_color &&
-        VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA ==
-            blend_state->blend_factor_destination_color &&
-        VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD == blend_state->blend_equation_color)
-    {
-        operator = CAIRO_OPERATOR_OVER;
-    } else {
-        fprintf(stderr, "can't select operator\n");
-        traceTrace("error: can't select operator for softVdpOutputSurfaceRenderBitmapSurface\n");
-        return VDP_STATUS_INVALID_BLEND_FACTOR;
-    }
-
-    cairo_t *cr = cairo_create(dstSurface->cairo_surface);
-    cairo_set_source_surface(cr, srcSurface->cairo_surface,
-        d_rect.x0 - s_rect.x0, d_rect.y0 - s_rect.y0);
-    cairo_rectangle(cr, d_rect.x0, d_rect.y0, d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0);
-    cairo_clip(cr);
-    cairo_set_operator(cr, operator);
-    cairo_paint(cr);
-    cairo_destroy(cr);
-*/
-
     VdpOutputSurfaceData *dstSurfData =
         handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
     VdpBitmapSurfaceData *srcSurfData =
