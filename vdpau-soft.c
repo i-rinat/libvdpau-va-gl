@@ -1067,6 +1067,103 @@ softVdpGenerateCSCMatrix(VdpProcamp *procamp, VdpColorStandard standard, VdpCSCM
 }
 
 static
+GLuint
+vdpBlendFuncToGLBlendFunc(VdpOutputSurfaceRenderBlendFactor blend_factor)
+{
+    switch (blend_factor) {
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO:
+        return GL_ZERO;
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE:
+        return GL_ONE;
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_SRC_COLOR:
+        return GL_SRC_COLOR;
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE_MINUS_SRC_COLOR:
+        return GL_ONE_MINUS_SRC_COLOR;
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_SRC_ALPHA:
+        return GL_SRC_ALPHA;
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA:
+        return GL_ONE_MINUS_SRC_ALPHA;
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_DST_ALPHA:
+        return GL_DST_ALPHA;
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE_MINUS_DST_ALPHA:
+        return GL_ONE_MINUS_DST_ALPHA;
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_DST_COLOR:
+        return GL_DST_COLOR;
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE_MINUS_DST_COLOR:
+        return GL_ONE_MINUS_DST_COLOR;
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_SRC_ALPHA_SATURATE:
+        return GL_SRC_ALPHA_SATURATE;
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_CONSTANT_COLOR:
+        return GL_CONSTANT_COLOR;
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR:
+        return GL_ONE_MINUS_CONSTANT_COLOR;
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_CONSTANT_ALPHA:
+        return GL_CONSTANT_ALPHA;
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA:
+        return GL_ONE_MINUS_CONSTANT_ALPHA;
+    default:
+        return GL_INVALID_VALUE;
+    }
+}
+
+static
+GLenum
+vdpBlendEquationToGLEquation(VdpOutputSurfaceRenderBlendEquation blend_equation)
+{
+    switch (blend_equation) {
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_SUBTRACT:
+        return GL_FUNC_SUBTRACT;
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_REVERSE_SUBTRACT:
+        return GL_FUNC_REVERSE_SUBTRACT;
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD:
+        return GL_FUNC_ADD;
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_MIN:
+        return GL_MIN;
+    case VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_MAX:
+        return GL_MAX;
+    default:
+        return GL_INVALID_VALUE;
+    }
+}
+
+struct blend_state_struct {
+    GLuint srcFuncRGB;
+    GLuint srcFuncAlpha;
+    GLuint dstFuncRGB;
+    GLuint dstFuncAlpha;
+    GLuint modeRGB;
+    GLuint modeAlpha;
+    int invalid_func;
+    int invalid_eq;
+};
+
+static
+struct blend_state_struct
+vdpBlendStateToGLBlendState(VdpOutputSurfaceRenderBlendState const *blend_state)
+{
+    struct blend_state_struct bs;
+    bs.invalid_func = 0;
+    bs.invalid_eq = 0;
+    bs.srcFuncRGB = vdpBlendFuncToGLBlendFunc(blend_state->blend_factor_source_color);
+    bs.srcFuncAlpha = vdpBlendFuncToGLBlendFunc(blend_state->blend_factor_source_alpha);
+    bs.dstFuncRGB = vdpBlendFuncToGLBlendFunc(blend_state->blend_factor_destination_color);
+    bs.dstFuncAlpha = vdpBlendFuncToGLBlendFunc(blend_state->blend_factor_destination_alpha);
+
+    if (GL_INVALID_VALUE == bs.srcFuncRGB || GL_INVALID_VALUE == bs.srcFuncAlpha ||
+        GL_INVALID_VALUE == bs.dstFuncRGB || GL_INVALID_VALUE == bs.dstFuncAlpha)
+    {
+        bs.invalid_func = 1;
+    }
+
+    bs.modeRGB = vdpBlendEquationToGLEquation(blend_state->blend_equation_color);
+    bs.modeAlpha = vdpBlendEquationToGLEquation(blend_state->blend_equation_alpha);
+    if (GL_INVALID_VALUE == bs.modeRGB || GL_INVALID_VALUE == bs.modeAlpha)
+        bs.invalid_eq = 1;
+
+    return bs;
+}
+
+static
 VdpStatus
 softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
                                         VdpRect const *destination_rect,
