@@ -247,7 +247,8 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glGenTextures(1, &data->tex_id);
     glBindTexture(GL_TEXTURE_2D, data->tex_id);
-    glTexStorage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height);
+    // reserve texture
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
 
     *surface = handlestorage_add(data);
     return VDP_STATUS_OK;
