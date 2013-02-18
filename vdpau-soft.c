@@ -1249,14 +1249,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    GLuint textures[2];
-    glGenTextures(2, textures);
-
-    glBindTexture(GL_TEXTURE_2D, textures[0]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-        cairo_image_surface_get_width(dstSurfData->cairo_surface),
-        cairo_image_surface_get_height(dstSurfData->cairo_surface),
-        0, GL_BGRA, GL_UNSIGNED_BYTE, cairo_image_surface_get_data(dstSurfData->cairo_surface));
+    glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1274,9 +1267,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     glEnd();
 
     // paint source surface over
-    glBindTexture(GL_TEXTURE_2D, textures[1]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, srcWidth, srcHeight,
-        0, GL_BGRA, GL_UNSIGNED_BYTE, cairo_image_surface_get_data(srcSurfData->cairo_surface));
+    glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1302,7 +1293,6 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
         cairo_image_surface_get_data(dstSurfData->cairo_surface));
     cairo_surface_mark_dirty(dstSurfData->cairo_surface);
 
-    glDeleteTextures(2, textures);
     glDeleteRenderbuffers(1, &renderbuffer_id);
 
     return VDP_STATUS_OK;
