@@ -1289,6 +1289,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version)
         return VDP_STATUS_INVALID_VALUE;
 
+/*
     VdpOutputSurfaceData *dstSurface =
         handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == dstSurface)
@@ -1344,6 +1345,84 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     cairo_set_operator(cr, operator);
     cairo_paint(cr);
     cairo_destroy(cr);
+*/
+
+    VdpOutputSurfaceData *dstSurfData =
+        handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
+    VdpBitmapSurfaceData *srcSurfData =
+        handlestorage_get(source_surface, HANDLETYPE_BITMAP_SURFACE);
+    if (NULL == dstSurfData || NULL == srcSurfData)
+        return VDP_STATUS_INVALID_HANDLE;
+    if (srcSurfData->device != dstSurfData->device)
+        return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+    VdpDeviceData *deviceData = srcSurfData->device;
+
+    const int srcWidth = cairo_image_surface_get_width(srcSurfData->cairo_surface);
+    const int srcHeight = cairo_image_surface_get_height(srcSurfData->cairo_surface);
+    const int dstWidth = dstSurfData->width;
+    const int dstHeight = dstSurfData->height;
+
+    VdpRect s_rect = {0, 0, srcWidth, srcHeight};
+    VdpRect d_rect = {0, 0, dstWidth, srcHeight};
+    if (source_rect) s_rect = *source_rect;
+    if (destination_rect) d_rect = *destination_rect;
+
+    // select blend functions
+    struct blend_state_struct bs = vdpBlendStateToGLBlendState(blend_state);
+    if (bs.invalid_func) return VDP_STATUS_INVALID_BLEND_FACTOR;
+    if (bs.invalid_eq) return VDP_STATUS_INVALID_BLEND_EQUATION;
+
+    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+        dstSurfData->tex_id, 0);
+    GLenum gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
+        fprintf(stderr, "framebuffer not ready, %d, %s\n", gl_status, gluErrorString(gl_status));
+        return VDP_STATUS_ERROR;
+    }
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, dstWidth-1, 0, dstHeight-1, -1.0f, 1.0f);
+    glViewport(0, 0, dstWidth, dstHeight);
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    // paint source surface over
+    GLuint src_tex_id;
+    glGenTextures(1, &src_tex_id);
+    glBindTexture(GL_TEXTURE_2D, src_tex_id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    cairo_surface_flush(srcSurfData->cairo_surface);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, srcWidth, srcHeight, 0,
+        GL_BGRA, GL_UNSIGNED_BYTE, cairo_image_surface_get_data(srcSurfData->cairo_surface));
+
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
+    glScalef(1.0f/srcWidth, 1.0f/srcHeight, 1.0f);
+
+    // blend
+    glBlendFuncSeparate(bs.srcFuncRGB, bs.dstFuncRGB, bs.srcFuncAlpha, bs.dstFuncAlpha);
+    glBlendEquationSeparate(bs.modeRGB, bs.modeAlpha);
+
+    glBegin(GL_QUADS);
+    glTexCoord2i(s_rect.x0,   s_rect.y0);   glVertex2f(d_rect.x0,   d_rect.y0);
+    glTexCoord2i(s_rect.x1-1, s_rect.y0);   glVertex2f(d_rect.x1-1, d_rect.y0);
+    glTexCoord2i(s_rect.x1-1, s_rect.y1-1); glVertex2f(d_rect.x1-1, d_rect.y1-1);
+    glTexCoord2i(s_rect.x0,   s_rect.y1-1); glVertex2f(d_rect.x0,   d_rect.y1-1);
+    glEnd();
+
+    glDeleteTextures(1, &src_tex_id);
+
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+    glReadPixels(0, 0, dstWidth, dstHeight, GL_BGRA, GL_UNSIGNED_BYTE,
+        cairo_image_surface_get_data(dstSurfData->cairo_surface));
+    cairo_surface_mark_dirty(dstSurfData->cairo_surface);
 
     return VDP_STATUS_OK;
 }
