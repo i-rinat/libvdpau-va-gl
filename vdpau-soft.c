@@ -535,8 +535,8 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     // copy image from cairo surface to texture
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glBindTexture(GL_TEXTURE_2D, dest_surface->tex_id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dest_surface->width, dest_surface->height, 0,
-        GL_BGRA, GL_UNSIGNED_BYTE, cairo_image_surface_get_data(dest_surface->cairo_surface));
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, dest_surface->width, dest_surface->height,
+        GL_RGBA, GL_UNSIGNED_BYTE, cairo_image_surface_get_data(dest_surface->cairo_surface));
 
     return VDP_STATUS_OK;
 }
