@@ -1230,15 +1230,9 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     if (bs.invalid_func) return VDP_STATUS_INVALID_BLEND_FACTOR;
     if (bs.invalid_eq) return VDP_STATUS_INVALID_BLEND_EQUATION;
 
-    // TODO: Do I need to make context current?
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
-
-    GLuint renderbuffer_id;
-    glGenRenderbuffers(1, &renderbuffer_id);
-    glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer_id);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA, dstWidth, dstHeight);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER,
-        renderbuffer_id);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+        dstSurfData->tex_id, 0);
     GLenum gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
         fprintf(stderr, "framebuffer not ready, %d, %s\n", gl_status, gluErrorString(gl_status));
@@ -1253,19 +1247,6 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-
-    glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
-
-    // overwrite all with dst surface
-    glBlendFunc(GL_ONE, GL_ZERO);
-    glBlendEquation(GL_FUNC_ADD);
-
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f); glVertex2f(0, 0);
-    glTexCoord2f(1.0f, 0.0f); glVertex2f(dstWidth-1, 0);
-    glTexCoord2f(1.0f, 1.0f); glVertex2f(dstWidth-1, dstHeight-1);
-    glTexCoord2f(0.0f, 1.0f); glVertex2f(0, dstHeight-1);
-    glEnd();
 
     // paint source surface over
     glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
@@ -1289,8 +1270,6 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     glReadPixels(0, 0, dstWidth, dstHeight, GL_BGRA, GL_UNSIGNED_BYTE,
         cairo_image_surface_get_data(dstSurfData->cairo_surface));
     cairo_surface_mark_dirty(dstSurfData->cairo_surface);
-
-    glDeleteRenderbuffers(1, &renderbuffer_id);
 
     return VDP_STATUS_OK;
 }
