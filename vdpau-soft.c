@@ -55,10 +55,11 @@ typedef struct {
 } VdpVideoMixerData;
 
 typedef struct {
-    HandleType type;
-    VdpDeviceData *device;
-    VdpRGBAFormat rgba_format;
-    cairo_surface_t *cairo_surface;
+    HandleType          type;
+    VdpDeviceData      *device;
+    VdpRGBAFormat       rgba_format;
+    cairo_surface_t    *cairo_surface;
+    GLuint              tex_id;
 } VdpOutputSurfaceData;
 
 typedef struct {
@@ -239,6 +240,11 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
         return VDP_STATUS_RESOURCES;
     }
 
+    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glGenTextures(1, &data->tex_id);
+    glBindTexture(GL_TEXTURE_2D, data->tex_id);
+    glTexStorage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height);
+
     *surface = handlestorage_add(data);
     return VDP_STATUS_OK;
 }
@@ -252,6 +258,10 @@ softVdpOutputSurfaceDestroy(VdpOutputSurface surface)
     VdpOutputSurfaceData *data = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
+    VdpDeviceData *deviceData = data->device;
+
+    glXMakeCurrent(data->device->display, deviceData->root, deviceData->glc);
+    glDeleteTextures(1, &data->tex_id);
 
     cairo_surface_destroy(data->cairo_surface);
     free(data);
