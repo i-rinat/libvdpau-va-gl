@@ -1172,7 +1172,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
                                         VdpOutputSurfaceRenderBlendState const *blend_state,
                                         uint32_t flags)
 {
-    traceVdpOutputSurfaceRenderOutputSurface("{dirty impl}", destination_surface, destination_rect,
+    traceVdpOutputSurfaceRenderOutputSurface("{full}", destination_surface, destination_rect,
         source_surface, source_rect, colors, blend_state, flags);
 
     if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version)
@@ -1188,105 +1188,23 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     if (srcSurfData->device != dstSurfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     VdpDeviceData *deviceData = srcSurfData->device;
 
-    VdpRect s_rect = {0, 0, 0, 0};
-    VdpRect d_rect = {0, 0, 0, 0};
-
-    if (source_rect) {
-        s_rect = *source_rect;
-    } else {
-        s_rect.x1 = cairo_image_surface_get_width(srcSurfData->cairo_surface);
-        s_rect.y1 = cairo_image_surface_get_height(srcSurfData->cairo_surface);
-    }
-
-    if (destination_rect) {
-        d_rect = *destination_rect;
-    } else {
-        d_rect.x1 = cairo_image_surface_get_width(dstSurfData->cairo_surface);
-        d_rect.y1 = cairo_image_surface_get_height(dstSurfData->cairo_surface);
-    }
-
-    /*
-    // select cairo operator
-    int operator = -1;
-    if (VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE == blend_state->blend_factor_source_color &&
-        VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO == blend_state->blend_factor_destination_color &&
-        VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD == blend_state->blend_equation_color)
-    {
-        operator = CAIRO_OPERATOR_SOURCE;
-    } else
-    if (VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE == blend_state->blend_factor_source_color &&
-        VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA ==
-            blend_state->blend_factor_destination_color &&
-        VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD == blend_state->blend_equation_color)
-    {
-        operator = CAIRO_OPERATOR_OVER;
-    } else {
-        fprintf(stderr, "can't select operator\n");
-        traceTrace("error: can't select operator for softVdpOutputSurfaceRenderOutputSurface\n");
-        return VDP_STATUS_INVALID_BLEND_FACTOR;
-    }
-
-    if (s_rect.x1 - s_rect.x0 == d_rect.x1 - d_rect.x0 &&
-        s_rect.y1 - s_rect.y0 == d_rect.y1 - d_rect.y0)
-    {
-        // trivial case -- destination and source rectangles have the same width and height
-        cairo_t *cr = cairo_create(dstSurface->cairo_surface);
-        cairo_set_source_surface(cr, srcSurface->cairo_surface,
-            d_rect.x0 - s_rect.x0, d_rect.y0 - s_rect.y0);
-        cairo_rectangle(cr, d_rect.x0, d_rect.y0, d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0);
-        cairo_clip(cr);
-        cairo_set_operator(cr, operator);
-        cairo_paint(cr);
-        cairo_destroy(cr);
-    } else {
-        // Scaling needed. First, scale image.
-        cairo_surface_t *scaled_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
-                                            d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0);
-        cairo_surface_flush(scaled_surface);
-        struct SwsContext *sws_ctx =
-            sws_getContext(s_rect.x1 - s_rect.x0, s_rect.y1 - s_rect.y0, PIX_FMT_BGRA,
-                d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0,
-                PIX_FMT_BGRA, SWS_FAST_BILINEAR, NULL, NULL, NULL);
-        cairo_surface_flush(srcSurface->cairo_surface);
-        uint8_t const * const src_planes[] =
-            {cairo_image_surface_get_data(srcSurface->cairo_surface), NULL, NULL, NULL };
-        int src_strides[] =
-            {cairo_image_surface_get_stride(srcSurface->cairo_surface), 0, 0, 0};
-        uint8_t *dst_planes[] = {cairo_image_surface_get_data(scaled_surface), NULL, NULL, NULL};
-        int dst_strides[] = {cairo_image_surface_get_stride(scaled_surface), 0, 0, 0};
-        int lines_scaled = sws_scale(sws_ctx,
-                            src_planes, src_strides, 0,  s_rect.y1 - s_rect.y0,
-                            dst_planes, dst_strides);
-        cairo_surface_mark_dirty(scaled_surface);
-        sws_freeContext(sws_ctx);
-
-        if (lines_scaled != d_rect.y1 - d_rect.y0) {
-            fprintf(stderr, "error: can't scale, lines_scaled=%d, d_rect.height()=%d\n",
-                lines_scaled, d_rect.y1 - d_rect.y0);
-            cairo_surface_destroy(scaled_surface);
-            return VDP_STATUS_ERROR;
-        }
-
-        // then do drawing
-        cairo_t *cr = cairo_create(dstSurface->cairo_surface);
-        cairo_set_source_surface(cr, scaled_surface, 0, 0);
-        cairo_rectangle(cr, d_rect.x0, d_rect.y0, d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0);
-        cairo_clip(cr);
-        cairo_set_operator(cr, operator);
-        cairo_paint(cr);
-        cairo_destroy(cr);
-
-        cairo_surface_destroy(scaled_surface);
-    }
-    */
-
-    // just to be sure
-    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
-
     const int dstWidth = cairo_image_surface_get_width(dstSurfData->cairo_surface);
     const int dstHeight = cairo_image_surface_get_height(dstSurfData->cairo_surface);
     const int srcWidth = cairo_image_surface_get_width(srcSurfData->cairo_surface);
     const int srcHeight = cairo_image_surface_get_height(srcSurfData->cairo_surface);
+    VdpRect s_rect = {0, 0, srcWidth, srcHeight};
+    VdpRect d_rect = {0, 0, dstWidth, dstHeight};
+
+    if (source_rect) s_rect = *source_rect;
+    if (destination_rect) d_rect = *destination_rect;
+
+    // select blend functions
+    struct blend_state_struct bs = vdpBlendStateToGLBlendState(blend_state);
+    if (bs.invalid_func) return VDP_STATUS_INVALID_BLEND_FACTOR;
+    if (bs.invalid_eq) return VDP_STATUS_INVALID_BLEND_EQUATION;
+
+    // TODO: Do I need to make context current?
+    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
 
     GLuint renderbuffer_id;
     glGenRenderbuffers(1, &renderbuffer_id);
@@ -1302,7 +1220,12 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0, dstWidth-1, 0, dstHeight-1, -1.0f, 1.0f);
+    glViewport(0, 0, dstWidth, dstHeight);
     glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
     GLuint textures[2];
     glGenTextures(2, textures);
@@ -1314,8 +1237,12 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
         0, GL_BGRA, GL_UNSIGNED_BYTE, cairo_image_surface_get_data(dstSurfData->cairo_surface));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // overwrite all with dst surface
+    glBlendFunc(GL_ONE, GL_ZERO);
+    glBlendEquation(GL_FUNC_ADD);
 
     glBegin(GL_QUADS);
     glTexCoord2f(0.0f, 0.0f); glVertex2f(0, 0);
@@ -1324,19 +1251,22 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     glTexCoord2f(0.0f, 1.0f); glVertex2f(0, dstHeight-1);
     glEnd();
 
+    // paint source surface over
     glBindTexture(GL_TEXTURE_2D, textures[1]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-        cairo_image_surface_get_width(srcSurfData->cairo_surface),
-        cairo_image_surface_get_height(srcSurfData->cairo_surface),
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, srcWidth, srcHeight,
         0, GL_BGRA, GL_UNSIGNED_BYTE, cairo_image_surface_get_data(srcSurfData->cairo_surface));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glMatrixMode(GL_TEXTURE);
     glLoadIdentity();
     glScalef(1.0f/srcWidth, 1.0f/srcHeight, 1.0f);
+
+    // blend
+    glBlendFuncSeparate(bs.srcFuncRGB, bs.dstFuncRGB, bs.srcFuncAlpha, bs.dstFuncAlpha);
+    glBlendEquationSeparate(bs.modeRGB, bs.modeAlpha);
 
     glBegin(GL_QUADS);
     glTexCoord2i(s_rect.x0,   s_rect.y0);   glVertex2f(d_rect.x0,   d_rect.y0);
