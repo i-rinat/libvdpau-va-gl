@@ -503,6 +503,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == dest_surface)
         return VDP_STATUS_INVALID_HANDLE;
+    VdpDeviceData *deviceData = source_surface->device;
 
     struct SwsContext *sws_ctx =
         sws_getContext(source_surface->width, source_surface->height, PIX_FMT_YUV420P,
@@ -529,6 +530,13 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         fprintf(stderr, "scaling failed\n");
         return VDP_STATUS_ERROR;
     }
+
+    // copy image from cairo surface to texture
+    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glBindTexture(GL_TEXTURE_2D, dest_surface->tex_id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dest_surface->width, dest_surface->height, 0,
+        GL_BGRA, GL_UNSIGNED_BYTE, cairo_image_surface_get_data(dest_surface->cairo_surface));
+
     return VDP_STATUS_OK;
 }
 
