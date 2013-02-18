@@ -60,6 +60,8 @@ typedef struct {
     VdpRGBAFormat       rgba_format;
     cairo_surface_t    *cairo_surface;
     GLuint              tex_id;
+    uint32_t            width;
+    uint32_t            height;
 } VdpOutputSurfaceData;
 
 typedef struct {
@@ -231,6 +233,8 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
         return VDP_STATUS_RESOURCES;
 
     data->type = HANDLETYPE_OUTPUT_SURFACE;
+    data->width = width;
+    data->height = height;
     data->device = deviceData;
     data->rgba_format = rgba_format;
     data->cairo_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
