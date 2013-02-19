@@ -89,6 +89,16 @@ typedef struct {
     uint32_t        height;
 } VdpBitmapSurfaceData;
 
+typedef struct {
+    HandleType          type;
+    VdpDeviceData      *device;
+    VdpDecoderProfile   profile;
+    uint32_t            width;
+    uint32_t            height;
+    uint32_t            max_references;
+    VAConfigID          config_id;
+} VdpDecoderData;
+
 // ====================
 static
 uint32_t
@@ -134,16 +144,61 @@ VdpStatus
 softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width, uint32_t height,
                      uint32_t max_references, VdpDecoder *decoder)
 {
-    traceVdpDecoderCreate("{zilch}", device, profile, width, height, max_references, decoder);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    traceVdpDecoderCreate("{WIP}", device, profile, width, height, max_references, decoder);
+
+    VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
+    if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
+    if (!deviceData->va_available) return VDP_STATUS_INVALID_DECODER_PROFILE;
+    VADisplay va_dpy = deviceData->va_dpy;
+
+    VdpDecoderData *data = calloc(1, sizeof(VdpDecoderData));
+    if (NULL == data) return VDP_STATUS_RESOURCES;
+
+    data->type = HANDLETYPE_DECODER;
+    data->device = deviceData;
+    data->profile = profile;
+    data->width = width;
+    data->height = height;
+    data->max_references = max_references;
+
+    VAProfile va_profile;
+    switch (profile) {
+    case VDP_DECODER_PROFILE_H264_MAIN:
+        va_profile = VAProfileH264Main;
+        break;
+    default:
+        fprintf(stderr, "not implemented decoder\n");
+        free(data);
+        return VDP_STATUS_INVALID_DECODER_PROFILE;
+    }
+
+    VAStatus status;
+    status = vaCreateConfig(va_dpy, va_profile, VAEntrypointVLD, NULL, 0, &data->config_id);
+    if (VA_STATUS_SUCCESS != status) {
+        free(data);
+        return VDP_STATUS_ERROR;
+    }
+
+    *decoder = handlestorage_add(data);
+
+    fprintf(stderr, "debug: decoder created\n");
+    return VDP_STATUS_OK;
 }
 
 static
 VdpStatus
 softVdpDecoderDestroy(VdpDecoder decoder)
 {
-    traceVdpDecoderDestroy("{zilch}", decoder);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    traceVdpDecoderDestroy("{full}", decoder);
+
+    VdpDecoderData *data = handlestorage_get(decoder, HANDLETYPE_DECODER);
+    if (data->device->va_available)
+        vaDestroyConfig(data->device->va_dpy, data->config_id);
+
+    handlestorage_expunge(decoder);
+    free(data);
+
+    return VDP_STATUS_OK;
 }
 
 static
