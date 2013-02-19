@@ -76,11 +76,12 @@ typedef struct {
 } VdpVideoSurfaceData;
 
 typedef struct {
-    HandleType          type;
-    VdpDeviceData      *device;
-    VdpRGBAFormat       rgba_format;
-    cairo_surface_t     *cairo_surface;
-    GLuint              tex_id;
+    HandleType      type;
+    VdpDeviceData  *device;
+    VdpRGBAFormat   rgba_format;
+    GLuint          tex_id;
+    uint32_t        width;
+    uint32_t        height;
 } VdpBitmapSurfaceData;
 
 // ====================
@@ -955,27 +956,20 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
         surface);
 
     VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
-    if (NULL == deviceData)
-        return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
 
     VdpBitmapSurfaceData *data = (VdpBitmapSurfaceData *)calloc(1, sizeof(VdpBitmapSurfaceData));
-    if (NULL == data)
-        return VDP_STATUS_RESOURCES;
+    if (NULL == data) return VDP_STATUS_RESOURCES;
 
     //TODO: other format handling
     if (rgba_format != VDP_RGBA_FORMAT_B8G8R8A8)
         return VDP_STATUS_INVALID_RGBA_FORMAT;
 
-    data->cairo_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
-    if (CAIRO_STATUS_SUCCESS != cairo_surface_status(data->cairo_surface)) {
-        cairo_surface_destroy(data->cairo_surface);
-        free(data);
-        return VDP_STATUS_RESOURCES;
-    }
-
     data->type = HANDLETYPE_BITMAP_SURFACE;
     data->device = deviceData;
     data->rgba_format = rgba_format;
+    data->width = width;
+    data->height = height;
 
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glGenTextures(1, &data->tex_id);
@@ -1004,7 +998,6 @@ softVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glDeleteTextures(1, &data->tex_id);
 
-    cairo_surface_destroy(data->cairo_surface);
     free(data);
     handlestorage_expunge(surface);
     return VDP_STATUS_OK;
@@ -1028,47 +1021,23 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
     traceVdpBitmapSurfacePutBitsNative("{full}", surface, source_data, source_pitches,
         destination_rect);
 
-    VdpBitmapSurfaceData *surfaceData = handlestorage_get(surface, HANDLETYPE_BITMAP_SURFACE);
-    if (NULL == surfaceData)
+    VdpBitmapSurfaceData *dstSurfData = handlestorage_get(surface, HANDLETYPE_BITMAP_SURFACE);
+    if (NULL == dstSurfData)
         return VDP_STATUS_INVALID_HANDLE;
-    VdpDeviceData *deviceData = surfaceData->device;
+    VdpDeviceData *deviceData = dstSurfData->device;
 
     //TODO: fix handling other formats
-    if (VDP_RGBA_FORMAT_B8G8R8A8 != surfaceData->rgba_format)
+    if (VDP_RGBA_FORMAT_B8G8R8A8 != dstSurfData->rgba_format)
         return VDP_STATUS_INVALID_RGBA_FORMAT;
 
-    VdpRect rect = {0, 0, 0, 0};
-    if (destination_rect) {
-        rect = *destination_rect;
-    } else {
-        rect.x1 = cairo_image_surface_get_width(surfaceData->cairo_surface);
-        rect.y1 = cairo_image_surface_get_height(surfaceData->cairo_surface);
-    }
-
-    cairo_surface_t *src_surf =
-        cairo_image_surface_create_for_data((unsigned char *)(source_data[0]),
-        CAIRO_FORMAT_ARGB32, rect.x1-rect.x0, rect.y1-rect.y0, source_pitches[0]);
-    if (CAIRO_STATUS_INVALID_STRIDE == cairo_surface_status(src_surf)) {
-        printf("CAIRO_STATUS_INVALID_STRIDE\n");
-        cairo_surface_destroy(src_surf);
-        return VDP_STATUS_INVALID_VALUE;
-    }
-
-    cairo_t *cr = cairo_create(surfaceData->cairo_surface);
-    cairo_set_source_surface(cr, src_surf, rect.x0, rect.y0);
-    cairo_rectangle(cr, rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0);
-    cairo_clip(cr);
-    cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
-    cairo_paint(cr);
-    cairo_destroy(cr);
-
-    cairo_surface_destroy(src_surf);
+    VdpRect d_rect = {0, 0, dstSurfData->width, dstSurfData->height};
+    if (destination_rect) d_rect = *destination_rect;
 
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0]/4);
-    glBindTexture(GL_TEXTURE_2D, surfaceData->tex_id);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0,
-        GL_BGRA, GL_UNSIGNED_BYTE, source_data[0]);
+    glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, d_rect.x0, d_rect.y0,
+        d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0, GL_BGRA, GL_UNSIGNED_BYTE, source_data[0]);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 
     return VDP_STATUS_OK;
@@ -1342,8 +1311,8 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
         return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     VdpDeviceData *deviceData = srcSurfData->device;
 
-    const int srcWidth = cairo_image_surface_get_width(srcSurfData->cairo_surface);
-    const int srcHeight = cairo_image_surface_get_height(srcSurfData->cairo_surface);
+    const int srcWidth = srcSurfData->width;
+    const int srcHeight = srcSurfData->height;
     const int dstWidth = dstSurfData->width;
     const int dstHeight = dstSurfData->height;
 
