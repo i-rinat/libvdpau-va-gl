@@ -1,4 +1,5 @@
 #define _XOPEN_SOURCE
+#define GL_GLEXT_PROTOTYPES
 #include <assert.h>
 #include <glib.h>
 #include <libswscale/swscale.h>
@@ -8,10 +9,11 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <va/va.h>
+#include <va/va_glx.h>
 #include <vdpau/vdpau.h>
 #include <vdpau/vdpau_x11.h>
 #include <X11/extensions/XShm.h>
-#define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glx.h>
@@ -30,6 +32,10 @@ typedef struct {
     GLXContext  glc;
     Window      root;
     GLuint      fbo_id;
+    VADisplay   va_dpy;
+    int         va_available;
+    int         va_version_major;
+    int         va_version_minor;
 } VdpDeviceData;
 
 typedef struct {
@@ -994,6 +1000,10 @@ softVdpDeviceDestroy(VdpDevice device)
     glXMakeCurrent(data->display, None, NULL);
     glXDestroyContext(data->display, data->glc);
 
+    // cleaup libva
+    if (data->va_available)
+        vaTerminate(data->va_dpy);
+
     free(data);
     handlestorage_expunge(device);
     return VDP_STATUS_OK;
@@ -1576,6 +1586,21 @@ softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+
+    // initialize VAAPI
+    data->va_dpy = vaGetDisplayGLX(display);
+    data->va_available = 1;
+
+    VAStatus status = vaInitialize(data->va_dpy, &data->va_version_major, &data->va_version_minor);
+    if (VA_STATUS_SUCCESS == status) {
+        data->va_available = TRUE;
+        traceTrace("libva (version %d.%d) library initialized\n",
+            data->va_version_major, data->va_version_minor);
+    } else {
+        data->va_available = FALSE;
+        traceTrace("warning: failed to initialize libva. "
+            "No video decode acceleration available.\n");
+    }
 
     *device = handlestorage_add(data);
     *get_proc_address = &softVdpGetProcAddress;
