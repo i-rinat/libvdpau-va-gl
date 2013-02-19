@@ -1377,16 +1377,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     glLoadIdentity();
 
     // paint source surface over
-    GLuint src_tex_id;
-    glGenTextures(1, &src_tex_id);
-    glBindTexture(GL_TEXTURE_2D, src_tex_id);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    cairo_surface_flush(srcSurfData->cairo_surface);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, srcWidth, srcHeight, 0,
-        GL_BGRA, GL_UNSIGNED_BYTE, cairo_image_surface_get_data(srcSurfData->cairo_surface));
+    glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
 
     glMatrixMode(GL_TEXTURE);
     glLoadIdentity();
@@ -1402,8 +1393,6 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     glTexCoord2i(s_rect.x1-1, s_rect.y1-1); glVertex2f(d_rect.x1-1, d_rect.y1-1);
     glTexCoord2i(s_rect.x0,   s_rect.y1-1); glVertex2f(d_rect.x0,   d_rect.y1-1);
     glEnd();
-
-    glDeleteTextures(1, &src_tex_id);
 
     return VDP_STATUS_OK;
 }
