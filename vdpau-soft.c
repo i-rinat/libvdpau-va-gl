@@ -1300,11 +1300,6 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     glTexCoord2i(s_rect.x0,   s_rect.y1-1); glVertex2f(d_rect.x0,   d_rect.y1-1);
     glEnd();
 
-    glReadBuffer(GL_COLOR_ATTACHMENT0);
-    glReadPixels(0, 0, dstWidth, dstHeight, GL_BGRA, GL_UNSIGNED_BYTE,
-        cairo_image_surface_get_data(dstSurfData->cairo_surface));
-    cairo_surface_mark_dirty(dstSurfData->cairo_surface);
-
     return VDP_STATUS_OK;
 }
 
@@ -1395,11 +1390,6 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     glEnd();
 
     glDeleteTextures(1, &src_tex_id);
-
-    glReadBuffer(GL_COLOR_ATTACHMENT0);
-    glReadPixels(0, 0, dstWidth, dstHeight, GL_BGRA, GL_UNSIGNED_BYTE,
-        cairo_image_surface_get_data(dstSurfData->cairo_surface));
-    cairo_surface_mark_dirty(dstSurfData->cairo_surface);
 
     return VDP_STATUS_OK;
 }
