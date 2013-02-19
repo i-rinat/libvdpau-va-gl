@@ -1031,6 +1031,7 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
     VdpBitmapSurfaceData *surfaceData = handlestorage_get(surface, HANDLETYPE_BITMAP_SURFACE);
     if (NULL == surfaceData)
         return VDP_STATUS_INVALID_HANDLE;
+    VdpDeviceData *deviceData = surfaceData->device;
 
     //TODO: fix handling other formats
     if (VDP_RGBA_FORMAT_B8G8R8A8 != surfaceData->rgba_format)
@@ -1062,6 +1063,14 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
     cairo_destroy(cr);
 
     cairo_surface_destroy(src_surf);
+
+    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0]/4);
+    glBindTexture(GL_TEXTURE_2D, surfaceData->tex_id);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0,
+        GL_BGRA, GL_UNSIGNED_BYTE, source_data[0]);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+
     return VDP_STATUS_OK;
 }
 
