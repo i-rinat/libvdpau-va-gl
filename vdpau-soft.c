@@ -58,7 +58,6 @@ typedef struct {
     HandleType          type;
     VdpDeviceData      *device;
     VdpRGBAFormat       rgba_format;
-    cairo_surface_t    *cairo_surface;
     GLuint              tex_id;
     uint32_t            width;
     uint32_t            height;
@@ -237,12 +236,6 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     data->height = height;
     data->device = deviceData;
     data->rgba_format = rgba_format;
-    data->cairo_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
-    if (CAIRO_STATUS_SUCCESS != cairo_surface_status(data->cairo_surface)) {
-        cairo_surface_destroy(data->cairo_surface);
-        free(data);
-        return VDP_STATUS_RESOURCES;
-    }
 
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glGenTextures(1, &data->tex_id);
@@ -272,7 +265,6 @@ softVdpOutputSurfaceDestroy(VdpOutputSurface surface)
     glXMakeCurrent(data->device->display, deviceData->root, deviceData->glc);
     glDeleteTextures(1, &data->tex_id);
 
-    cairo_surface_destroy(data->cairo_surface);
     free(data);
     handlestorage_expunge(surface);
     return VDP_STATUS_OK;
@@ -510,28 +502,26 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = source_surface->device;
 
+    uint8_t *img_buf = malloc(dest_surface->width * dest_surface->height * 4);
+    if (NULL == img_buf) return VDP_STATUS_RESOURCES;
+
     struct SwsContext *sws_ctx =
         sws_getContext(source_surface->width, source_surface->height, PIX_FMT_YUV420P,
-            cairo_image_surface_get_width(dest_surface->cairo_surface),
-            cairo_image_surface_get_height(dest_surface->cairo_surface),
+            dest_surface->width, dest_surface->height,
             PIX_FMT_RGBA, SWS_POINT, NULL, NULL, NULL);
 
-    cairo_surface_flush(dest_surface->cairo_surface);
     uint8_t const * const src_planes[] =
         { source_surface->y_plane, source_surface->v_plane, source_surface->u_plane, NULL };
     int src_strides[] =
         {source_surface->stride, source_surface->stride/2, source_surface->stride/2, 0};
-    uint8_t *dst_planes[] = {NULL, NULL, NULL, NULL};
-    dst_planes[0] = cairo_image_surface_get_data(dest_surface->cairo_surface);
-    int dst_strides[] = {0, 0, 0, 0};
-    dst_strides[0] = cairo_image_surface_get_stride(dest_surface->cairo_surface);
+    uint8_t *dst_planes[] = {img_buf, NULL, NULL, NULL};
+    int dst_strides[] = {dest_surface->width * 4, 0, 0, 0};
 
     int res = sws_scale(sws_ctx,
                         src_planes, src_strides, 0, source_surface->height,
                         dst_planes, dst_strides);
-    cairo_surface_mark_dirty(dest_surface->cairo_surface);
     sws_freeContext(sws_ctx);
-    if (res != cairo_image_surface_get_height(dest_surface->cairo_surface)) {
+    if (res != dest_surface->height) {
         fprintf(stderr, "scaling failed\n");
         return VDP_STATUS_ERROR;
     }
@@ -540,7 +530,8 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glBindTexture(GL_TEXTURE_2D, dest_surface->tex_id);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, dest_surface->width, dest_surface->height,
-        GL_RGBA, GL_UNSIGNED_BYTE, cairo_image_surface_get_data(dest_surface->cairo_surface));
+        GL_RGBA, GL_UNSIGNED_BYTE, img_buf);
+    free(img_buf);
 
     return VDP_STATUS_OK;
 }
@@ -1248,10 +1239,10 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     if (srcSurfData->device != dstSurfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     VdpDeviceData *deviceData = srcSurfData->device;
 
-    const int dstWidth = cairo_image_surface_get_width(dstSurfData->cairo_surface);
-    const int dstHeight = cairo_image_surface_get_height(dstSurfData->cairo_surface);
-    const int srcWidth = cairo_image_surface_get_width(srcSurfData->cairo_surface);
-    const int srcHeight = cairo_image_surface_get_height(srcSurfData->cairo_surface);
+    const int dstWidth = dstSurfData->width;
+    const int dstHeight = dstSurfData->height;
+    const int srcWidth = srcSurfData->width;
+    const int srcHeight = srcSurfData->height;
     VdpRect s_rect = {0, 0, srcWidth, srcHeight};
     VdpRect d_rect = {0, 0, dstWidth, dstHeight};
 
