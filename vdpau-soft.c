@@ -76,10 +76,11 @@ typedef struct {
 } VdpVideoSurfaceData;
 
 typedef struct {
-    HandleType type;
-    VdpDeviceData *device;
-    VdpRGBAFormat rgba_format;
-    cairo_surface_t *cairo_surface;
+    HandleType          type;
+    VdpDeviceData      *device;
+    VdpRGBAFormat       rgba_format;
+    cairo_surface_t     *cairo_surface;
+    GLuint              tex_id;
 } VdpBitmapSurfaceData;
 
 // ====================
@@ -976,6 +977,10 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     data->device = deviceData;
     data->rgba_format = rgba_format;
 
+    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glGenTextures(1, &data->tex_id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+
     *surface = handlestorage_add(data);
     return VDP_STATUS_OK;
 }
@@ -989,6 +994,10 @@ softVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
     VdpBitmapSurfaceData *data = handlestorage_get(surface, HANDLETYPE_BITMAP_SURFACE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
+    VdpDeviceData *deviceData = data->device;
+
+    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glDeleteTextures(1, &data->tex_id);
 
     cairo_surface_destroy(data->cairo_surface);
     free(data);
