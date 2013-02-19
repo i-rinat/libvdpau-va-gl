@@ -1,6 +1,5 @@
 #define _XOPEN_SOURCE
 #include <assert.h>
-#include <cairo.h>
 #include <glib.h>
 #include <libswscale/swscale.h>
 #include <stdio.h>
@@ -22,7 +21,7 @@
 
 
 static char const *
-implemetation_description_string = "software (cairo/libswscale) backend for VDPAU";
+implemetation_description_string = "OpenGL/libswscale backend for VDPAU";
 
 typedef struct {
     HandleType  type;
