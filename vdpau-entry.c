@@ -1,5 +1,6 @@
 #include <vdpau/vdpau.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "handle-storage.h"
 #include "vdpau-soft.h"
 #include "vdpau-trace.h"

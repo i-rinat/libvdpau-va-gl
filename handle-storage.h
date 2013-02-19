@@ -2,7 +2,6 @@
 #ifndef HANDLE_STORAGE_H_
 #define HANDLE_STORAGE_H_
 
-#include <cairo.h>
 #include <vdpau/vdpau_x11.h>
 #include <glib.h>
 #include <X11/extensions/XShm.h>
