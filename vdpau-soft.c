@@ -534,7 +534,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     glPixelStorei(GL_UNPACK_ROW_LENGTH, dst_stride);
     glBindTexture(GL_TEXTURE_2D, dest_surface->tex_id);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, dest_surface->width, dest_surface->height,
-        GL_RGBA, GL_UNSIGNED_BYTE, img_buf);
+        GL_BGRA, GL_UNSIGNED_BYTE, img_buf);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     free(img_buf);
 
