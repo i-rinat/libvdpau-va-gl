@@ -652,6 +652,7 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     traceVdpPresentationQueueDisplay("{part}", presentation_queue, surface, clip_width, clip_height,
         earliest_presentation_time);
 
+    /*
     VdpOutputSurfaceData *surfaceData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == surfaceData) return VDP_STATUS_INVALID_HANDLE;
 
@@ -714,6 +715,38 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
 
     XShmPutImage(display, drawable, DefaultGC(display, screen), presentationQueue->image,
                  0, 0, 0, 0, out_width, out_height, False );
+    */
+
+    VdpOutputSurfaceData *surfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
+    VdpPresentationQueueData *pqueueData =
+        handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
+    if (NULL == surfData || NULL == pqueueData) return VDP_STATUS_INVALID_HANDLE;
+    if (pqueueData->device != surfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+    VdpDeviceData *deviceData = surfData->device;
+
+    glXMakeCurrent(deviceData->display, pqueueData->target->drawable, deviceData->glc);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, surfData->width - 1, surfData->height - 1, 0, -1.0, 1.0);
+    glViewport(0, 0, surfData->width, surfData->height);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
+
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, surfData->tex_id);
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f); glVertex2i(0, 0);
+        glTexCoord2f(1.0f, 0.0f); glVertex2i(surfData->width - 1, 0);
+        glTexCoord2f(1.0f, 1.0f); glVertex2i(surfData->width - 1, surfData->height - 1);
+        glTexCoord2f(0.0f, 1.0f); glVertex2i(0, surfData->height - 1);
+    glEnd();
+    glXSwapBuffers(deviceData->display, pqueueData->target->drawable);
 
     return VDP_STATUS_OK;
 }
