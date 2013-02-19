@@ -503,7 +503,9 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = source_surface->device;
 
-    uint8_t *img_buf = malloc(dest_surface->width * dest_surface->height * 4);
+    const uint32_t dst_stride = dest_surface->width & 3 ? (dest_surface->width & ~3u) + 4
+                                                        : dest_surface->width;
+    uint8_t *img_buf = malloc(dst_stride * dest_surface->height * 4);
     if (NULL == img_buf) return VDP_STATUS_RESOURCES;
 
     struct SwsContext *sws_ctx =
@@ -516,7 +518,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     int src_strides[] =
         {source_surface->stride, source_surface->stride/2, source_surface->stride/2, 0};
     uint8_t *dst_planes[] = {img_buf, NULL, NULL, NULL};
-    int dst_strides[] = {dest_surface->width * 4, 0, 0, 0};
+    int dst_strides[] = {dst_stride * 4, 0, 0, 0};
 
     int res = sws_scale(sws_ctx,
                         src_planes, src_strides, 0, source_surface->height,
@@ -529,9 +531,11 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
 
     // copy converted image to texture
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, dst_stride);
     glBindTexture(GL_TEXTURE_2D, dest_surface->tex_id);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, dest_surface->width, dest_surface->height,
         GL_RGBA, GL_UNSIGNED_BYTE, img_buf);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     free(img_buf);
 
     return VDP_STATUS_OK;
