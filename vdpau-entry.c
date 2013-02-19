@@ -19,6 +19,8 @@ library_constructor(void)
 #else
     traceEnableTracing(1);
 #endif
+    if (getenv("VDPAU_FAKE_NOLOG"))
+        traceEnableTracing(0);
 }
 
 __attribute__ ((visibility("default")))
