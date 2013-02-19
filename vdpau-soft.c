@@ -1231,6 +1231,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     if (bs.invalid_eq) return VDP_STATUS_INVALID_BLEND_EQUATION;
 
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
         dstSurfData->tex_id, 0);
     GLenum gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -1315,6 +1316,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     if (bs.invalid_eq) return VDP_STATUS_INVALID_BLEND_EQUATION;
 
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
         dstSurfData->tex_id, 0);
     GLenum gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
