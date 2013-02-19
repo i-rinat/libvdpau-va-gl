@@ -492,48 +492,44 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         destination_surface, destination_rect, destination_video_rect, layer_count, layers);
 
     //TODO: handle rectangles
-    VdpVideoSurfaceData *source_surface =
+    VdpVideoSurfaceData *srcSurfData =
         handlestorage_get(video_surface_current, HANDLETYPE_VIDEO_SURFACE);
-    if (NULL == source_surface)
-        return VDP_STATUS_INVALID_HANDLE;
-
-    VdpOutputSurfaceData *dest_surface =
+    VdpOutputSurfaceData *dstSurfData =
         handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
-    if (NULL == dest_surface)
-        return VDP_STATUS_INVALID_HANDLE;
-    VdpDeviceData *deviceData = source_surface->device;
+    if (NULL == srcSurfData || NULL == dstSurfData) return VDP_STATUS_INVALID_HANDLE;
+    if (srcSurfData->device != dstSurfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+    VdpDeviceData *deviceData = srcSurfData->device;
 
-    const uint32_t dst_stride = dest_surface->width & 3 ? (dest_surface->width & ~3u) + 4
-                                                        : dest_surface->width;
-    uint8_t *img_buf = malloc(dst_stride * dest_surface->height * 4);
+    const uint32_t dstStride = dstSurfData->width & 3 ? (dstSurfData->width & ~3u) + 4
+                                                      : dstSurfData->width;
+    uint8_t *img_buf = malloc(dstStride * dstSurfData->height * 4);
     if (NULL == img_buf) return VDP_STATUS_RESOURCES;
 
     struct SwsContext *sws_ctx =
-        sws_getContext(source_surface->width, source_surface->height, PIX_FMT_YUV420P,
-            dest_surface->width, dest_surface->height,
+        sws_getContext(srcSurfData->width, srcSurfData->height, PIX_FMT_YUV420P,
+            dstSurfData->width, dstSurfData->height,
             PIX_FMT_RGBA, SWS_POINT, NULL, NULL, NULL);
 
     uint8_t const * const src_planes[] =
-        { source_surface->y_plane, source_surface->v_plane, source_surface->u_plane, NULL };
-    int src_strides[] =
-        {source_surface->stride, source_surface->stride/2, source_surface->stride/2, 0};
+        { srcSurfData->y_plane, srcSurfData->v_plane, srcSurfData->u_plane, NULL };
+    int src_strides[] = {srcSurfData->stride, srcSurfData->stride/2, srcSurfData->stride/2, 0};
     uint8_t *dst_planes[] = {img_buf, NULL, NULL, NULL};
-    int dst_strides[] = {dst_stride * 4, 0, 0, 0};
+    int dst_strides[] = {dstStride * 4, 0, 0, 0};
 
     int res = sws_scale(sws_ctx,
-                        src_planes, src_strides, 0, source_surface->height,
+                        src_planes, src_strides, 0, srcSurfData->height,
                         dst_planes, dst_strides);
     sws_freeContext(sws_ctx);
-    if (res != dest_surface->height) {
+    if (res != dstSurfData->height) {
         fprintf(stderr, "scaling failed\n");
         return VDP_STATUS_ERROR;
     }
 
     // copy converted image to texture
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, dst_stride);
-    glBindTexture(GL_TEXTURE_2D, dest_surface->tex_id);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, dest_surface->width, dest_surface->height,
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, dstStride);
+    glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, dstSurfData->width, dstSurfData->height,
         GL_BGRA, GL_UNSIGNED_BYTE, img_buf);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     free(img_buf);
