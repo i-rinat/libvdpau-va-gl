@@ -27,5 +27,7 @@ target_link_libraries (vdpau_fake
 
 set_target_properties (vdpau_fake
 	PROPERTIES
-	SOVERSION 1
+	VERSION 1
 )
+
+install (TARGETS vdpau_fake DESTINATION lib)
