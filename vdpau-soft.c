@@ -22,6 +22,9 @@
 #include "vdpau-trace.h"
 
 
+#define MAX_RENDER_TARGETS          21
+#define NUM_RENDER_TARGETS_H264     21
+
 static char const *
 implemetation_description_string = "OpenGL/libswscale backend for VDPAU";
 
@@ -97,6 +100,9 @@ typedef struct {
     uint32_t            height;
     uint32_t            max_references;
     VAConfigID          config_id;
+    VASurfaceID         render_targets[MAX_RENDER_TARGETS];
+    uint32_t            num_render_targets;
+    VAContextID         context_id;
 } VdpDecoderData;
 
 // ====================
@@ -146,6 +152,7 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
 {
     traceVdpDecoderCreate("{WIP}", device, profile, width, height, max_references, decoder);
 
+    VdpStatus retval = VDP_STATUS_ERROR;
     VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
     if (!deviceData->va_available) return VDP_STATUS_INVALID_DECODER_PROFILE;
@@ -165,24 +172,35 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
     switch (profile) {
     case VDP_DECODER_PROFILE_H264_MAIN:
         va_profile = VAProfileH264Main;
+        data->num_render_targets = 21;
         break;
     default:
         fprintf(stderr, "not implemented decoder\n");
-        free(data);
-        return VDP_STATUS_INVALID_DECODER_PROFILE;
+        retval = VDP_STATUS_INVALID_DECODER_PROFILE;
+        goto error;
     }
 
     VAStatus status;
     status = vaCreateConfig(va_dpy, va_profile, VAEntrypointVLD, NULL, 0, &data->config_id);
-    if (VA_STATUS_SUCCESS != status) {
-        free(data);
-        return VDP_STATUS_ERROR;
-    }
+    if (VA_STATUS_SUCCESS != status) goto error;
+
+    // create surfaces
+    // TODO: check format of surfaces created
+    status = vaCreateSurfaces(va_dpy, width, height, VA_RT_FORMAT_YUV420,
+        data->num_render_targets, data->render_targets);
+    if (VA_STATUS_SUCCESS != status) goto error;
+
+    status = vaCreateContext(va_dpy, data->config_id, width, height, VA_PROGRESSIVE,
+        data->render_targets, data->num_render_targets, &data->context_id);
+    if (VA_STATUS_SUCCESS != status) goto error;
 
     *decoder = handlestorage_add(data);
 
     fprintf(stderr, "debug: decoder created\n");
     return VDP_STATUS_OK;
+error:
+    free(data);
+    return retval;
 }
 
 static
@@ -192,8 +210,12 @@ softVdpDecoderDestroy(VdpDecoder decoder)
     traceVdpDecoderDestroy("{full}", decoder);
 
     VdpDecoderData *data = handlestorage_get(decoder, HANDLETYPE_DECODER);
-    if (data->device->va_available)
+
+    if (data->device->va_available) {
+        vaDestroySurfaces(data->device->va_dpy, data->render_targets, data->num_render_targets);
+        vaDestroyContext(data->device->va_dpy, data->context_id);
         vaDestroyConfig(data->device->va_dpy, data->config_id);
+    }
 
     handlestorage_expunge(decoder);
     free(data);
