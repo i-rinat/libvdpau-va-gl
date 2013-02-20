@@ -150,7 +150,7 @@ VdpStatus
 softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width, uint32_t height,
                      uint32_t max_references, VdpDecoder *decoder)
 {
-    traceVdpDecoderCreate("{WIP}", device, profile, width, height, max_references, decoder);
+    traceVdpDecoderCreate("{full}", device, profile, width, height, max_references, decoder);
 
     VdpStatus retval = VDP_STATUS_ERROR;
     VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
