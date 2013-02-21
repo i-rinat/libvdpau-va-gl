@@ -48,13 +48,13 @@ typedef struct {
 } VdpPresentationQueueTargetData;
 
 typedef struct {
-    HandleType type;
-    VdpDeviceData *device;
+    HandleType                      type;
+    VdpDeviceData                  *device;
     VdpPresentationQueueTargetData *target;
-    XShmSegmentInfo shminfo;
-    XImage *image;
-    uint32_t prev_width;
-    uint32_t prev_height;
+    XShmSegmentInfo                 shminfo;
+    XImage                         *image;
+    uint32_t                        prev_width;
+    uint32_t                        prev_height;
 } VdpPresentationQueueData;
 
 typedef struct {
