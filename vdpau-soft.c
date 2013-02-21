@@ -257,12 +257,14 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         VDP_DECODER_PROFILE_H264_HIGH == decoderData->profile)
     {
         VdpPictureInfoH264 const *vdppi = (void *)picture_info;
-        VABufferID pic_param_buf;
-        VAPictureParameterBufferH264 *pic_param;
-        // TODO:
+
+        // TODO: figure out where to get level
         uint32_t level = 41;
 
         // preparing picture parameters
+        VABufferID pic_param_buf;
+        VAPictureParameterBufferH264 *pic_param;
+
         status = vaCreateBuffer(va_dpy, decoderData->context_id, VAPictureParameterBufferType,
             sizeof(VAPictureParameterBufferH264), 1, NULL, &pic_param_buf);
         if (VA_STATUS_SUCCESS != status) goto error;
@@ -285,10 +287,17 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         pic_param->CurrPic.BottomFieldOrderCnt  = vdppi->field_order_cnt[1];
 
         // pic_param->ReferenceFrames = {}
+        int va_ref_frame_count = 0;
         for (int k = 0; k < vdppi->num_ref_frames; k ++) {
+            fprintf(stderr, "num_ref_frames = %d\n", vdppi->num_ref_frames);
+            fprintf(stderr, "vdppi->referenceFrames[k].surface = %d\n", vdppi->referenceFrames[k].surface);
+            if (VDP_INVALID_HANDLE == vdppi->referenceFrames[k].surface)
+                continue;
+            va_ref_frame_count ++;
             VdpVideoSurfaceData *vdpSurfData =
                 handlestorage_get(vdppi->referenceFrames[k].surface, HANDLETYPE_VIDEO_SURFACE);
             VAPictureH264 *va_ref = &(pic_param->ReferenceFrames[k]);
+            if (NULL == vdpSurfData) goto error;
             VdpReferenceFrameH264 const *vdp_ref = &(vdppi->referenceFrames[k]);
 
             va_ref->picture_id = vdpSurfData->va_surf;
@@ -306,7 +315,7 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         pic_param->picture_height_in_mbs_minus1         = (decoderData->height - 1) / 16;
         pic_param->bit_depth_luma_minus8                = 0;
         pic_param->bit_depth_chroma_minus8              = 0;
-        pic_param->num_ref_frames                       = vdppi->num_ref_frames;
+        pic_param->num_ref_frames                       = va_ref_frame_count;
 
 #define SEQ_FIELDS(fieldname) pic_param->seq_fields.bits.fieldname
 #define PIC_FIELDS(fieldname) pic_param->pic_fields.bits.fieldname
@@ -323,6 +332,8 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         SEQ_FIELDS(log2_max_pic_order_cnt_lsb_minus4)   = vdppi->log2_max_pic_order_cnt_lsb_minus4;
         SEQ_FIELDS(delta_pic_order_always_zero_flag)    = vdppi->delta_pic_order_always_zero_flag;
         pic_param->num_slice_groups_minus1              = vdppi->slice_count - 1; // ???
+        fprintf(stderr, "slice_count = %d\n", vdppi->slice_count);
+        fflush(stderr);
         pic_param->slice_group_map_type                 = 0; // ???
         pic_param->slice_group_change_rate_minus1       = 0; // ???
         pic_param->pic_init_qp_minus26                  = vdppi->pic_init_qp_minus26;
@@ -343,12 +354,42 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
 #undef SEQ_FIELDS
 #undef PIC_FIELDS
 
+
+
+        //  IQ Matrix
+        VABufferID iq_matrix_buf;
+        VAIQMatrixBufferH264 *iq_matrix;
+
+        status = vaCreateBuffer(va_dpy, decoderData->context_id, VAIQMatrixBufferType,
+            sizeof(VAIQMatrixBufferType), 1, NULL, &iq_matrix_buf);
+        if (VA_STATUS_SUCCESS != status) goto error;
+
+        status = vaMapBuffer(va_dpy, iq_matrix_buf, (void **)&iq_matrix);
+        if (VA_STATUS_SUCCESS != status) goto error;
+
+        memcpy(iq_matrix->ScalingList4x4, vdppi->scaling_lists_4x4,
+            sizeof(iq_matrix->ScalingList4x4));
+        memcpy(iq_matrix->ScalingList8x8, vdppi->scaling_lists_8x8,
+            sizeof(iq_matrix->ScalingList8x8));
+
+        // Slice parameters
+        VABufferID slice_parameters_buf;
+        VASliceParameterBufferH264 *slice_parameters;
+
+        //~ status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceParameterBufferType,
+            //~ sizeof(VASliceParameterBufferH264), 1, NULL, &slice_parameters_buf);
+        //~ if (VA_STATUS_SUCCESS != status) goto error;
+
+        //slice_parameters->
+
+
         vaUnmapBuffer(va_dpy, pic_param_buf);
+        vaUnmapBuffer(va_dpy, iq_matrix_buf);
 
 
-        vaBeginPicture(va_dpy, decoderData->context_id, dstSurfData->va_surf);
-        vaRenderPicture(va_dpy, decoderData->context_id, &pic_param_buf, 1);
-        vaEndPicture(va_dpy, decoderData->context_id);
+        //~ vaBeginPicture(va_dpy, decoderData->context_id, dstSurfData->va_surf);
+        //~ vaRenderPicture(va_dpy, decoderData->context_id, &pic_param_buf, 1);
+        //~ vaEndPicture(va_dpy, decoderData->context_id);
 
 
 
@@ -367,6 +408,7 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
     fprintf(stderr, "softVdpDecoderRender reached VDP_STATUS_OK state\n");
     return VDP_STATUS_OK;
 error:
+    fprintf(stderr, "error: something gone wrong in softVdpDecoderRender\n");
     return VDP_STATUS_ERROR;
 }
 
