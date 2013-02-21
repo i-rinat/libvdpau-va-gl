@@ -51,6 +51,7 @@ typedef struct {
     HandleType                      type;
     VdpDeviceData                  *device;
     VdpPresentationQueueTargetData *target;
+    // TODO: remove XImage and XShmSegmentInfo
     XShmSegmentInfo                 shminfo;
     XImage                         *image;
     uint32_t                        prev_width;
