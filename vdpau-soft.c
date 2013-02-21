@@ -243,9 +243,131 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                      VdpPictureInfo const *picture_info, uint32_t bitstream_buffer_count,
                      VdpBitstreamBuffer const *bitstream_buffers)
 {
-    traceVdpDecoderRender("{zilch}", decoder, target, picture_info, bitstream_buffer_count,
+    traceVdpDecoderRender("{WIP}", decoder, target, picture_info, bitstream_buffer_count,
         bitstream_buffers);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+
+    VdpDecoderData *decoderData = handlestorage_get(decoder, HANDLETYPE_DECODER);
+    VdpVideoSurfaceData *dstSurfData = handlestorage_get(target, HANDLETYPE_VIDEO_SURFACE);
+    if (NULL == decoderData || NULL == dstSurfData) return VDP_STATUS_INVALID_HANDLE;
+    VdpDeviceData *deviceData = decoderData->device;
+    VADisplay va_dpy = deviceData->va_dpy;
+    VAStatus status;
+
+    if (VDP_DECODER_PROFILE_H264_MAIN == decoderData->profile ||
+        VDP_DECODER_PROFILE_H264_HIGH == decoderData->profile)
+    {
+        VdpPictureInfoH264 const *vdppi = (void *)picture_info;
+        VABufferID pic_param_buf;
+        VAPictureParameterBufferH264 *pic_param;
+        // TODO:
+        uint32_t level = 41;
+
+        // preparing picture parameters
+        status = vaCreateBuffer(va_dpy, decoderData->context_id, VAPictureParameterBufferType,
+            sizeof(VAPictureParameterBufferH264), 1, NULL, &pic_param_buf);
+        if (VA_STATUS_SUCCESS != status) goto error;
+
+        status = vaMapBuffer(va_dpy, pic_param_buf, (void **)&pic_param);
+        if (VA_STATUS_SUCCESS != status) goto error;
+
+        // TODO: va_surf
+        pic_param->CurrPic.picture_id           = dstSurfData->va_surf;
+        pic_param->CurrPic.frame_idx            = vdppi->frame_num;
+
+        if (vdppi->field_pic_flag) {
+            pic_param->CurrPic.flags           |= vdppi->bottom_field_flag
+                                                  ? VA_PICTURE_H264_BOTTOM_FIELD
+                                                  : VA_PICTURE_H264_TOP_FIELD;
+        } else {
+            pic_param->CurrPic.flags            = 0;
+        }
+        pic_param->CurrPic.TopFieldOrderCnt     = vdppi->field_order_cnt[0];
+        pic_param->CurrPic.BottomFieldOrderCnt  = vdppi->field_order_cnt[1];
+
+        // pic_param->ReferenceFrames = {}
+        for (int k = 0; k < vdppi->num_ref_frames; k ++) {
+            VdpVideoSurfaceData *vdpSurfData =
+                handlestorage_get(vdppi->referenceFrames[k].surface, HANDLETYPE_VIDEO_SURFACE);
+            VAPictureH264 *va_ref = &(pic_param->ReferenceFrames[k]);
+            VdpReferenceFrameH264 const *vdp_ref = &(vdppi->referenceFrames[k]);
+
+            va_ref->picture_id = vdpSurfData->va_surf;
+            va_ref->frame_idx = vdp_ref->frame_idx;
+            va_ref->flags = vdp_ref->is_long_term ? VA_PICTURE_H264_LONG_TERM_REFERENCE
+                                                  : VA_PICTURE_H264_SHORT_TERM_REFERENCE;
+            if (vdp_ref->top_is_reference)    va_ref->flags |= VA_PICTURE_H264_TOP_FIELD;
+            if (vdp_ref->bottom_is_reference) va_ref->flags |= VA_PICTURE_H264_BOTTOM_FIELD;
+
+            va_ref->TopFieldOrderCnt    = vdp_ref->field_order_cnt[0];
+            va_ref->BottomFieldOrderCnt = vdp_ref->field_order_cnt[1];
+        }
+
+        pic_param->picture_width_in_mbs_minus1          = (decoderData->width - 1) / 16;
+        pic_param->picture_height_in_mbs_minus1         = (decoderData->height - 1) / 16;
+        pic_param->bit_depth_luma_minus8                = 0;
+        pic_param->bit_depth_chroma_minus8              = 0;
+        pic_param->num_ref_frames                       = vdppi->num_ref_frames;
+
+#define SEQ_FIELDS(fieldname) pic_param->seq_fields.bits.fieldname
+#define PIC_FIELDS(fieldname) pic_param->pic_fields.bits.fieldname
+
+        SEQ_FIELDS(chroma_format_idc)                   = 1; // YUV420
+        SEQ_FIELDS(residual_colour_transform_flag)      = 0;
+        SEQ_FIELDS(gaps_in_frame_num_value_allowed_flag)= 0;
+        SEQ_FIELDS(frame_mbs_only_flag)                 = vdppi->frame_mbs_only_flag;
+        SEQ_FIELDS(mb_adaptive_frame_field_flag)        = vdppi->mb_adaptive_frame_field_flag;
+        SEQ_FIELDS(direct_8x8_inference_flag)           = vdppi->direct_8x8_inference_flag;
+        SEQ_FIELDS(MinLumaBiPredSize8x8)                = (level >= 31);
+        SEQ_FIELDS(log2_max_frame_num_minus4)           = vdppi->log2_max_frame_num_minus4;
+        SEQ_FIELDS(pic_order_cnt_type)                  = vdppi->pic_order_cnt_type;
+        SEQ_FIELDS(log2_max_pic_order_cnt_lsb_minus4)   = vdppi->log2_max_pic_order_cnt_lsb_minus4;
+        SEQ_FIELDS(delta_pic_order_always_zero_flag)    = vdppi->delta_pic_order_always_zero_flag;
+        pic_param->num_slice_groups_minus1              = vdppi->slice_count - 1; // ???
+        pic_param->slice_group_map_type                 = 0; // ???
+        pic_param->slice_group_change_rate_minus1       = 0; // ???
+        pic_param->pic_init_qp_minus26                  = vdppi->pic_init_qp_minus26;
+        pic_param->pic_init_qs_minus26                  = 0; // ???
+        pic_param->chroma_qp_index_offset               = vdppi->chroma_qp_index_offset;
+        pic_param->second_chroma_qp_index_offset        = vdppi->second_chroma_qp_index_offset;
+        PIC_FIELDS(entropy_coding_mode_flag)            = vdppi->entropy_coding_mode_flag;
+        PIC_FIELDS(weighted_pred_flag)                  = vdppi->weighted_pred_flag;
+        PIC_FIELDS(weighted_bipred_idc)                 = vdppi->weighted_bipred_idc;
+        PIC_FIELDS(transform_8x8_mode_flag)             = vdppi->transform_8x8_mode_flag;
+        PIC_FIELDS(field_pic_flag)                      = vdppi->field_pic_flag;
+        PIC_FIELDS(constrained_intra_pred_flag)         = vdppi->constrained_intra_pred_flag;
+        PIC_FIELDS(pic_order_present_flag)              = vdppi->pic_order_present_flag;
+        PIC_FIELDS(deblocking_filter_control_present_flag) = vdppi->deblocking_filter_control_present_flag;
+        PIC_FIELDS(redundant_pic_cnt_present_flag)      = vdppi->redundant_pic_cnt_present_flag;
+        PIC_FIELDS(reference_pic_flag)                  = vdppi->is_reference;
+        pic_param->frame_num                            = vdppi->frame_num;
+#undef SEQ_FIELDS
+#undef PIC_FIELDS
+
+        vaUnmapBuffer(va_dpy, pic_param_buf);
+
+
+        vaBeginPicture(va_dpy, decoderData->context_id, dstSurfData->va_surf);
+        vaRenderPicture(va_dpy, decoderData->context_id, &pic_param_buf, 1);
+        vaEndPicture(va_dpy, decoderData->context_id);
+
+
+
+
+        // from vdp
+        //~ uint8_t  num_ref_idx_l0_active_minus1;
+        //~ uint8_t  num_ref_idx_l1_active_minus1;
+        //~ uint8_t scaling_lists_4x4[6][16];
+        //~ uint8_t scaling_lists_8x8[2][64];
+        // ================================
+
+    } else {
+        fprintf(stderr, "error: no implementation for profile\n");
+        return VDP_STATUS_NO_IMPLEMENTATION;
+    }
+    fprintf(stderr, "softVdpDecoderRender reached VDP_STATUS_OK state\n");
+    return VDP_STATUS_OK;
+error:
+    return VDP_STATUS_ERROR;
 }
 
 static
