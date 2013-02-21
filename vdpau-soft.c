@@ -174,6 +174,10 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
         va_profile = VAProfileH264Main;
         data->num_render_targets = 21;
         break;
+    case VDP_DECODER_PROFILE_H264_HIGH:
+        va_profile = VAProfileH264High;
+        data->num_render_targets = 21;
+        break;
     default:
         fprintf(stderr, "not implemented decoder\n");
         retval = VDP_STATUS_INVALID_DECODER_PROFILE;
