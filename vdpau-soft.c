@@ -104,6 +104,7 @@ typedef struct {
     VAConfigID          config_id;
     VASurfaceID         render_targets[MAX_RENDER_TARGETS];
     uint32_t            num_render_targets;
+    uint32_t            next_surface;
     VAContextID         context_id;
 } VdpDecoderData;
 
@@ -169,6 +170,7 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
     data->width = width;
     data->height = height;
     data->max_references = max_references;
+    data->next_surface = 0;
 
     VAProfile va_profile;
     switch (profile) {
@@ -300,6 +302,16 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
             VAPictureH264 *va_ref = &(pic_param->ReferenceFrames[k]);
             if (NULL == vdpSurfData) goto error;
             VdpReferenceFrameH264 const *vdp_ref = &(vdppi->referenceFrames[k]);
+
+            if (VA_INVALID_SURFACE == vdpSurfData->va_surf) {
+                vdpSurfData->va_surf = decoderData->render_targets[decoderData->next_surface];
+                decoderData->next_surface ++;
+                if (decoderData->next_surface >= MAX_RENDER_TARGETS) {
+                    fprintf(stderr, "oops, no more surfaces\n");
+                    goto error;
+                }
+            }
+            fprintf(stderr, "vdpSurfData->va_surf = %x\n", vdpSurfData->va_surf);
 
             va_ref->picture_id = vdpSurfData->va_surf;
             va_ref->frame_idx = vdp_ref->frame_idx;
@@ -1019,6 +1031,8 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
     data->width = width;
     data->stride = stride;
     data->height = height;
+    data->va_surf = VA_INVALID_SURFACE;
+
     //TODO: find valid storage size for chroma_type
     data->y_plane = malloc(stride * height);
     data->v_plane = malloc(stride * height / chroma_storage_size_divider(chroma_type));
