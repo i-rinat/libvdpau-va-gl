@@ -72,15 +72,15 @@ typedef struct {
 } VdpOutputSurfaceData;
 
 typedef struct {
-    HandleType type;
-    VdpDeviceData *device;
-    VdpChromaType chroma_type;
-    uint32_t width;
-    uint32_t stride;
-    uint32_t height;
-    void *y_plane;
-    void *v_plane;
-    void *u_plane;
+    HandleType      type;
+    VdpDeviceData  *device;
+    VdpChromaType   chroma_type;
+    uint32_t        width;
+    uint32_t        stride;
+    uint32_t        height;
+    void           *y_plane;
+    void           *v_plane;
+    void           *u_plane;
 } VdpVideoSurfaceData;
 
 typedef struct {
