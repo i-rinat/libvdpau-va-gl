@@ -362,7 +362,7 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         VAIQMatrixBufferH264 *iq_matrix;
 
         status = vaCreateBuffer(va_dpy, decoderData->context_id, VAIQMatrixBufferType,
-            sizeof(VAIQMatrixBufferType), 1, NULL, &iq_matrix_buf);
+            sizeof(VAIQMatrixBufferH264), 1, NULL, &iq_matrix_buf);
         if (VA_STATUS_SUCCESS != status) goto error;
 
         status = vaMapBuffer(va_dpy, iq_matrix_buf, (void **)&iq_matrix);
