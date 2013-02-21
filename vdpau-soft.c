@@ -81,6 +81,7 @@ typedef struct {
     void           *y_plane;
     void           *v_plane;
     void           *u_plane;
+    VASurfaceID     va_surf;
 } VdpVideoSurfaceData;
 
 typedef struct {
