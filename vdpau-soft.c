@@ -300,6 +300,14 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         pic_param->CurrPic.BottomFieldOrderCnt  = vdppi->field_order_cnt[1];
 
         // reference frames
+        // mark all pictures invalid preliminary
+        for (int k = 0; k < 16; k ++) {
+            pic_param->ReferenceFrames[k].picture_id = VA_INVALID_ID;
+            pic_param->ReferenceFrames[k].flags = VA_PICTURE_H264_INVALID;
+            pic_param->ReferenceFrames[k].TopFieldOrderCnt = 0;
+            pic_param->ReferenceFrames[k].BottomFieldOrderCnt = 0;
+        }
+
         int va_ref_frame_count = 0;
         for (int k = 0; k < vdppi->num_ref_frames; k ++) {
             fprintf(stderr, "num_ref_frames = %d\n", vdppi->num_ref_frames);
