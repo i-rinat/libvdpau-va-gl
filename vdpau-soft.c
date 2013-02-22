@@ -354,8 +354,9 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         SEQ_FIELDS(pic_order_cnt_type)                  = vdppi->pic_order_cnt_type;
         SEQ_FIELDS(log2_max_pic_order_cnt_lsb_minus4)   = vdppi->log2_max_pic_order_cnt_lsb_minus4;
         SEQ_FIELDS(delta_pic_order_always_zero_flag)    = vdppi->delta_pic_order_always_zero_flag;
-        pic_param->num_slice_groups_minus1              = vdppi->slice_count - 1; // ???
+        pic_param->num_slice_groups_minus1              = 0; // ???
         fprintf(stderr, "slice_count = %d\n", vdppi->slice_count);
+        fprintf(stderr, "bitstream_buffer_count = %d\n", bitstream_buffer_count);
 
         pic_param->slice_group_map_type                 = 0; // ???
         pic_param->slice_group_change_rate_minus1       = 0; // ???
@@ -397,26 +398,21 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
 
         // Slice parameters
         VABufferID slice_parameters_buf;
-        VASliceParameterBufferH264 *slice_parameters;
+        VASliceParameterBufferH264 slice_parameters;
 
-        status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceParameterBufferType,
-            sizeof(VASliceParameterBufferH264), 1, NULL, &slice_parameters_buf);
-        if (VA_STATUS_SUCCESS != status) goto error;
-
-        status = vaMapBuffer(va_dpy, slice_parameters_buf, (void **) &slice_parameters);
-        if (VA_STATUS_SUCCESS != status) goto error;
-
-        fprintf(stderr, "slice_parameters size = %lu\n", sizeof(*slice_parameters));
-
-        slice_parameters->slice_data_size               = bitstream_buffers[0].bitstream_bytes;
-        slice_parameters->slice_data_offset             = 0;
-        slice_parameters->slice_data_flag               = VA_SLICE_DATA_FLAG_ALL;
-        slice_parameters->slice_data_bit_offset         = 0;
-        slice_parameters->first_mb_in_slice             = 0;    // ???
-        slice_parameters->slice_type                    = 0;
+        slice_parameters.slice_data_size               = bitstream_buffers[0].bitstream_bytes;
+        slice_parameters.slice_data_offset             = 0;
+        slice_parameters.slice_data_flag               = VA_SLICE_DATA_FLAG_ALL;
+        slice_parameters.slice_data_bit_offset         = 0;
+        slice_parameters.first_mb_in_slice             = 0;    // ???
+        switch (va_ref_frame_count) {
+        case 0: slice_parameters.slice_type            = 2; break;
+        case 1: slice_parameters.slice_type            = 0; break;
+        default: slice_parameters.slice_type           = 1; break;
+        }
         //~ slice_parameters->direct_spatial_mv_pred_flag   =
-        slice_parameters->num_ref_idx_l0_active_minus1  = vdppi->num_ref_idx_l0_active_minus1;
-        slice_parameters->num_ref_idx_l1_active_minus1  = vdppi->num_ref_idx_l1_active_minus1;
+        slice_parameters.num_ref_idx_l0_active_minus1  = vdppi->num_ref_idx_l0_active_minus1;
+        slice_parameters.num_ref_idx_l1_active_minus1  = vdppi->num_ref_idx_l1_active_minus1;
         //~ slice_parameters->cabac_init_idc
         //~ slice_parameters->slice_qp_delta
         //~ slice_parameters->disable_deblocking_filter_idc
@@ -439,25 +435,42 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         //~ slice_parameters->chroma_weight_l1[32][2]
         //~ slice_parameters->chroma_offset_l1[32][2]
 
-        VABufferID slice_buf;
-        status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceDataBufferType,
-            bitstream_buffers[0].bitstream_bytes, 1, bitstream_buffers[0].bitstream, &slice_buf);
-        if (VA_STATUS_SUCCESS != status) goto error;
-
 
         vaUnmapBuffer(va_dpy, pic_param_buf);
         vaUnmapBuffer(va_dpy, iq_matrix_buf);
-        vaUnmapBuffer(va_dpy, slice_parameters_buf);
 
-        vaBeginPicture(va_dpy, decoderData->context_id, dstSurfData->va_surf);
-        vaRenderPicture(va_dpy, decoderData->context_id, &pic_param_buf, 1);
-        vaRenderPicture(va_dpy, decoderData->context_id, &iq_matrix_buf, 1);
-        vaRenderPicture(va_dpy, decoderData->context_id, &slice_parameters_buf, 1);
-        vaRenderPicture(va_dpy, decoderData->context_id, &slice_buf, 1);
-        vaEndPicture(va_dpy, decoderData->context_id);
+        status = vaBeginPicture(va_dpy, decoderData->context_id, dstSurfData->va_surf);
+        status = vaRenderPicture(va_dpy, decoderData->context_id, &pic_param_buf, 1);
+        status = vaRenderPicture(va_dpy, decoderData->context_id, &iq_matrix_buf, 1);
+
+        for (int k = 0; k < bitstream_buffer_count; k ++) {
+            status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceParameterBufferType,
+                sizeof(VASliceParameterBufferH264), 1, &slice_parameters, &slice_parameters_buf);
+            if (VA_STATUS_SUCCESS != status) goto error;
+            status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_parameters_buf, 1);
+
+            VABufferID slice_buf;
+            status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceDataBufferType,
+                bitstream_buffers[0].bitstream_bytes, 1, bitstream_buffers[0].bitstream, &slice_buf);
+            if (VA_STATUS_SUCCESS != status) goto error;
+            status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_buf, 1);
+        }
+
+        status = vaEndPicture(va_dpy, decoderData->context_id);
+
 
         vaSyncSurface(va_dpy, dstSurfData->va_surf);
-
+        VAImage q;
+        vaDeriveImage(va_dpy, dstSurfData->va_surf, &q);
+        char *buf;
+        vaMapBuffer(va_dpy, q.buf, (void**)&buf);
+        memcpy(dstSurfData->y_plane, buf, dstSurfData->width * dstSurfData->height);
+        buf += dstSurfData->width * dstSurfData->height;
+        memcpy(dstSurfData->v_plane, buf, dstSurfData->width * dstSurfData->height / 4);
+        buf += dstSurfData->width * dstSurfData->height / 4;
+        memcpy(dstSurfData->u_plane, buf, dstSurfData->width * dstSurfData->height / 4);
+        vaUnmapBuffer(va_dpy, q.buf);
+        vaDestroyImage(va_dpy, q.image_id);
 
     } else {
         fprintf(stderr, "error: no implementation for profile\n");
