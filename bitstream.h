@@ -5,9 +5,9 @@
 
 /** @brief State of raw byte stream payload comsumer */
 typedef struct _rbsp_state_struct {
-    char       *buf_ptr;            ///< pointer to beginning of the buffer
+    const char *buf_ptr;            ///< pointer to beginning of the buffer
     size_t      byte_count;         ///< size of buffer
-    char       *cur_ptr;            ///< pointer to currently processed byte
+    const char *cur_ptr;            ///< pointer to currently processed byte
     char        cur_byte_value;     ///< value of currently processed byte
     int         bit_ptr;            ///< pointer to currently processed bit
     int         zeros_in_row;       ///< number of consequetive zero bytes so far
@@ -22,7 +22,7 @@ typedef struct _rbsp_state_struct {
  *
  *  @retval void
  */
-void rbsp_attach_buffer(rbsp_state_t *state, char *buf, size_t byte_count);
+void rbsp_attach_buffer(rbsp_state_t *state, const char *buf, size_t byte_count);
 
 /** @brief Consumes and returns one byte from rbsp
  *

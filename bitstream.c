@@ -2,7 +2,7 @@
 #include <assert.h>
 
 void
-rbsp_attach_buffer(rbsp_state_t *state, char *buf, size_t byte_count)
+rbsp_attach_buffer(rbsp_state_t *state, const char *buf, size_t byte_count)
 {
     state->buf_ptr      = buf;
     state->byte_count   = byte_count;
