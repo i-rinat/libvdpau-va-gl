@@ -17,6 +17,7 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glx.h>
+#include "bitstream.h"
 #include "reverse-constant.h"
 #include "handle-storage.h"
 #include "vdpau-trace.h"

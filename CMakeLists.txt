@@ -19,6 +19,7 @@ add_library (vdpau_fake SHARED
 	vdpau-trace.c
 	reverse-constant.c
 	handle-storage.c
+	bitstream.c
 )
 
 target_link_libraries (vdpau_fake
