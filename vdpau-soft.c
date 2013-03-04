@@ -407,8 +407,9 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         // Slice parameters
         VABufferID slice_parameters_buf;
         VASliceParameterBufferH264 slice_parameters;
+        memset(&slice_parameters, 0, sizeof(VASliceParameterBufferH264));
 
-        slice_parameters.slice_data_size               = bitstream_buffers[0].bitstream_bytes;
+        slice_parameters.slice_data_size               = bitstream_buffers[1].bitstream_bytes;
         slice_parameters.slice_data_offset             = 0;
         slice_parameters.slice_data_flag               = VA_SLICE_DATA_FLAG_ALL;
         slice_parameters.slice_data_bit_offset         = 0;
