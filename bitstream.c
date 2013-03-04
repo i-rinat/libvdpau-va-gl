@@ -32,3 +32,63 @@ rbsp_consume_byte(rbsp_state_t *state)
 
     return c;
 }
+
+int
+rbsp_consume_bit(rbsp_state_t *state)
+{
+    assert (state->cur_ptr < state->buf_ptr + state->byte_count);
+
+    int value = !!(*state->cur_ptr & (1 << state->bit_ptr));
+    if (state->bit_ptr > 0) {
+        state->bit_ptr --;
+    } else {
+        state->bit_ptr = 7;
+        state->cur_ptr ++;
+    }
+    return value;
+}
+
+unsigned int
+rbsp_get_u(rbsp_state_t *state, int bitcount)
+{
+    unsigned int value = 0;
+    for (int k = 0; k < bitcount; k ++)
+        value = (value << 1) + rbsp_consume_bit(state);
+
+    return value;
+}
+
+unsigned int
+rbsp_get_uev(rbsp_state_t *state)
+{
+    int zerobit_count = -1;
+    int current_bit = 0;
+    do {
+        zerobit_count ++;
+        current_bit = rbsp_consume_bit(state);
+    } while (0 == current_bit);
+
+    if (0 == zerobit_count) return 0;
+
+    return (1 << zerobit_count) - 1 + rbsp_get_u(state, zerobit_count);
+}
+
+int
+rbsp_get_sev(rbsp_state_t *state)
+{
+    int zerobit_count = -1;
+    int current_bit = 0;
+    do {
+        zerobit_count ++;
+        current_bit = rbsp_consume_bit(state);
+    } while (0 == current_bit);
+
+    if (0 == zerobit_count) return 0;
+
+    int value = (1 << zerobit_count) + rbsp_get_u(state, zerobit_count);
+
+    if (value & 1)
+        return -value/2;
+
+    return value/2;
+}

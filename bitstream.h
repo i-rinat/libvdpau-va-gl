@@ -32,5 +32,16 @@ void rbsp_attach_buffer(rbsp_state_t *state, const char *buf, size_t byte_count)
  */
 int rbsp_consume_byte(rbsp_state_t *state);
 
+int
+rbsp_consume_bit(rbsp_state_t *state);
+
+unsigned int
+rbsp_get_u(rbsp_state_t *state, int bitcount);
+
+unsigned int
+rbsp_get_uev(rbsp_state_t *state);
+
+int
+rbsp_get_sev(rbsp_state_t *state);
 
 #endif
