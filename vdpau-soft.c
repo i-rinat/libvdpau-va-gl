@@ -461,13 +461,14 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
 
             VABufferID slice_buf;
             status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceDataBufferType,
-                bitstream_buffers[0].bitstream_bytes, 1, bitstream_buffers[0].bitstream, &slice_buf);
+                bitstream_buffers[0].bitstream_bytes, 1, (char *)bitstream_buffers[0].bitstream,
+                &slice_buf);
             if (VA_STATUS_SUCCESS != status) goto error;
             status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_buf, 1);
 
             // TODO: debug code, remove
             unsigned int sz = bitstream_buffers[k].bitstream_bytes;
-            uint8_t *buf = bitstream_buffers[k].bitstream;
+            const uint8_t *buf = bitstream_buffers[k].bitstream;
             fprintf(stderr, "--------------------------\nbitstream buffer #%d, size = %d\n", k, sz);
             for (unsigned int y = 0; y <= sz / 16; y ++) {
                 fprintf(stderr, "%04x   ", y*16);
