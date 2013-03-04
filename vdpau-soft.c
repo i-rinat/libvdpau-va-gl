@@ -477,6 +477,19 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                 fprintf(stderr, "\n");
             }
             fprintf(stderr, "---------------------------\n");
+
+            if (1 == k) {
+                rbsp_state_t st;
+                rbsp_attach_buffer(&st, bitstream_buffers[k].bitstream, bitstream_buffers[k].bitstream_bytes);
+                int c;
+                int x = 0;
+                while ((c = rbsp_consume_byte(&st)) != -1) {
+                    if (x % 16 == 0) fprintf(stderr, "\n%04x  {", x);
+                    fprintf(stderr, " %02x", c);
+                    x ++;
+                }
+                fprintf(stderr, "\n");
+            }
         }
 
         status = vaEndPicture(va_dpy, decoderData->context_id);
