@@ -463,6 +463,19 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                 bitstream_buffers[0].bitstream_bytes, 1, bitstream_buffers[0].bitstream, &slice_buf);
             if (VA_STATUS_SUCCESS != status) goto error;
             status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_buf, 1);
+
+            // TODO: debug code, remove
+            unsigned int sz = bitstream_buffers[k].bitstream_bytes;
+            uint8_t *buf = bitstream_buffers[k].bitstream;
+            fprintf(stderr, "--------------------------\nbitstream buffer #%d, size = %d\n", k, sz);
+            for (unsigned int y = 0; y <= sz / 16; y ++) {
+                fprintf(stderr, "%04x   ", y*16);
+                for (unsigned int x = 0; x < 16; x ++) {
+                    if (y*16 + x < sz) fprintf(stderr, " %02x", buf[y*16 + x]);
+                }
+                fprintf(stderr, "\n");
+            }
+            fprintf(stderr, "---------------------------\n");
         }
 
         status = vaEndPicture(va_dpy, decoderData->context_id);
