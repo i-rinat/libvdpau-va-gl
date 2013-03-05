@@ -26,6 +26,12 @@
 #define MAX_RENDER_TARGETS          21
 #define NUM_RENDER_TARGETS_H264     21
 
+#define SLICE_TYPE_P    0
+#define SLICE_TYPE_B    1
+#define SLICE_TYPE_I    2
+#define SLICE_TYPE_SP   3
+#define SLICE_TYPE_SI   4
+
 static char const *
 implemetation_description_string = "OpenGL/libswscale backend for VDPAU";
 
