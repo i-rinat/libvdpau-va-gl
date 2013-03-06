@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include "h264-parse.h"
 
+#define NOT_IMPLEMENTED     assert(0 && "not implemented")
+
 void
 parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
                    const int ChromaArrayType, VASliceParameterBufferH264 *vasp)
@@ -11,7 +13,7 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
     int nal_unit_type = rbsp_get_u(st, 5);
     fprintf(stderr, "nal_unit_type = %d\n", nal_unit_type);
     if (14 == nal_unit_type || 20 == nal_unit_type) {
-        fprintf(stderr, "QQQQQQQQQQQQQQQQQQQQQQ\n");
+        NOT_IMPLEMENTED;
     }
 
     fprintf(stderr, "first_mb_in_slice = %d\n", rbsp_get_uev(st));
@@ -59,7 +61,7 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
         }
     }
     if (20 == nal_unit_type) {
-        assert(0 && "not implemented");
+        NOT_IMPLEMENTED;
     } else {
         // begin of ref_pic_list_modification( )
         if (2 != slice_type && 4 != slice_type) {
