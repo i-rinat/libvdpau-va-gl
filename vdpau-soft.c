@@ -454,20 +454,8 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         status = vaRenderPicture(va_dpy, decoderData->context_id, &pic_param_buf, 1);
         status = vaRenderPicture(va_dpy, decoderData->context_id, &iq_matrix_buf, 1);
 
+        // TODO: debug code, remove
         for (int k = 0; k < bitstream_buffer_count; k ++) {
-            status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceParameterBufferType,
-                sizeof(VASliceParameterBufferH264), 1, &slice_parameters, &slice_parameters_buf);
-            if (VA_STATUS_SUCCESS != status) goto error;
-            status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_parameters_buf, 1);
-
-            VABufferID slice_buf;
-            status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceDataBufferType,
-                bitstream_buffers[0].bitstream_bytes, 1, (char *)bitstream_buffers[0].bitstream,
-                &slice_buf);
-            if (VA_STATUS_SUCCESS != status) goto error;
-            status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_buf, 1);
-
-            // TODO: debug code, remove
             unsigned int sz = bitstream_buffers[k].bitstream_bytes;
             const uint8_t *buf = bitstream_buffers[k].bitstream;
             fprintf(stderr, "--------------------------\nbitstream buffer #%d, size = %d\n", k, sz);
@@ -479,30 +467,41 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                 fprintf(stderr, "\n");
             }
             fprintf(stderr, "---------------------------\n");
-
-            if (1 == k) {
-                rbsp_state_t st;
-                rbsp_attach_buffer(&st, bitstream_buffers[k].bitstream, bitstream_buffers[k].bitstream_bytes);
-                int c;
-                int x = 0;
-                while ((c = rbsp_consume_byte(&st)) != -1) {
-                    if (x % 16 == 0) fprintf(stderr, "\n%04x  {", x);
-                    fprintf(stderr, " %02x", c);
-                    x ++;
-                }
-                fprintf(stderr, "\n");
-
-                rbsp_attach_buffer(&st, bitstream_buffers[k].bitstream, bitstream_buffers[k].bitstream_bytes);
-
-                // TODO: this may be not entirely true for YUV444
-                // but if we limiting to YUV420, that's ok
-                int ChromaArrayType = pic_param->seq_fields.bits.chroma_format_idc;
-
-                parse_slice_header(&st, vdppi, ChromaArrayType, &slice_parameters);
-
-                fprintf(stderr, "/////////////////////\n");
-            }
         }
+
+        rbsp_state_t st;
+        rbsp_attach_buffer(&st, bitstream_buffers[1].bitstream, bitstream_buffers[1].bitstream_bytes);
+        int c;
+        int x = 0;
+        while ((c = rbsp_consume_byte(&st)) != -1) {
+            if (x % 16 == 0) fprintf(stderr, "\n%04x  {", x);
+            fprintf(stderr, " %02x", c);
+            x ++;
+        }
+        fprintf(stderr, "\n");
+
+        rbsp_attach_buffer(&st, bitstream_buffers[1].bitstream, bitstream_buffers[1].bitstream_bytes);
+
+        // TODO: this may be not entirely true for YUV444
+        // but if we limiting to YUV420, that's ok
+        int ChromaArrayType = pic_param->seq_fields.bits.chroma_format_idc;
+
+        parse_slice_header(&st, vdppi, ChromaArrayType, &slice_parameters);
+
+        fprintf(stderr, "/////////////////////\n");
+        //////////////////////////
+
+        status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceParameterBufferType,
+            sizeof(VASliceParameterBufferH264), 1, &slice_parameters, &slice_parameters_buf);
+        if (VA_STATUS_SUCCESS != status) goto error;
+        status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_parameters_buf, 1);
+
+        VABufferID slice_buf;
+        status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceDataBufferType,
+            bitstream_buffers[1].bitstream_bytes, 1, (char *)bitstream_buffers[1].bitstream,
+            &slice_buf);
+        if (VA_STATUS_SUCCESS != status) goto error;
+        status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_buf, 1);
 
         status = vaEndPicture(va_dpy, decoderData->context_id);
 
