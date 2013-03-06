@@ -20,6 +20,8 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
     int slice_type = rbsp_get_uev(st);
     fprintf(stderr, "slice_type = %d\n", slice_type);
     if (slice_type > 4) slice_type -= 5;
+    fprintf(stderr, "pic_parameter_set_id = %d\n", rbsp_get_uev(st));
+    // TODO: separate_colour_plane_flag is 0 for all but YUV444. Now ok, but should detect properly.
     fprintf(stderr, "frame_num = %d\n",
         rbsp_get_u(st, vdppi->log2_max_frame_num_minus4 + 4));
     if (vdppi->frame_mbs_only_flag) {
