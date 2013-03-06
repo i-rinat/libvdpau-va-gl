@@ -32,6 +32,14 @@
 #define SLICE_TYPE_SP   3
 #define SLICE_TYPE_SI   4
 
+#define NAL_UNSPECIFIED     0
+#define NAL_SLICE           1
+#define NAL_SLICE_DATA_A    2
+#define NAL_SLICE_DATA_B    3
+#define NAL_SLICE_DATA_C    4
+#define NAL_IDR_SLICE       5
+
+
 static char const *
 implemetation_description_string = "OpenGL/libswscale backend for VDPAU";
 
@@ -520,7 +528,7 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                         fprintf(stderr, "bottom_field_flag = %d\n", rbsp_get_u(&st, 1));
                     }
                 }
-                if (5 == nal_unit_type) {    // IDR picture
+                if (NAL_IDR_SLICE == nal_unit_type) {    // IDR picture
                     fprintf(stderr, "idr_pic_id = %d\n", rbsp_get_uev(&st));
                 }
                 if (0 == vdppi->pic_order_cnt_type) {
