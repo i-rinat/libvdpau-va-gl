@@ -1,6 +1,7 @@
 #include "bitstream.h"
 #include <assert.h>
 
+inline
 void
 rbsp_attach_buffer(rbsp_state_t *state, const uint8_t *buf, size_t byte_count)
 {
@@ -11,8 +12,8 @@ rbsp_attach_buffer(rbsp_state_t *state, const uint8_t *buf, size_t byte_count)
     state->zeros_in_row = 0;
 }
 
-int
 inline
+int
 rbsp_consume_byte(rbsp_state_t *state)
 {
     if (state->cur_ptr >= state->buf_ptr + state->byte_count)
@@ -32,6 +33,7 @@ rbsp_consume_byte(rbsp_state_t *state)
     return c;
 }
 
+inline
 int
 rbsp_consume_bit(rbsp_state_t *state)
 {
@@ -47,6 +49,7 @@ rbsp_consume_bit(rbsp_state_t *state)
     return value;
 }
 
+inline
 unsigned int
 rbsp_get_u(rbsp_state_t *state, int bitcount)
 {
@@ -57,6 +60,7 @@ rbsp_get_u(rbsp_state_t *state, int bitcount)
     return value;
 }
 
+inline
 unsigned int
 rbsp_get_uev(rbsp_state_t *state)
 {
@@ -72,6 +76,7 @@ rbsp_get_uev(rbsp_state_t *state)
     return (1 << zerobit_count) - 1 + rbsp_get_u(state, zerobit_count);
 }
 
+inline
 int
 rbsp_get_sev(rbsp_state_t *state)
 {
