@@ -2,12 +2,11 @@
 #include <assert.h>
 
 void
-rbsp_attach_buffer(rbsp_state_t *state, const char *buf, size_t byte_count)
+rbsp_attach_buffer(rbsp_state_t *state, const uint8_t *buf, size_t byte_count)
 {
     state->buf_ptr      = buf;
     state->byte_count   = byte_count;
     state->cur_ptr      = buf;
-    state->cur_byte_value = 0;
     state->bit_ptr      = 7;
     state->zeros_in_row = 0;
 }
@@ -19,15 +18,15 @@ rbsp_consume_byte(rbsp_state_t *state)
     if (state->cur_ptr >= state->buf_ptr + state->byte_count)
         return -1;
 
-    unsigned char c = state->cur_byte_value = *state->cur_ptr++;
+    uint8_t c = *state->cur_ptr++;
     if (0 == c) state->zeros_in_row ++;
     else state->zeros_in_row = 0;
 
-    if (2 == state->zeros_in_row) {
-        state->zeros_in_row = 0;
-        unsigned char epb = *state->cur_ptr++;
+    if (state->zeros_in_row >= 2) {
+        uint8_t epb = *state->cur_ptr++;
+        if (0 != epb) state->zeros_in_row = 0;
         // if epb is not actually have 0x03 value, it's not an emulation prevention
-        if (0x03 != epb) state->cur_ptr--;  // rewind
+        if (0x03 != epb) state->cur_ptr--;  // so rewind
     }
 
     return c;
@@ -43,7 +42,7 @@ rbsp_consume_bit(rbsp_state_t *state)
         state->bit_ptr --;
     } else {
         state->bit_ptr = 7;
-        state->cur_ptr ++;
+        rbsp_consume_byte(state);   // handles emulation prevention bytes
     }
     return value;
 }
