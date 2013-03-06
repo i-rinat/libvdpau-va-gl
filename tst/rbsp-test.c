@@ -45,5 +45,21 @@ int main(void)
     assert ( 0 == rbsp_get_sev(&st));
     assert ( 0 == rbsp_get_sev(&st));
 
+    char buf2[] = {0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0x00};
+    rbsp_attach_buffer(&st, buf2, 8);
+    for (int k = 0; k < 6 * 8; k ++) {
+        assert (0 == rbsp_get_u(&st, 1));
+    }
+
+    char buf3[] = {0x00, 0x00, 0x03, 0xff, 0xff};
+    rbsp_attach_buffer(&st, buf3, 5);
+    for (int k = 0; k < 16; k ++) assert (0 == rbsp_get_u(&st, 1));
+    for (int k = 0; k < 16; k ++) assert (1 == rbsp_get_u(&st, 1));
+
+    char buf4[] = {0x00, 0x00, 0x00, 0x03, 0xff};
+    rbsp_attach_buffer(&st, buf4, 5);
+    for (int k = 0; k < 24; k ++) assert (0 == rbsp_get_u(&st, 1));
+    for (int k = 0; k < 8; k ++) assert (1 == rbsp_get_u(&st, 1));
+
     printf ("pass\n");
 }
