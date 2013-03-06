@@ -359,14 +359,14 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
 
         pic_param->picture_width_in_mbs_minus1          = (decoderData->width - 1) / 16;
         pic_param->picture_height_in_mbs_minus1         = (decoderData->height - 1) / 16;
-        pic_param->bit_depth_luma_minus8                = 0;
-        pic_param->bit_depth_chroma_minus8              = 0;
+        pic_param->bit_depth_luma_minus8                = 0; // TODO: deal with more than 8 bits
+        pic_param->bit_depth_chroma_minus8              = 0; // same for luma
         pic_param->num_ref_frames                       = va_ref_frame_count;
 
 #define SEQ_FIELDS(fieldname) pic_param->seq_fields.bits.fieldname
 #define PIC_FIELDS(fieldname) pic_param->pic_fields.bits.fieldname
 
-        SEQ_FIELDS(chroma_format_idc)                   = 1; // YUV420
+        SEQ_FIELDS(chroma_format_idc)                   = 1; // TODO: not only YUV420
         SEQ_FIELDS(residual_colour_transform_flag)      = 0;
         SEQ_FIELDS(gaps_in_frame_num_value_allowed_flag)= 0;
         SEQ_FIELDS(frame_mbs_only_flag)                 = vdppi->frame_mbs_only_flag;
@@ -506,6 +506,10 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                 fprintf(stderr, "\n");
 
                 rbsp_attach_buffer(&st, bitstream_buffers[k].bitstream, bitstream_buffers[k].bitstream_bytes);
+
+                // TODO: this may be not entirely true for YUV444
+                // but if we limiting to YUV420, that's ok
+                int ChromaArrayType = pic_param->seq_fields.bits.chroma_format_idc;
 
                 fprintf(stderr, "forbidden_zero_bit = %d\n", rbsp_get_u(&st, 1));
                 fprintf(stderr, "nal_ref_idc = %d\n", rbsp_get_u(&st, 2));
