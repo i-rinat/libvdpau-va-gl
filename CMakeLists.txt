@@ -20,6 +20,7 @@ add_library (vdpau_fake SHARED
 	reverse-constant.c
 	handle-storage.c
 	bitstream.c
+	h264-parse.c
 )
 
 target_link_libraries (vdpau_fake
