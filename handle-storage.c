@@ -22,7 +22,7 @@ int
 handlestorage_valid(int handle, HandleType type)
 {
     // return false if index is invalid
-    if (handle < 1 || handle >= vdpHandles->len) return 0;
+    if (handle < 1 || handle >= (int)vdpHandles->len) return 0;
 
     // return false if entry was deleted
     if (NULL == g_ptr_array_index(vdpHandles, handle)) return 0;
@@ -42,7 +42,7 @@ void *
 handlestorage_get(int handle, HandleType type)
 {
 
-    if (handle < 1 || handle >= vdpHandles->len) return NULL;
+    if (handle < 1 || handle >= (int)vdpHandles->len) return NULL;
     void *result = g_ptr_array_index(vdpHandles, handle);
     if (!result) return NULL;
     if (HANDLETYPE_ANY == type) return result;
