@@ -455,30 +455,30 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         status = vaRenderPicture(va_dpy, decoderData->context_id, &iq_matrix_buf, 1);
 
         // TODO: debug code, remove
-        for (unsigned int k = 0; k < bitstream_buffer_count; k ++) {
-            unsigned int sz = bitstream_buffers[k].bitstream_bytes;
-            const uint8_t *buf = bitstream_buffers[k].bitstream;
-            fprintf(stderr, "--------------------------\nbitstream buffer #%d, size = %d\n", k, sz);
-            for (unsigned int y = 0; y <= sz / 16; y ++) {
-                fprintf(stderr, "%04x   ", y*16);
-                for (unsigned int x = 0; x < 16; x ++) {
-                    if (y*16 + x < sz) fprintf(stderr, " %02x", buf[y*16 + x]);
-                }
-                fprintf(stderr, "\n");
-            }
-            fprintf(stderr, "---------------------------\n");
-        }
+        //~ for (unsigned int k = 0; k < bitstream_buffer_count; k ++) {
+            //~ unsigned int sz = bitstream_buffers[k].bitstream_bytes;
+            //~ const uint8_t *buf = bitstream_buffers[k].bitstream;
+            //~ fprintf(stderr, "--------------------------\nbitstream buffer #%d, size = %d\n", k, sz);
+            //~ for (unsigned int y = 0; y <= sz / 16; y ++) {
+                //~ fprintf(stderr, "%04x   ", y*16);
+                //~ for (unsigned int x = 0; x < 16; x ++) {
+                    //~ if (y*16 + x < sz) fprintf(stderr, " %02x", buf[y*16 + x]);
+                //~ }
+                //~ fprintf(stderr, "\n");
+            //~ }
+            //~ fprintf(stderr, "---------------------------\n");
+        //~ }
 
         rbsp_state_t st;
-        rbsp_attach_buffer(&st, bitstream_buffers[1].bitstream, bitstream_buffers[1].bitstream_bytes);
-        int c;
-        int x = 0;
-        while ((c = rbsp_consume_byte(&st)) != -1) {
-            if (x % 16 == 0) fprintf(stderr, "\n%04x  {", x);
-            fprintf(stderr, " %02x", c);
-            x ++;
-        }
-        fprintf(stderr, "\n");
+        //~ rbsp_attach_buffer(&st, bitstream_buffers[1].bitstream, bitstream_buffers[1].bitstream_bytes);
+        //~ int c;
+        //~ int x = 0;
+        //~ while ((c = rbsp_consume_byte(&st)) != -1) {
+            //~ if (x % 16 == 0) fprintf(stderr, "\n%04x  {", x);
+            //~ fprintf(stderr, " %02x", c);
+            //~ x ++;
+        //~ }
+        //~ fprintf(stderr, "\n");
 
         rbsp_attach_buffer(&st, bitstream_buffers[1].bitstream, bitstream_buffers[1].bitstream_bytes);
 
