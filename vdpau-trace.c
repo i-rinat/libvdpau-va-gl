@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include "vdpau-trace.h"
@@ -238,8 +239,8 @@ traceVdpOutputSurfacePutBitsNative(const char *impl_state, VdpOutputSurface surf
     (void)source_data;
     (void)source_pitches;
     if (!enabled) return;
-    fprintf(tlog, "%s%s VdpOutputSurfacePutBitsNative surface=%d\n", trace_header, impl_state,
-        surface);
+    fprintf(tlog, "%s%s VdpOutputSurfacePutBitsNative surface=%d, destination_rect=%s\n",
+        trace_header, impl_state, surface, rect2string(destination_rect));
 }
 
 void
@@ -338,6 +339,9 @@ traceVdpVideoMixerCreate(const char *impl_state, VdpDevice device, uint32_t feat
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoMixerCreate device=%d, feature_count=%d, parameter_count=%d\n",
         trace_header, impl_state, device, feature_count, parameter_count);
+    for (uint32_t k = 0; k < feature_count; k ++)
+        fprintf(tlog, "%s      feature %s\n", trace_header_blank,
+            reverse_video_mixer_feature(features[k]));
     for (uint32_t k = 0; k < parameter_count; k ++) {
         fprintf(tlog, "%s      parameter ", trace_header_blank);
         switch (parameters[k]) {
@@ -410,6 +414,9 @@ traceVdpVideoMixerGetFeatureSupport(const char *impl_state, VdpVideoMixer mixer,
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoMixerGetFeatureSupport mixer=%d, feature_count=%d\n",
         trace_header, impl_state, mixer, feature_count);
+    for (unsigned int k = 0; k < feature_count; k ++)
+        fprintf(tlog, "%s      feature %s\n", trace_header_blank,
+            reverse_video_mixer_feature(features[k]));
 }
 
 void
@@ -421,6 +428,9 @@ traceVdpVideoMixerGetFeatureEnables(const char *impl_state, VdpVideoMixer mixer,
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoMixerGetFeatureEnables mixer=%d, feature_count=%d\n",
         trace_header, impl_state, mixer, feature_count);
+    for (unsigned int k = 0; k < feature_count; k ++)
+        fprintf(tlog, "%s      feature %s\n", trace_header_blank,
+            reverse_video_mixer_feature(features[k]));
 }
 
 void
@@ -433,6 +443,9 @@ traceVdpVideoMixerGetParameterValues(const char *impl_state, VdpVideoMixer mixer
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoMixerGetParameterValues mixer=%d, parameter_count=%d\n",
         trace_header, impl_state, mixer, parameter_count);
+    for (unsigned int k = 0; k < parameter_count; k ++)
+        fprintf(tlog, "%s      parameter %s\n", trace_header_blank,
+            reverse_video_mixer_parameter(parameters[k]));
 }
 
 void
@@ -445,6 +458,9 @@ traceVdpVideoMixerGetAttributeValues(const char *impl_state, VdpVideoMixer mixer
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoMixerGetAttributeValues mixer=%d, attribute_count=%d\n",
         trace_header, impl_state, mixer, attribute_count);
+    for (unsigned int k = 0; k < attribute_count; k ++)
+        fprintf(tlog, "%s      attribute %s\n", trace_header_blank,
+            reverse_video_mixer_attribute(attributes[k]));
 }
 
 void
@@ -483,8 +499,8 @@ traceVdpVideoMixerRender(const char *impl_state, VdpVideoMixer mixer,
         fprintf(tlog, "%d", video_surface_future[k]);
     }
     fprintf(tlog, "],\n%s      video_source_rect=%s, destination_surface=%d, destination_rect=%s, "
-         "layers=[", trace_header_blank, rect2string(video_source_rect), destination_surface,
-         rect2string(destination_rect));
+         "destination_video_rect=%s, layers=[", trace_header_blank, rect2string(video_source_rect),
+         destination_surface, rect2string(destination_rect), rect2string(destination_video_rect));
     for (uint32_t k = 0; k < layer_count; k ++) {
         if (0 != k) fprintf(tlog, ",");
         fprintf(tlog, "{%d,src:%s,dst:%s}", layers[k].source_surface,
@@ -527,8 +543,10 @@ traceVdpPresentationQueueSetBackgroundColor(const char *impl_state,
                                             VdpColor *const background_color)
 {
     if (!enabled) return;
-    fprintf(tlog, "%s%s VdpPresentationQueueSetBackgroundColor presentation_queue=%d\n",
-        trace_header, impl_state, presentation_queue);
+    fprintf(tlog, "%s%s VdpPresentationQueueSetBackgroundColor presentation_queue=%d, "
+        "background_color=(%.2f,%.2f,%.2f,%.2f)\n",
+        trace_header, impl_state, presentation_queue, background_color->red,
+        background_color->green, background_color->blue, background_color->alpha);
 }
 
 void
@@ -559,8 +577,10 @@ traceVdpPresentationQueueDisplay(const char *impl_state, VdpPresentationQueue pr
 {
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpPresentationQueueDisplay presentation_queue=%d, surface=%d, "
-        "clip_width=%d, clip_height=%d\n", trace_header, impl_state, presentation_queue, surface,
+        "clip_width=%d, clip_height=%d,\n", trace_header, impl_state, presentation_queue, surface,
         clip_width, clip_height);
+    fprintf(tlog, "%s      earliest_presentation_time=%"PRIu64"\n", trace_header_blank,
+        earliest_presentation_time);
 }
 
 void
