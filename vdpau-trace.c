@@ -64,6 +64,8 @@ rect2string(VdpRect const *rect)
 void
 traceVdpGetErrorString(const char *impl_state, VdpStatus status)
 {
+    (void)impl_state;
+    (void)status;
     if (!enabled) return;
     //fprintf(tlog, "%s%s VdpGetErrorString status=%d\n", trace_header, impl_state, status);
 }
@@ -71,6 +73,7 @@ traceVdpGetErrorString(const char *impl_state, VdpStatus status)
 void
 traceVdpGetApiVersion(const char *impl_state, uint32_t *api_version)
 {
+    (void)api_version;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpGetApiVersion\n", trace_header, impl_state);
 }
@@ -81,6 +84,11 @@ traceVdpDecoderQueryCapabilities(const char *impl_state, VdpDevice device,
                                  uint32_t *max_level, uint32_t *max_macroblocks,
                                  uint32_t *max_width, uint32_t *max_height)
 {
+    (void)is_supported;
+    (void)max_level;
+    (void)max_macroblocks;
+    (void)max_width;
+    (void)max_height;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpDecoderQueryCapabilities device=%d, profile=%s\n",
         trace_header, impl_state, device, reverse_decoder_profile(profile));
@@ -90,6 +98,7 @@ void
 traceVdpDecoderCreate(const char *impl_state, VdpDevice device, VdpDecoderProfile profile,
                       uint32_t width, uint32_t height, uint32_t max_references, VdpDecoder *decoder)
 {
+    (void)decoder;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpDecoderCreate device=%d, profile=%s, width=%d, height=%d, "
         "max_references=%d\n", trace_header, impl_state, device, reverse_decoder_profile(profile),
@@ -107,6 +116,9 @@ void
 traceVdpDecoderGetParameters(const char *impl_state, VdpDecoder decoder,
                              VdpDecoderProfile *profile, uint32_t *width, uint32_t *height)
 {
+    (void)profile;
+    (void)width;
+    (void)height;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpDecoderGetParameters decoder=%d\n", trace_header, impl_state, decoder);
 }
@@ -116,6 +128,7 @@ traceVdpDecoderRender(const char *impl_state, VdpDecoder decoder, VdpVideoSurfac
                       VdpPictureInfo const *picture_info, uint32_t bitstream_buffer_count,
                       VdpBitstreamBuffer const *bitstream_buffers)
 {
+    (void)bitstream_buffers;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpDecoderRender decoder=%d, target=%d, picture_info=%p, "
         "bitstream_buffer_count=%d\n", trace_header, impl_state, decoder, target, picture_info,
@@ -127,6 +140,9 @@ traceVdpOutputSurfaceQueryCapabilities(const char *impl_state, VdpDevice device,
                                        VdpRGBAFormat surface_rgba_format, VdpBool *is_supported,
                                        uint32_t *max_width, uint32_t *max_height)
 {
+    (void)is_supported;
+    (void)max_width;
+    (void)max_height;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpOutputSurfaceQueryCapabilities device=%d, surface_rgba_format=%s\n",
         trace_header, impl_state, device, reverse_rgba_format(surface_rgba_format));
@@ -137,6 +153,7 @@ traceVdpOutputSurfaceQueryGetPutBitsNativeCapabilities(const char *impl_state, V
                                                        VdpRGBAFormat surface_rgba_format,
                                                        VdpBool *is_supported)
 {
+    (void)is_supported;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpOutputSurfaceQueryGetPutBitsNativeCapabilities device=%d, "
         "surface_rgba_format=%s\n", trace_header, impl_state, device,
@@ -150,6 +167,7 @@ traceVdpOutputSurfaceQueryPutBitsIndexedCapabilities(const char *impl_state, Vdp
                                                      VdpColorTableFormat color_table_format,
                                                      VdpBool *is_supported)
 {
+    (void)is_supported;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpOutputSurfaceQueryPutBitsIndexedCapabilities device=%d, "
         "surface_rgba_format=%s, bits_indexed_format=%s, color_table_format=%s\n",
@@ -164,6 +182,7 @@ traceVdpOutputSurfaceQueryPutBitsYCbCrCapabilities(const char *impl_state, VdpDe
                                                    VdpYCbCrFormat bits_ycbcr_format,
                                                    VdpBool *is_supported)
 {
+    (void)is_supported;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpOutputSurfaceQueryPutBitsYCbCrCapabilities device=%d, "
         "surface_rgba_format=%s, bits_ycbcr_format=%s\n", trace_header, impl_state,
@@ -174,6 +193,7 @@ void
 traceVdpOutputSurfaceCreate(const char *impl_state, VdpDevice device, VdpRGBAFormat rgba_format,
                             uint32_t width, uint32_t height, VdpOutputSurface *surface)
 {
+    (void)surface;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpOutputSurfaceCreate device=%d, rgba_format=%s, width=%d, height=%d\n",
         trace_header, impl_state, device, reverse_rgba_format(rgba_format), width, height);
@@ -190,6 +210,9 @@ void
 traceVdpOutputSurfaceGetParameters(const char *impl_state, VdpOutputSurface surface,
                                    VdpRGBAFormat *rgba_format, uint32_t *width, uint32_t *height)
 {
+    (void)rgba_format;
+    (void)width;
+    (void)height;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpOutputSurfaceGetParameters surface=%d\n", trace_header, impl_state,
         surface);
@@ -200,6 +223,8 @@ traceVdpOutputSurfaceGetBitsNative(const char *impl_state, VdpOutputSurface surf
                                    VdpRect const *source_rect, void *const *destination_data,
                                    uint32_t const *destination_pitches)
 {
+    (void)destination_data;
+    (void)destination_pitches;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpOutputSurfaceGetBitsNative surface=%d, source_rect=%s\n",
         trace_header, impl_state, surface, rect2string(source_rect));
@@ -210,6 +235,8 @@ traceVdpOutputSurfacePutBitsNative(const char *impl_state, VdpOutputSurface surf
                                    void const *const *source_data, uint32_t const *source_pitches,
                                    VdpRect const *destination_rect)
 {
+    (void)source_data;
+    (void)source_pitches;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpOutputSurfacePutBitsNative surface=%d\n", trace_header, impl_state,
         surface);
@@ -222,6 +249,9 @@ traceVdpOutputSurfacePutBitsIndexed(const char *impl_state, VdpOutputSurface sur
                                     VdpRect const *destination_rect,
                                     VdpColorTableFormat color_table_format, void const *color_table)
 {
+    (void)source_data;
+    (void)source_pitch;
+    (void)color_table;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpOutputSurfacePutBitsIndexed surface=%d, source_indexed_format=%s, "
         "destination_rect=%s, color_table_format=%s\n", trace_header, impl_state, surface,
@@ -235,6 +265,8 @@ traceVdpOutputSurfacePutBitsYCbCr(const char *impl_state, VdpOutputSurface surfa
                                   void const *const *source_data, uint32_t const *source_pitches,
                                   VdpRect const *destination_rect, VdpCSCMatrix const *csc_matrix)
 {
+    (void)source_data;
+    (void)source_pitches;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpOutputSurfacePutBitsYCbCr surface=%d, source_ycbcr_format=%s, "
         "destination_rect=%s, csc_matrix=%p\n", trace_header, impl_state, surface,
@@ -245,6 +277,7 @@ void
 traceVdpVideoMixerQueryFeatureSupport(const char *impl_state, VdpDevice device,
                                       VdpVideoMixerFeature feature, VdpBool *is_supported)
 {
+    (void)is_supported;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoMixerQueryFeatureSupport device=%d, feature=%s\n",
         trace_header, impl_state, device, reverse_video_mixer_feature(feature));
@@ -255,6 +288,7 @@ traceVdpVideoMixerQueryParameterSupport(const char *impl_state, VdpDevice device
                                         VdpVideoMixerParameter parameter,
                                         VdpBool *is_supported)
 {
+    (void)is_supported;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoMixerQueryParameterSupport device=%d, parameter=%s\n",
         trace_header, impl_state, device, reverse_video_mixer_parameter(parameter));
@@ -264,6 +298,7 @@ void
 traceVdpVideoMixerQueryAttributeSupport(const char *impl_state, VdpDevice device,
                                         VdpVideoMixerAttribute attribute, VdpBool *is_supported)
 {
+    (void)is_supported;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoMixerQueryAttributeSupport device=%d, attribute=%s\n",
         trace_header, impl_state, device, reverse_video_mixer_attribute(attribute));
@@ -274,6 +309,8 @@ traceVdpVideoMixerQueryParameterValueRange(const char *impl_state, VdpDevice dev
                                            VdpVideoMixerParameter parameter,
                                            void *min_value, void *max_value)
 {
+    (void)min_value;
+    (void)max_value;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoMixerQueryParameterValueRange device=%d, parameter=%s\n",
         trace_header, impl_state, device, reverse_video_mixer_parameter(parameter));
@@ -284,6 +321,8 @@ traceVdpVideoMixerQueryAttributeValueRange(const char *impl_state, VdpDevice dev
                                            VdpVideoMixerAttribute attribute,
                                            void *min_value, void *max_value)
 {
+    (void)min_value;
+    (void)max_value;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoMixerQueryAttributeValueRange device=%d, attribute=%s\n",
         trace_header, impl_state, device, reverse_video_mixer_attribute(attribute));
@@ -295,6 +334,7 @@ traceVdpVideoMixerCreate(const char *impl_state, VdpDevice device, uint32_t feat
                          VdpVideoMixerParameter const *parameters,
                          void const *const *parameter_values, VdpVideoMixer *mixer)
 {
+    (void)mixer;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoMixerCreate device=%d, feature_count=%d, parameter_count=%d\n",
         trace_header, impl_state, device, feature_count, parameter_count);
@@ -366,6 +406,7 @@ traceVdpVideoMixerGetFeatureSupport(const char *impl_state, VdpVideoMixer mixer,
                                     uint32_t feature_count, VdpVideoMixerFeature const *features,
                                     VdpBool *feature_supports)
 {
+    (void)feature_supports;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoMixerGetFeatureSupport mixer=%d, feature_count=%d\n",
         trace_header, impl_state, mixer, feature_count);
@@ -376,6 +417,7 @@ traceVdpVideoMixerGetFeatureEnables(const char *impl_state, VdpVideoMixer mixer,
                                     uint32_t feature_count, VdpVideoMixerFeature const *features,
                                     VdpBool *feature_enables)
 {
+    (void)feature_enables;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoMixerGetFeatureEnables mixer=%d, feature_count=%d\n",
         trace_header, impl_state, mixer, feature_count);
@@ -387,6 +429,7 @@ traceVdpVideoMixerGetParameterValues(const char *impl_state, VdpVideoMixer mixer
                                      VdpVideoMixerParameter const *parameters,
                                      void *const *parameter_values)
 {
+    (void)parameter_values;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoMixerGetParameterValues mixer=%d, parameter_count=%d\n",
         trace_header, impl_state, mixer, parameter_count);
@@ -398,6 +441,7 @@ traceVdpVideoMixerGetAttributeValues(const char *impl_state, VdpVideoMixer mixer
                                      VdpVideoMixerAttribute const *attributes,
                                      void *const *attribute_values)
 {
+    (void)attribute_values;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoMixerGetAttributeValues mixer=%d, attribute_count=%d\n",
         trace_header, impl_state, mixer, attribute_count);
@@ -463,6 +507,7 @@ traceVdpPresentationQueueCreate(const char *impl_state, VdpDevice device,
                                 VdpPresentationQueueTarget presentation_queue_target,
                                 VdpPresentationQueue *presentation_queue)
 {
+    (void)presentation_queue;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpPresentationQueueCreate device=%d, presentation_queue_target=%d\n",
         trace_header, impl_state, device, presentation_queue_target);
@@ -491,6 +536,7 @@ traceVdpPresentationQueueGetBackgroundColor(const char *impl_state,
                                             VdpPresentationQueue presentation_queue,
                                             VdpColor *background_color)
 {
+    (void)background_color;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpPresentationQueueGetBackgroundColor  presentation_queue=%d\n",
         trace_header, impl_state, presentation_queue);
@@ -500,6 +546,7 @@ void
 traceVdpPresentationQueueGetTime(const char *impl_state, VdpPresentationQueue presentation_queue,
                                  VdpTime *current_time)
 {
+    (void)current_time;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpPresentationQueueGetTime presentation_queue=%d\n",
         trace_header, impl_state, presentation_queue);
@@ -523,6 +570,7 @@ traceVdpPresentationQueueBlockUntilSurfaceIdle(const char *impl_state,
                                                VdpTime *first_presentation_time)
 
 {
+    (void)first_presentation_time;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpPresentationQueueBlockUntilSurfaceIdle presentation_queue=%d, "
         "surface=%d\n", trace_header, impl_state, presentation_queue, surface);
@@ -535,6 +583,8 @@ traceVdpPresentationQueueQuerySurfaceStatus(const char *impl_state,
                                             VdpPresentationQueueStatus *status,
                                             VdpTime *first_presentation_time)
 {
+    (void)status;
+    (void)first_presentation_time;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpPresentationQueueQuerySurfaceStatus presentation_queue=%d, "
         "surface=%d\n", trace_header, impl_state, presentation_queue, surface);
@@ -545,6 +595,9 @@ traceVdpVideoSurfaceQueryCapabilities(const char *impl_state, VdpDevice device,
                                       VdpChromaType surface_chroma_type, VdpBool *is_supported,
                                       uint32_t *max_width, uint32_t *max_height)
 {
+    (void)is_supported;
+    (void)max_width;
+    (void)max_height;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoSurfaceQueryCapabilities device=%d, surface_chroma_type=%s\n",
         trace_header, impl_state, device, reverse_chroma_type(surface_chroma_type));
@@ -556,6 +609,7 @@ traceVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(const char *impl_state, Vdp
                                                      VdpYCbCrFormat bits_ycbcr_format,
                                                      VdpBool *is_supported)
 {
+    (void)is_supported;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities device=%d, "
         "surface_chroma_type=%s, bits_ycbcr_format=%s\n", trace_header, impl_state,
@@ -566,6 +620,7 @@ void
 traceVdpVideoSurfaceCreate(const char *impl_state, VdpDevice device, VdpChromaType chroma_type,
                            uint32_t width, uint32_t height, VdpVideoSurface *surface)
 {
+    (void)surface;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoSurfaceCreate, device=%d, chroma_type=%s, width=%d, height=%d\n",
         trace_header, impl_state, device, reverse_chroma_type(chroma_type), width, height);
@@ -582,6 +637,9 @@ void
 traceVdpVideoSurfaceGetParameters(const char *impl_state, VdpVideoSurface surface,
                                   VdpChromaType *chroma_type, uint32_t *width, uint32_t *height)
 {
+    (void)chroma_type;
+    (void)width;
+    (void)height;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoSurfaceGetParameters surface=%d\n", trace_header, impl_state,
         surface);
@@ -592,6 +650,8 @@ traceVdpVideoSurfaceGetBitsYCbCr(const char *impl_state, VdpVideoSurface surface
                                  VdpYCbCrFormat destination_ycbcr_format,
                                  void *const *destination_data, uint32_t const *destination_pitches)
 {
+    (void)destination_data;
+    (void)destination_pitches;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoSurfaceGetBitsYCbCr surface=%d, destination_ycbcr_format=%s\n",
         trace_header, impl_state, surface, reverse_ycbcr_format(destination_ycbcr_format));
@@ -602,6 +662,8 @@ traceVdpVideoSurfacePutBitsYCbCr(const char *impl_state, VdpVideoSurface surface
                                  VdpYCbCrFormat source_ycbcr_format, void const *const *source_data,
                                  uint32_t const *source_pitches)
 {
+    (void)source_data;
+    (void)source_pitches;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpVideoSurfacePutBitsYCbCr surface=%d, source_ycbcr_format=%s\n",
         trace_header, impl_state, surface, reverse_ycbcr_format(source_ycbcr_format));
@@ -612,6 +674,9 @@ traceVdpBitmapSurfaceQueryCapabilities(const char *impl_state, VdpDevice device,
                                        VdpRGBAFormat surface_rgba_format, VdpBool *is_supported,
                                        uint32_t *max_width, uint32_t *max_height)
 {
+    (void)is_supported;
+    (void)max_width;
+    (void)max_height;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpBitmapSurfaceQueryCapabilities device=%d, surface_rgba_format=%s\n",
         trace_header, impl_state, device, reverse_rgba_format(surface_rgba_format));
@@ -622,6 +687,7 @@ traceVdpBitmapSurfaceCreate(const char *impl_state, VdpDevice device, VdpRGBAFor
                             uint32_t width, uint32_t height, VdpBool frequently_accessed,
                             VdpBitmapSurface *surface)
 {
+    (void)surface;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpBitmapSurfaceCreate device=%d, rgba_format=%s, width=%d, height=%d,\n"
         "%s      frequently_accessed=%d\n", trace_header, impl_state, device,
@@ -640,6 +706,10 @@ traceVdpBitmapSurfaceGetParameters(const char *impl_state, VdpBitmapSurface surf
                                    VdpRGBAFormat *rgba_format, uint32_t *width, uint32_t *height,
                                    VdpBool *frequently_accessed)
 {
+    (void)rgba_format;
+    (void)width;
+    (void)height;
+    (void)frequently_accessed;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpBitmapSurfaceGetParameters surface=%d\n",
         trace_header, impl_state, surface);
@@ -650,6 +720,8 @@ traceVdpBitmapSurfacePutBitsNative(const char *impl_state, VdpBitmapSurface surf
                                    void const *const *source_data, uint32_t const *source_pitches,
                                    VdpRect const *destination_rect)
 {
+    (void)source_data;
+    (void)source_pitches;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpBitmapSurfacePutBitsNative surface=%d, destination_rect=%s\n",
         trace_header, impl_state, surface, rect2string(destination_rect));
@@ -665,6 +737,7 @@ traceVdpDeviceDestroy(const char *impl_state, VdpDevice device)
 void
 traceVdpGetInformationString(const char *impl_state, char const **information_string)
 {
+    (void)information_string;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpGetInformationString\n", trace_header, impl_state);
 }
@@ -673,6 +746,7 @@ void
 traceVdpGenerateCSCMatrix(const char *impl_state, VdpProcamp *procamp, VdpColorStandard standard,
                           VdpCSCMatrix *csc_matrix)
 {
+    (void)csc_matrix;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpGenerateCSCMatrix ", trace_header, impl_state);
     if (procamp) {
@@ -761,6 +835,7 @@ void
 traceVdpPresentationQueueTargetCreateX11(const char *impl_state, VdpDevice device,
                                          Drawable drawable, VdpPresentationQueueTarget *target)
 {
+    (void)target;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpPresentationQueueTargetCreateX11, device=%d, drawable=%u\n",
         trace_header, impl_state, device, ((unsigned int)drawable));
@@ -770,6 +845,7 @@ void
 traceVdpGetProcAddress(const char *impl_state, VdpDevice device, VdpFuncId function_id,
                        void **function_pointer)
 {
+    (void)function_pointer;
     if (!enabled) return;
     fprintf(tlog, "%s%s VdpGetProcAddress, device=%d, function_id=%s\n",
         trace_header, impl_state, device, reverse_func_id(function_id));
@@ -779,6 +855,8 @@ void
 traceVdpDeviceCreateX11(const char *trace_state, Display *display, int screen, VdpDevice *device,
                         VdpGetProcAddress **get_proc_address)
 {
+    (void)device;
+    (void)get_proc_address;
     if (!enabled) return;
     fprintf(tlog, "%s%s vdp_imp_device_create_x11 display=%p, screen=%d\n", trace_header,
         trace_state, display, screen);
