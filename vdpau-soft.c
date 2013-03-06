@@ -455,7 +455,7 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         status = vaRenderPicture(va_dpy, decoderData->context_id, &iq_matrix_buf, 1);
 
         // TODO: debug code, remove
-        for (int k = 0; k < bitstream_buffer_count; k ++) {
+        for (unsigned int k = 0; k < bitstream_buffer_count; k ++) {
             unsigned int sz = bitstream_buffers[k].bitstream_bytes;
             const uint8_t *buf = bitstream_buffers[k].bitstream;
             fprintf(stderr, "--------------------------\nbitstream buffer #%d, size = %d\n", k, sz);
@@ -890,7 +890,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
                         src_planes, src_strides, 0, srcSurfData->height,
                         dst_planes, dst_strides);
     sws_freeContext(sws_ctx);
-    if (res != dstSurfData->height) {
+    if (res != (int)dstSurfData->height) {
         fprintf(stderr, "scaling failed\n");
         return VDP_STATUS_ERROR;
     }
