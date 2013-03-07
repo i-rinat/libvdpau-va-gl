@@ -83,6 +83,15 @@ do_fill_va_slice_parameter_buffer(struct slice_parameters const * const sp,
     vasp->slice_beta_offset_div2 = sp->slice_beta_offset_div2;
     //~ VAPictureH264 RefPicList0[32];	/* See 8.2.4.2 */
     //~ VAPictureH264 RefPicList1[32];	/* See 8.2.4.2 */
+
+    // TODO: supply correct values
+    for (int k = 0; k < 32; k ++) {
+        vasp->RefPicList0[k].flags = VA_PICTURE_H264_INVALID;
+        vasp->RefPicList0[k].picture_id = -1;
+        vasp->RefPicList1[k].flags = VA_PICTURE_H264_INVALID;
+        vasp->RefPicList1[k].picture_id = -1;
+    }
+
     vasp->luma_log2_weight_denom = sp->luma_log2_weight_denom;
     vasp->chroma_log2_weight_denom = sp->luma_log2_weight_denom;
 
