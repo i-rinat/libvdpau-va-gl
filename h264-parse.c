@@ -24,6 +24,11 @@ struct slice_parameters {
     int num_ref_idx_l1_active_minus1;
 };
 
+static
+void
+parse_ref_pic_list_modification(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
+                                struct slice_parameters *sp);
+
 void
 parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
                    const int ChromaArrayType, VASliceParameterBufferH264 *vasp)
@@ -100,44 +105,7 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
     if (20 == sp.nal_unit_type) {
         NOT_IMPLEMENTED;
     } else {
-        // begin of ref_pic_list_modification( )
-        if (2 != sp.slice_type && 4 != sp.slice_type) {
-            int ref_pic_list_modification_flag_l0 = rbsp_get_u(st, 1);
-            fprintf(stderr, "ref_pic_list_modification_flag_l0 = %d\n",
-                ref_pic_list_modification_flag_l0);
-            if (ref_pic_list_modification_flag_l0) {
-                int modification_of_pic_nums_idc;
-                do {
-                    modification_of_pic_nums_idc = rbsp_get_uev(st);
-                    if (0 == modification_of_pic_nums_idc ||
-                        1 == modification_of_pic_nums_idc)
-                    {
-                        fprintf(stderr, "abs_diff_pic_num_minus1 = %d\n", rbsp_get_uev(st));
-                    } else if (2 == modification_of_pic_nums_idc) {
-                        fprintf(stderr, "long_term_pic_num = %d\n", rbsp_get_uev(st));
-                    }
-                } while (modification_of_pic_nums_idc != 3);
-
-            }
-        }
-
-        if (1 == sp.slice_type) {
-            int ref_pic_list_modification_flag_l1 = rbsp_get_u(st, 1);
-            if (ref_pic_list_modification_flag_l1) {
-                int modification_of_pic_nums_idc;
-                do {
-                    modification_of_pic_nums_idc = rbsp_get_uev(st);
-                    if (0 == modification_of_pic_nums_idc ||
-                        1 == modification_of_pic_nums_idc)
-                    {
-                        fprintf(stderr, "abs_diff_pic_num_minus1 = %d\n", rbsp_get_uev(st));
-                    } else if (2 == modification_of_pic_nums_idc) {
-                        fprintf(stderr, "long_term_pic_num = %d\n", rbsp_get_uev(st));
-                    }
-                } while (modification_of_pic_nums_idc != 3);
-            }
-        }
-        // end of ref_pic_list_modification( )
+        parse_ref_pic_list_modification(st, vdppi, &sp);
     }
 
     if ((vdppi->weighted_pred_flag &&
@@ -232,3 +200,46 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
 
 }
 
+
+static
+void
+parse_ref_pic_list_modification(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
+                                struct slice_parameters *sp)
+{
+    if (2 != sp->slice_type && 4 != sp->slice_type) {
+        int ref_pic_list_modification_flag_l0 = rbsp_get_u(st, 1);
+        fprintf(stderr, "ref_pic_list_modification_flag_l0 = %d\n",
+            ref_pic_list_modification_flag_l0);
+        if (ref_pic_list_modification_flag_l0) {
+            int modification_of_pic_nums_idc;
+            do {
+                modification_of_pic_nums_idc = rbsp_get_uev(st);
+                if (0 == modification_of_pic_nums_idc ||
+                    1 == modification_of_pic_nums_idc)
+                {
+                    fprintf(stderr, "abs_diff_pic_num_minus1 = %d\n", rbsp_get_uev(st));
+                } else if (2 == modification_of_pic_nums_idc) {
+                    fprintf(stderr, "long_term_pic_num = %d\n", rbsp_get_uev(st));
+                }
+            } while (modification_of_pic_nums_idc != 3);
+
+        }
+    }
+
+    if (1 == sp->slice_type) {
+        int ref_pic_list_modification_flag_l1 = rbsp_get_u(st, 1);
+        if (ref_pic_list_modification_flag_l1) {
+            int modification_of_pic_nums_idc;
+            do {
+                modification_of_pic_nums_idc = rbsp_get_uev(st);
+                if (0 == modification_of_pic_nums_idc ||
+                    1 == modification_of_pic_nums_idc)
+                {
+                    fprintf(stderr, "abs_diff_pic_num_minus1 = %d\n", rbsp_get_uev(st));
+                } else if (2 == modification_of_pic_nums_idc) {
+                    fprintf(stderr, "long_term_pic_num = %d\n", rbsp_get_uev(st));
+                }
+            } while (modification_of_pic_nums_idc != 3);
+        }
+    }
+}
