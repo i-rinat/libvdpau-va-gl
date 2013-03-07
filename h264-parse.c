@@ -160,8 +160,8 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
         sp.direct_spatial_mv_pred_flag = rbsp_get_u(st, 1);
 
     sp.num_ref_idx_active_override_flag = 0;
-    sp.num_ref_idx_l0_active_minus1 = 0;
-    sp.num_ref_idx_l1_active_minus1 = 0;
+    sp.num_ref_idx_l0_active_minus1 = vdppi->num_ref_idx_l0_active_minus1;
+    sp.num_ref_idx_l1_active_minus1 = vdppi->num_ref_idx_l1_active_minus1;
     if (SLICE_TYPE_P == sp.slice_type || SLICE_TYPE_SP == sp.slice_type ||
         SLICE_TYPE_B == sp.slice_type)
     {
