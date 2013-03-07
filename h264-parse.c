@@ -22,12 +22,35 @@ struct slice_parameters {
     int num_ref_idx_active_override_flag;
     int num_ref_idx_l0_active_minus1;
     int num_ref_idx_l1_active_minus1;
+    int luma_log2_weight_denom;
+    int chroma_log2_weight_denom;
+    unsigned int luma_weight_l0_flag;
+    int luma_weight_l0[32];
+    int luma_offset_l0[32];
+    unsigned int chroma_weight_l0_flag;
+    int chroma_weight_l0[32][2];
+    int chroma_offset_l0[32][2];
+    unsigned int luma_weight_l1_flag;
+    int luma_weight_l1[32];
+    int luma_offset_l1[32];
+    unsigned int chroma_weight_l1_flag;
+    int chroma_weight_l1[32][2];
+    int chroma_offset_l1[32][2];
 };
 
 static
 void
 parse_ref_pic_list_modification(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
                                 struct slice_parameters *sp);
+
+static
+void
+parse_pred_weight_table(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
+                        const int ChromaArrayType, struct slice_parameters *sp);
+
+static
+void
+fill_default_pred_weight_table(const VdpPictureInfoH264 *vdppi, struct slice_parameters *sp);
 
 void
 parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
@@ -108,54 +131,12 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
         parse_ref_pic_list_modification(st, vdppi, &sp);
     }
 
+    fill_default_pred_weight_table(vdppi, &sp);
     if ((vdppi->weighted_pred_flag &&
         (SLICE_TYPE_P == sp.slice_type || SLICE_TYPE_SP == sp.slice_type)) ||
         (1 == vdppi->weighted_bipred_idc && SLICE_TYPE_B == sp.slice_type))
     {
-        // begin of pred_weight_table( )
-        fprintf(stderr, "luma_log2_weight_denom = %d\n", rbsp_get_uev(st));
-        if (0 != ChromaArrayType) {
-            fprintf(stderr, "chroma_log2_weight_denom = %d\n", rbsp_get_uev(st));
-        }
-        for (int k = 0; k <= vdppi->num_ref_idx_l0_active_minus1; k ++) {
-            int luma_weight_l0_flag = rbsp_get_u(st, 1);
-            fprintf(stderr, "luma_weight_l0_flag = %d\n", luma_weight_l0_flag);
-            if (luma_weight_l0_flag) {
-                fprintf(stderr, "luma_weight_l0[%d] = %d\n", k, rbsp_get_sev(st));
-                fprintf(stderr, "luma_offset_l0[%d] = %d\n", k, rbsp_get_sev(st));
-            }
-            if (0 != ChromaArrayType) {
-                int chroma_weight_l0_flag = rbsp_get_u(st, 1);
-                fprintf(stderr, "chroma_weight_l0_flag = %d\n", chroma_weight_l0_flag);
-                if (chroma_weight_l0_flag) {
-                    for (int j = 0; j < 2; j ++) {
-                        fprintf(stderr, "chroma_weight_l0[%d][%d] = %d\n", k, j, rbsp_get_sev(st));
-                        fprintf(stderr, "chroma_offset_l0[%d][%d] = %d\n", k, j, rbsp_get_sev(st));
-                    }
-                }
-            }
-        }
-        if (1 == sp.slice_type) {
-            for (int k = 0; k <= vdppi->num_ref_idx_l1_active_minus1; k ++) {
-                int luma_weight_l1_flag = rbsp_get_u(st, 1);
-                fprintf(stderr, "luma_weight_l1_flag = %d\n", luma_weight_l1_flag);
-                if (luma_weight_l1_flag) {
-                    fprintf(stderr, "luma_weight_l1[%d] = %d\n", k, rbsp_get_sev(st));
-                    fprintf(stderr, "luma_offset_l1[%d] = %d\n", k, rbsp_get_sev(st));
-                }
-                if (0 != ChromaArrayType) {
-                    int chroma_weight_l1_flag = rbsp_get_u(st, 1);
-                    fprintf(stderr, "chroma_weight_l1_flag = %d\n", chroma_weight_l1_flag);
-                    if (chroma_weight_l1_flag) {
-                        for (int j = 0; j < 2; j ++) {
-                            fprintf(stderr, "chroma_weight_l1[%d][%d] = %d\n", k, j, rbsp_get_sev(st));
-                            fprintf(stderr, "chroma_offset_l1[%d][%d] = %d\n", k, j, rbsp_get_sev(st));
-                        }
-                    }
-                }
-            }
-        }
-        // end of pred_weight_table( )
+        parse_pred_weight_table(st, vdppi, ChromaArrayType, &sp);
     }
 
     if (sp.nal_ref_idc != 0) {
@@ -240,6 +221,77 @@ parse_ref_pic_list_modification(rbsp_state_t *st, const VdpPictureInfoH264 *vdpp
                     fprintf(stderr, "long_term_pic_num = %d\n", rbsp_get_uev(st));
                 }
             } while (modification_of_pic_nums_idc != 3);
+        }
+    }
+}
+
+static
+void
+fill_default_pred_weight_table(const VdpPictureInfoH264 *vdppi, struct slice_parameters *sp)
+{
+    sp->luma_log2_weight_denom = 0;
+    sp->chroma_log2_weight_denom = 0;
+    sp->luma_weight_l0_flag = 0;
+    sp->luma_weight_l1_flag = 0;
+    sp->chroma_weight_l0_flag = 0;
+    sp->chroma_weight_l1_flag = 0;
+    for (int k = 0; k < vdppi->num_ref_idx_l0_active_minus1 + 1; k ++) {
+        sp->luma_weight_l0[k] = 1;
+        sp->luma_offset_l0[k] = 0;
+        sp->chroma_weight_l0[k][0] = sp->chroma_weight_l0[k][1] = 1;
+        sp->chroma_offset_l0[k][0] = sp->chroma_offset_l0[k][1] = 0;
+    }
+    for (int k = 0; k < vdppi->num_ref_idx_l1_active_minus1 + 1; k ++) {
+        sp->luma_weight_l1[k] = 1;
+        sp->luma_offset_l1[k] = 0;
+        sp->chroma_weight_l1[k][0] = sp->chroma_weight_l1[k][1] = 1;
+        sp->chroma_offset_l1[k][0] = sp->chroma_offset_l1[k][1] = 0;
+    }
+}
+
+
+static
+void
+parse_pred_weight_table(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
+                        const int ChromaArrayType, struct slice_parameters *sp)
+{
+    sp->luma_log2_weight_denom = rbsp_get_uev(st);
+    if (0 != ChromaArrayType)
+        sp->chroma_log2_weight_denom = rbsp_get_uev(st);
+
+    for (int k = 0; k <= vdppi->num_ref_idx_l0_active_minus1; k ++) {
+        sp->luma_weight_l0_flag = rbsp_get_u(st, 1);
+        if (sp->luma_weight_l0_flag) {
+            sp->luma_weight_l0[k] = rbsp_get_sev(st);
+            sp->luma_offset_l0[k] = rbsp_get_sev(st);
+        }
+        if (0 != ChromaArrayType) {
+            sp->chroma_weight_l0_flag = rbsp_get_u(st, 1);
+            if (sp->chroma_weight_l0_flag) {
+                for (int j = 0; j < 2; j ++) {
+                    sp->chroma_weight_l0[k][j] = rbsp_get_sev(st);
+                    sp->chroma_offset_l0[k][j] = rbsp_get_sev(st);
+                }
+            }
+        }
+    }
+
+    if (1 == sp->slice_type) {
+        for (int k = 0; k <= vdppi->num_ref_idx_l1_active_minus1; k ++) {
+            sp->luma_weight_l1_flag = rbsp_get_u(st, 1);
+            if (sp->luma_weight_l1_flag) {
+                sp->luma_weight_l1[k] = rbsp_get_sev(st);
+                sp->luma_offset_l1[k] = rbsp_get_sev(st);
+            }
+            if (0 != ChromaArrayType) {
+                sp->chroma_weight_l1_flag = rbsp_get_u(st, 1);
+                if (sp->chroma_weight_l1_flag) {
+                    for (int j = 0; j < 2; j ++) {
+                        sp->chroma_weight_l1[k][j] = rbsp_get_sev(st);
+                        sp->chroma_offset_l1[k][j] = rbsp_get_sev(st);
+                    }
+                }
+            }
         }
     }
 }
