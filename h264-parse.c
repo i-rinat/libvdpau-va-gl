@@ -187,11 +187,11 @@ void
 parse_ref_pic_list_modification(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
                                 struct slice_parameters *sp)
 {
+    (void)vdppi;
     if (2 != sp->slice_type && 4 != sp->slice_type) {
         int ref_pic_list_modification_flag_l0 = rbsp_get_u(st, 1);
-        fprintf(stderr, "ref_pic_list_modification_flag_l0 = %d\n",
-            ref_pic_list_modification_flag_l0);
         if (ref_pic_list_modification_flag_l0) {
+            NOT_IMPLEMENTED;    // TODO: implement this
             int modification_of_pic_nums_idc;
             do {
                 modification_of_pic_nums_idc = rbsp_get_uev(st);
@@ -210,6 +210,7 @@ parse_ref_pic_list_modification(rbsp_state_t *st, const VdpPictureInfoH264 *vdpp
     if (1 == sp->slice_type) {
         int ref_pic_list_modification_flag_l1 = rbsp_get_u(st, 1);
         if (ref_pic_list_modification_flag_l1) {
+            NOT_IMPLEMENTED;    // TODO: implement this
             int modification_of_pic_nums_idc;
             do {
                 modification_of_pic_nums_idc = rbsp_get_uev(st);
