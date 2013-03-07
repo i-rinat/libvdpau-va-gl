@@ -406,47 +406,6 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         memcpy(iq_matrix->ScalingList8x8, vdppi->scaling_lists_8x8,
             sizeof(iq_matrix->ScalingList8x8));
 
-        // Slice parameters
-        VABufferID slice_parameters_buf;
-        VASliceParameterBufferH264 slice_parameters;
-        memset(&slice_parameters, 0, sizeof(VASliceParameterBufferH264));
-
-        slice_parameters.slice_data_size               = bitstream_buffers[1].bitstream_bytes;
-        slice_parameters.slice_data_offset             = 0;
-        slice_parameters.slice_data_flag               = VA_SLICE_DATA_FLAG_ALL;
-        slice_parameters.slice_data_bit_offset         = 0;
-        slice_parameters.first_mb_in_slice             = 0;    // ???
-        switch (va_ref_frame_count) {
-        case 0: slice_parameters.slice_type            = 2; break;
-        case 1: slice_parameters.slice_type            = 0; break;
-        default: slice_parameters.slice_type           = 1; break;
-        }
-        //~ slice_parameters->direct_spatial_mv_pred_flag   =
-        slice_parameters.num_ref_idx_l0_active_minus1  = vdppi->num_ref_idx_l0_active_minus1;
-        slice_parameters.num_ref_idx_l1_active_minus1  = vdppi->num_ref_idx_l1_active_minus1;
-        //~ slice_parameters->cabac_init_idc
-        //~ slice_parameters->slice_qp_delta
-        //~ slice_parameters->disable_deblocking_filter_idc
-        //~ slice_parameters->slice_alpha_c0_offset_div2
-        //~ slice_parameters->slice_beta_offset_div2
-        //~ slice_parameters->RefPicList0 [32]
-        //~ slice_parameters->RefPicList1 [32]
-        //~ slice_parameters->luma_log2_weight_denom
-        //~ slice_parameters->chroma_log2_weight_denom
-        //~ slice_parameters->luma_weight_l0_flag
-        //~ slice_parameters->luma_weight_l0[32]
-        //~ slice_parameters->luma_offset_l0[32]
-        //~ slice_parameters->chroma_weight_l0_flag
-        //~ slice_parameters->chroma_weight_l0[32][2]
-        //~ slice_parameters->chroma_offset_l0[32][2]
-        //~ slice_parameters->luma_weight_l1_flag
-        //~ slice_parameters->luma_weight_l1[32]
-        //~ slice_parameters->luma_offset_l1[32]
-        //~ slice_parameters->chroma_weight_l1_flag
-        //~ slice_parameters->chroma_weight_l1[32][2]
-        //~ slice_parameters->chroma_offset_l1[32][2]
-
-
         vaUnmapBuffer(va_dpy, pic_param_buf);
         vaUnmapBuffer(va_dpy, iq_matrix_buf);
 
@@ -455,21 +414,8 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         status = vaRenderPicture(va_dpy, decoderData->context_id, &iq_matrix_buf, 1);
 
         // TODO: debug code, remove
-        //~ for (unsigned int k = 0; k < bitstream_buffer_count; k ++) {
-            //~ unsigned int sz = bitstream_buffers[k].bitstream_bytes;
-            //~ const uint8_t *buf = bitstream_buffers[k].bitstream;
-            //~ fprintf(stderr, "--------------------------\nbitstream buffer #%d, size = %d\n", k, sz);
-            //~ for (unsigned int y = 0; y <= sz / 16; y ++) {
-                //~ fprintf(stderr, "%04x   ", y*16);
-                //~ for (unsigned int x = 0; x < 16; x ++) {
-                    //~ if (y*16 + x < sz) fprintf(stderr, " %02x", buf[y*16 + x]);
-                //~ }
-                //~ fprintf(stderr, "\n");
-            //~ }
-            //~ fprintf(stderr, "---------------------------\n");
-        //~ }
 
-        rbsp_state_t st;
+        //~ rbsp_state_t st;
         //~ rbsp_attach_buffer(&st, bitstream_buffers[1].bitstream, bitstream_buffers[1].bitstream_bytes);
         //~ int c;
         //~ int x = 0;
@@ -480,19 +426,25 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         //~ }
         //~ fprintf(stderr, "\n");
 
+        // Slice parameters
+        VABufferID slice_parameters_buf;
+        VASliceParameterBufferH264 sp_h264;
+        memset(&sp_h264, 0, sizeof(VASliceParameterBufferH264));
+
+        sp_h264.slice_data_size               = bitstream_buffers[1].bitstream_bytes;
+        sp_h264.slice_data_offset             = 0;
+        sp_h264.slice_data_flag               = VA_SLICE_DATA_FLAG_ALL;
+        rbsp_state_t st;
         rbsp_attach_buffer(&st, bitstream_buffers[1].bitstream, bitstream_buffers[1].bitstream_bytes);
 
         // TODO: this may be not entirely true for YUV444
         // but if we limiting to YUV420, that's ok
         int ChromaArrayType = pic_param->seq_fields.bits.chroma_format_idc;
 
-        parse_slice_header(&st, vdppi, ChromaArrayType, &slice_parameters);
-
-        fprintf(stderr, "/////////////////////\n");
-        //////////////////////////
+        parse_slice_header(&st, vdppi, ChromaArrayType, &sp_h264);
 
         status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceParameterBufferType,
-            sizeof(VASliceParameterBufferH264), 1, &slice_parameters, &slice_parameters_buf);
+            sizeof(VASliceParameterBufferH264), 1, &sp_h264, &slice_parameters_buf);
         if (VA_STATUS_SUCCESS != status) goto error;
         status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_parameters_buf, 1);
 
