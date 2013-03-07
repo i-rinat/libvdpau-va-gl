@@ -155,5 +155,45 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
         // end of pred_weight_table( )
     }
 
+    if (sp.nal_ref_idc != 0) {
+        // dec_ref_pic_marking( )
+        if (NAL_IDR_SLICE == sp.nal_unit_type) {
+            fprintf(stderr, "no_output_of_prior_pics_flag = %d\n", rbsp_get_u(st, 1));
+            fprintf(stderr, "long_term_reference_flag = %d\n", rbsp_get_u(st, 1));
+        } else {
+            int adaptive_ref_pic_marking_mode_flag = rbsp_get_u(st, 1);
+            fprintf(stderr, "adaptive_ref_pic_marking_mode_flag = %d\n", adaptive_ref_pic_marking_mode_flag);
+            if (adaptive_ref_pic_marking_mode_flag) {
+                int memory_management_control_operation;
+                do {
+                    memory_management_control_operation = rbsp_get_uev(st);
+                    fprintf(stderr, "memory_management_control_operation = %d\n", memory_management_control_operation);
+                    if (1 == memory_management_control_operation ||
+                        3 == memory_management_control_operation)
+                    {
+                        fprintf(stderr, "difference_of_pic_nums_minus1 = %d\n", rbsp_get_uev(st));
+                    }
+                    if (2 == memory_management_control_operation) {
+                        fprintf(stderr, "long_term_pic_num = %d\n", rbsp_get_uev(st));
+                    }
+                    if (3 == memory_management_control_operation ||
+                        6 == memory_management_control_operation)
+                    {
+                        fprintf(stderr, "long_term_frame_idx = %d\n", rbsp_get_uev(st));
+                    }
+                    if (4 == memory_management_control_operation) {
+                        fprintf(stderr, "max_long_term_frame_idx_plus1 = %d\n", rbsp_get_uev(st));
+                    }
+                } while (memory_management_control_operation != 0);
+            }
+        }
+        // end of dec_ref_pic_marking( )
+    }
+    if (vdppi->entropy_coding_mode_flag &&
+        SLICE_TYPE_I != sp.slice_type && SLICE_TYPE_SI != sp.slice_type)
+    {
+        fprintf(stderr, "cabac_init_idc = %d\n", rbsp_get_uev(st));
+    }
+
 }
 
