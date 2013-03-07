@@ -36,6 +36,10 @@ struct slice_parameters {
     unsigned int chroma_weight_l1_flag;
     int chroma_weight_l1[32][2];
     int chroma_offset_l1[32][2];
+    unsigned int no_output_of_prior_pics_flag;
+    unsigned int long_term_reference_flag;
+    unsigned int cabac_init_idc;
+    int slice_qp_delta;
 };
 
 static
@@ -51,6 +55,54 @@ parse_pred_weight_table(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
 static
 void
 fill_default_pred_weight_table(const VdpPictureInfoH264 *vdppi, struct slice_parameters *sp);
+
+static
+void
+parse_dec_ref_pic_marking(rbsp_state_t *st, struct slice_parameters *sp);
+
+static
+void
+do_fill_va_slice_parameter_buffer(VdpPictureInfoH264 const * const vdppi,
+                                  struct slice_parameters const * const sp,
+                                  VASliceParameterBufferH264 *vasp)
+{
+    assert (sp->num_ref_idx_l0_active_minus1 == vdppi->num_ref_idx_l0_active_minus1);
+    assert (sp->num_ref_idx_l1_active_minus1 == vdppi->num_ref_idx_l1_active_minus1);
+
+    vasp->slice_data_bit_offset = 0;
+    vasp->first_mb_in_slice = sp->first_mb_in_slice;
+    vasp->slice_type = sp->slice_type;
+    vasp->direct_spatial_mv_pred_flag = sp->direct_spatial_mv_pred_flag;
+    vasp->num_ref_idx_l0_active_minus1 = sp->num_ref_idx_l0_active_minus1;
+    vasp->num_ref_idx_l1_active_minus1 = sp->num_ref_idx_l1_active_minus1;
+    vasp->cabac_init_idc = sp->cabac_init_idc;
+    vasp->slice_qp_delta = sp->slice_qp_delta;
+    //~ unsigned char disable_deblocking_filter_idc;
+    //~ char slice_alpha_c0_offset_div2;
+    //~ char slice_beta_offset_div2;
+    //~ VAPictureH264 RefPicList0[32];	/* See 8.2.4.2 */
+    //~ VAPictureH264 RefPicList1[32];	/* See 8.2.4.2 */
+    vasp->luma_log2_weight_denom = sp->luma_log2_weight_denom;
+    vasp->chroma_log2_weight_denom = sp->luma_log2_weight_denom;
+
+    vasp->luma_weight_l0_flag = sp->luma_weight_l0_flag;
+    for (int k = 0; k < 32; k ++) vasp->luma_weight_l0[k] = sp->luma_weight_l0[k];
+    for (int k = 0; k < 32; k ++) vasp->luma_offset_l0[k] = sp->luma_offset_l0[k];
+    vasp->chroma_weight_l0_flag = sp->chroma_weight_l0_flag;
+    for (int k = 0; k < 32; k ++) vasp->chroma_weight_l0[k][0] = sp->chroma_weight_l0[k][0];
+    for (int k = 0; k < 32; k ++) vasp->chroma_weight_l0[k][1] = sp->chroma_weight_l0[k][1];
+    for (int k = 0; k < 32; k ++) vasp->chroma_offset_l0[k][0] = sp->chroma_offset_l0[k][0];
+    for (int k = 0; k < 32; k ++) vasp->chroma_offset_l0[k][1] = sp->chroma_offset_l0[k][1];
+
+    vasp->luma_weight_l1_flag = sp->luma_weight_l1_flag;
+    for (int k = 0; k < 32; k ++) vasp->luma_weight_l1[k] = sp->luma_weight_l1[k];
+    for (int k = 0; k < 32; k ++) vasp->luma_offset_l1[k] = sp->luma_offset_l1[k];
+    vasp->chroma_weight_l1_flag = sp->chroma_weight_l1_flag;
+    for (int k = 0; k < 32; k ++) vasp->chroma_weight_l1[k][0] = sp->chroma_weight_l1[k][0];
+    for (int k = 0; k < 32; k ++) vasp->chroma_weight_l1[k][1] = sp->chroma_weight_l1[k][1];
+    for (int k = 0; k < 32; k ++) vasp->chroma_offset_l1[k][0] = sp->chroma_offset_l1[k][0];
+    for (int k = 0; k < 32; k ++) vasp->chroma_offset_l1[k][1] = sp->chroma_offset_l1[k][1];
+}
 
 void
 parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
@@ -140,45 +192,17 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
     }
 
     if (sp.nal_ref_idc != 0) {
-        // dec_ref_pic_marking( )
-        if (NAL_IDR_SLICE == sp.nal_unit_type) {
-            fprintf(stderr, "no_output_of_prior_pics_flag = %d\n", rbsp_get_u(st, 1));
-            fprintf(stderr, "long_term_reference_flag = %d\n", rbsp_get_u(st, 1));
-        } else {
-            int adaptive_ref_pic_marking_mode_flag = rbsp_get_u(st, 1);
-            fprintf(stderr, "adaptive_ref_pic_marking_mode_flag = %d\n", adaptive_ref_pic_marking_mode_flag);
-            if (adaptive_ref_pic_marking_mode_flag) {
-                int memory_management_control_operation;
-                do {
-                    memory_management_control_operation = rbsp_get_uev(st);
-                    fprintf(stderr, "memory_management_control_operation = %d\n", memory_management_control_operation);
-                    if (1 == memory_management_control_operation ||
-                        3 == memory_management_control_operation)
-                    {
-                        fprintf(stderr, "difference_of_pic_nums_minus1 = %d\n", rbsp_get_uev(st));
-                    }
-                    if (2 == memory_management_control_operation) {
-                        fprintf(stderr, "long_term_pic_num = %d\n", rbsp_get_uev(st));
-                    }
-                    if (3 == memory_management_control_operation ||
-                        6 == memory_management_control_operation)
-                    {
-                        fprintf(stderr, "long_term_frame_idx = %d\n", rbsp_get_uev(st));
-                    }
-                    if (4 == memory_management_control_operation) {
-                        fprintf(stderr, "max_long_term_frame_idx_plus1 = %d\n", rbsp_get_uev(st));
-                    }
-                } while (memory_management_control_operation != 0);
-            }
-        }
-        // end of dec_ref_pic_marking( )
-    }
-    if (vdppi->entropy_coding_mode_flag &&
-        SLICE_TYPE_I != sp.slice_type && SLICE_TYPE_SI != sp.slice_type)
-    {
-        fprintf(stderr, "cabac_init_idc = %d\n", rbsp_get_uev(st));
+        parse_dec_ref_pic_marking(st, &sp);
     }
 
+    sp.cabac_init_idc = 0;
+    if (vdppi->entropy_coding_mode_flag &&
+        SLICE_TYPE_I != sp.slice_type && SLICE_TYPE_SI != sp.slice_type)
+            sp.cabac_init_idc = rbsp_get_uev(st);
+
+    sp.slice_qp_delta = rbsp_get_sev(st);
+
+    do_fill_va_slice_parameter_buffer(vdppi, &sp, vasp);
 }
 
 
@@ -250,7 +274,6 @@ fill_default_pred_weight_table(const VdpPictureInfoH264 *vdppi, struct slice_par
     }
 }
 
-
 static
 void
 parse_pred_weight_table(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
@@ -293,6 +316,42 @@ parse_pred_weight_table(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
                     }
                 }
             }
+        }
+    }
+}
+
+static
+void
+parse_dec_ref_pic_marking(rbsp_state_t *st, struct slice_parameters *sp)
+{
+    if (NAL_IDR_SLICE == sp->nal_unit_type) {
+        sp->no_output_of_prior_pics_flag = rbsp_get_u(st, 1);
+        sp->long_term_reference_flag = rbsp_get_u(st, 1);
+    } else {
+        int adaptive_ref_pic_marking_mode_flag = rbsp_get_u(st, 1);
+        if (adaptive_ref_pic_marking_mode_flag) {
+            NOT_IMPLEMENTED;    // TODO: implement
+            int memory_management_control_operation;
+            do {
+                memory_management_control_operation = rbsp_get_uev(st);
+                fprintf(stderr, "memory_management_control_operation = %d\n", memory_management_control_operation);
+                if (1 == memory_management_control_operation ||
+                    3 == memory_management_control_operation)
+                {
+                    fprintf(stderr, "difference_of_pic_nums_minus1 = %d\n", rbsp_get_uev(st));
+                }
+                if (2 == memory_management_control_operation) {
+                    fprintf(stderr, "long_term_pic_num = %d\n", rbsp_get_uev(st));
+                }
+                if (3 == memory_management_control_operation ||
+                    6 == memory_management_control_operation)
+                {
+                    fprintf(stderr, "long_term_frame_idx = %d\n", rbsp_get_uev(st));
+                }
+                if (4 == memory_management_control_operation) {
+                    fprintf(stderr, "max_long_term_frame_idx_plus1 = %d\n", rbsp_get_uev(st));
+                }
+            } while (memory_management_control_operation != 0);
         }
     }
 }
