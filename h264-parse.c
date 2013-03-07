@@ -40,6 +40,11 @@ struct slice_parameters {
     unsigned int long_term_reference_flag;
     unsigned int cabac_init_idc;
     int slice_qp_delta;
+    unsigned int sp_for_switch_flag;
+    int slice_qs_delta;
+    unsigned int disable_deblocking_filter_idc;
+    int slice_alpha_c0_offset_div2;
+    int slice_beta_offset_div2;
 };
 
 static
@@ -73,9 +78,9 @@ do_fill_va_slice_parameter_buffer(struct slice_parameters const * const sp,
     vasp->num_ref_idx_l1_active_minus1 = sp->num_ref_idx_l1_active_minus1;
     vasp->cabac_init_idc = sp->cabac_init_idc;
     vasp->slice_qp_delta = sp->slice_qp_delta;
-    //~ unsigned char disable_deblocking_filter_idc;
-    //~ char slice_alpha_c0_offset_div2;
-    //~ char slice_beta_offset_div2;
+    vasp->disable_deblocking_filter_idc = sp->disable_deblocking_filter_idc;
+    vasp->slice_alpha_c0_offset_div2 = sp->slice_alpha_c0_offset_div2;
+    vasp->slice_beta_offset_div2 = sp->slice_beta_offset_div2;
     //~ VAPictureH264 RefPicList0[32];	/* See 8.2.4.2 */
     //~ VAPictureH264 RefPicList1[32];	/* See 8.2.4.2 */
     vasp->luma_log2_weight_denom = sp->luma_log2_weight_denom;
@@ -197,6 +202,25 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
             sp.cabac_init_idc = rbsp_get_uev(st);
 
     sp.slice_qp_delta = rbsp_get_sev(st);
+
+    sp.sp_for_switch_flag = 0;
+    sp.slice_qs_delta = 0;
+    if (SLICE_TYPE_SP == sp.slice_type || SLICE_TYPE_SI == sp.slice_type) {
+        if (SLICE_TYPE_SP == sp.slice_type)
+            sp.sp_for_switch_flag = rbsp_get_u(st, 1);
+        sp.slice_qs_delta = rbsp_get_sev(st);
+    }
+
+    sp.disable_deblocking_filter_idc = 0;
+    sp.slice_alpha_c0_offset_div2 = 0;
+    sp.slice_beta_offset_div2 = 0;
+    if (vdppi->deblocking_filter_control_present_flag) {
+        sp.disable_deblocking_filter_idc = rbsp_get_uev(st);
+        if (1 != sp.disable_deblocking_filter_idc) {
+            sp.slice_alpha_c0_offset_div2 = rbsp_get_sev(st);
+            sp.slice_beta_offset_div2 = rbsp_get_sev(st);
+        }
+    }
 
     do_fill_va_slice_parameter_buffer(&sp, vasp);
 }
