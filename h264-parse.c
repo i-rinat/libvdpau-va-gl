@@ -4,69 +4,104 @@
 
 #define NOT_IMPLEMENTED     assert(0 && "not implemented")
 
+struct slice_parameters {
+    int nal_ref_idc;
+    int nal_unit_type;
+    int first_mb_in_slice;
+    int slice_type;
+    int pic_parameter_set_id;
+    int frame_num;
+    int field_pic_flag;
+    int bottom_field_flag;
+    int idr_pic_id;
+    int pic_order_cnt_lsb;
+    int delta_pic_order_cnt_bottom;
+    int delta_pic_order_cnt[2];
+    int redundant_pic_cnt;
+    int direct_spatial_mv_pred_flag;
+    int num_ref_idx_active_override_flag;
+    int num_ref_idx_l0_active_minus1;
+    int num_ref_idx_l1_active_minus1;
+};
+
 void
 parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
                    const int ChromaArrayType, VASliceParameterBufferH264 *vasp)
 {
-    fprintf(stderr, "forbidden_zero_bit = %d\n", rbsp_get_u(st, 1));
-    fprintf(stderr, "nal_ref_idc = %d\n", rbsp_get_u(st, 2));
-    int nal_unit_type = rbsp_get_u(st, 5);
-    fprintf(stderr, "nal_unit_type = %d\n", nal_unit_type);
-    if (14 == nal_unit_type || 20 == nal_unit_type) {
+    struct slice_parameters sp;
+
+    rbsp_get_u(st, 1); // forbidden_zero_bit
+    sp.nal_ref_idc = rbsp_get_u(st, 2);
+    sp.nal_unit_type = rbsp_get_u(st, 5);
+
+    if (14 == sp.nal_unit_type || 20 == sp.nal_unit_type) {
         NOT_IMPLEMENTED;
     }
 
-    fprintf(stderr, "first_mb_in_slice = %d\n", rbsp_get_uev(st));
-    int slice_type = rbsp_get_uev(st);
-    fprintf(stderr, "slice_type = %d\n", slice_type);
-    if (slice_type > 4) slice_type -= 5;
-    fprintf(stderr, "pic_parameter_set_id = %d\n", rbsp_get_uev(st));
+    sp.first_mb_in_slice = rbsp_get_uev(st);
+    sp.slice_type = rbsp_get_uev(st);
+    if (sp.slice_type > 4) sp.slice_type -= 5;    // wrap 5-9 to 0-4
+
+    sp.pic_parameter_set_id = rbsp_get_uev(st);
+
     // TODO: separate_colour_plane_flag is 0 for all but YUV444. Now ok, but should detect properly.
-    fprintf(stderr, "frame_num = %d\n",
-        rbsp_get_u(st, vdppi->log2_max_frame_num_minus4 + 4));
-    if (vdppi->frame_mbs_only_flag) {
-        int field_pic_flag = rbsp_get_u(st, 1);
-        fprintf(stderr, "field_pic_flag = %d\n", field_pic_flag);
-        if (field_pic_flag) {
-            fprintf(stderr, "bottom_field_flag = %d\n", rbsp_get_u(st, 1));
+
+    sp.frame_num = rbsp_get_u(st, vdppi->log2_max_frame_num_minus4 + 4);
+    sp.field_pic_flag = 0;
+    sp.bottom_field_flag = 0;
+    if (!vdppi->frame_mbs_only_flag) {
+        sp.field_pic_flag = rbsp_get_u(st, 1);
+        if (sp.field_pic_flag) {
+            sp.bottom_field_flag = rbsp_get_u(st, 1);
         }
     }
-    if (NAL_IDR_SLICE == nal_unit_type) {    // IDR picture
-        fprintf(stderr, "idr_pic_id = %d\n", rbsp_get_uev(st));
-    }
+    sp.idr_pic_id = 0;
+    if (NAL_IDR_SLICE == sp.nal_unit_type)    // IDR picture
+        sp.idr_pic_id = rbsp_get_uev(st);
+
+    sp.pic_order_cnt_lsb = 0;
+    sp.delta_pic_order_cnt_bottom = 0;
     if (0 == vdppi->pic_order_cnt_type) {
-        fprintf(stderr, "pic_order_cnt_lsb = %d\n",
-            rbsp_get_u(st, vdppi->log2_max_pic_order_cnt_lsb_minus4 + 4));
+        sp.pic_order_cnt_lsb = rbsp_get_u(st, vdppi->log2_max_pic_order_cnt_lsb_minus4 + 4);
         if (vdppi->pic_order_present_flag && !vdppi->field_pic_flag) {
-            fprintf(stderr, "delta_pic_order_cnt_bottom = %d\n", rbsp_get_sev(st));
+            sp.delta_pic_order_cnt_bottom = rbsp_get_sev(st);
         }
     }
+
+    sp.delta_pic_order_cnt[0] = sp.delta_pic_order_cnt[1] = 0;
     if (1 == vdppi->pic_order_cnt_type && !vdppi->delta_pic_order_always_zero_flag) {
-        fprintf(stderr, "delta_pic_order_cnt[0] = %d\n", rbsp_get_sev(st));
-        if (vdppi->pic_order_present_flag && !vdppi->field_pic_flag) {
-            fprintf(stderr, "delta_pic_order_cnt[1] = %d\n", rbsp_get_sev(st));
+        sp.delta_pic_order_cnt[0] = rbsp_get_sev(st);
+        if (vdppi->pic_order_present_flag && !vdppi->field_pic_flag)
+            sp.delta_pic_order_cnt[1] = rbsp_get_sev(st);
+    }
+
+    sp.redundant_pic_cnt = 0;
+    if (vdppi->redundant_pic_cnt_present_flag)
+        sp.redundant_pic_cnt = rbsp_get_uev(st);
+
+    sp.direct_spatial_mv_pred_flag = 0;
+    if (SLICE_TYPE_B == sp.slice_type)
+        sp.direct_spatial_mv_pred_flag = rbsp_get_u(st, 1);
+
+    sp.num_ref_idx_active_override_flag = 0;
+    sp.num_ref_idx_l0_active_minus1 = 0;
+    sp.num_ref_idx_l1_active_minus1 = 0;
+    if (SLICE_TYPE_P == sp.slice_type || SLICE_TYPE_SP == sp.slice_type ||
+        SLICE_TYPE_B == sp.slice_type)
+    {
+        sp.num_ref_idx_active_override_flag = rbsp_get_u(st, 1);
+        if (sp.num_ref_idx_active_override_flag) {
+            sp.num_ref_idx_l0_active_minus1 = rbsp_get_uev(st);
+            if (SLICE_TYPE_B == sp.slice_type)
+                sp.num_ref_idx_l1_active_minus1 = rbsp_get_uev(st);
         }
     }
-    if (vdppi->redundant_pic_cnt_present_flag) {
-        fprintf(stderr, "redundant_pic_cnt = %d\n", rbsp_get_uev(st));
-    }
-    if (SLICE_TYPE_B == slice_type) {
-        fprintf(stderr, "direct_spatial_mv_pred_flag = %d\n", rbsp_get_u(st, 1));
-    }
-    if (SLICE_TYPE_P == slice_type || SLICE_TYPE_SP == slice_type || SLICE_TYPE_B == slice_type) {
-        int num_ref_idx_active_override_flag = rbsp_get_u(st, 1);
-        if (num_ref_idx_active_override_flag) {
-            fprintf(stderr, "num_ref_idx_l0_active_minus1 = %d\n", rbsp_get_uev(st));
-            if (SLICE_TYPE_B == slice_type) {
-                fprintf(stderr, "num_ref_idx_l1_active_minus1 = %d\n", rbsp_get_uev(st));
-            }
-        }
-    }
-    if (20 == nal_unit_type) {
+
+    if (20 == sp.nal_unit_type) {
         NOT_IMPLEMENTED;
     } else {
         // begin of ref_pic_list_modification( )
-        if (2 != slice_type && 4 != slice_type) {
+        if (2 != sp.slice_type && 4 != sp.slice_type) {
             int ref_pic_list_modification_flag_l0 = rbsp_get_u(st, 1);
             fprintf(stderr, "ref_pic_list_modification_flag_l0 = %d\n",
                 ref_pic_list_modification_flag_l0);
@@ -86,7 +121,7 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
             }
         }
 
-        if (1 == slice_type) {
+        if (1 == sp.slice_type) {
             int ref_pic_list_modification_flag_l1 = rbsp_get_u(st, 1);
             if (ref_pic_list_modification_flag_l1) {
                 int modification_of_pic_nums_idc;
@@ -106,8 +141,8 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
     }
 
     if ((vdppi->weighted_pred_flag &&
-        (SLICE_TYPE_P == slice_type || SLICE_TYPE_SP == slice_type)) ||
-        (1 == vdppi->weighted_bipred_idc && SLICE_TYPE_B == slice_type))
+        (SLICE_TYPE_P == sp.slice_type || SLICE_TYPE_SP == sp.slice_type)) ||
+        (1 == vdppi->weighted_bipred_idc && SLICE_TYPE_B == sp.slice_type))
     {
         // begin of pred_weight_table( )
         fprintf(stderr, "luma_log2_weight_denom = %d\n", rbsp_get_uev(st));
@@ -132,7 +167,7 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
                 }
             }
         }
-        if (1 == slice_type) {
+        if (1 == sp.slice_type) {
             for (int k = 0; k <= vdppi->num_ref_idx_l1_active_minus1; k ++) {
                 int luma_weight_l1_flag = rbsp_get_u(st, 1);
                 fprintf(stderr, "luma_weight_l1_flag = %d\n", luma_weight_l1_flag);
