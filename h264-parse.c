@@ -68,9 +68,9 @@ parse_dec_ref_pic_marking(rbsp_state_t *st, struct slice_parameters *sp);
 static
 void
 do_fill_va_slice_parameter_buffer(struct slice_parameters const * const sp,
-                                  VASliceParameterBufferH264 *vasp)
+                                  VASliceParameterBufferH264 *vasp, int bit_offset)
 {
-    vasp->slice_data_bit_offset = 0;
+    vasp->slice_data_bit_offset = bit_offset;
     vasp->first_mb_in_slice = sp->first_mb_in_slice;
     vasp->slice_type = sp->slice_type;
     vasp->direct_spatial_mv_pred_flag = sp->direct_spatial_mv_pred_flag;
@@ -234,7 +234,7 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
         }
     }
 
-    do_fill_va_slice_parameter_buffer(&sp, vasp);
+    do_fill_va_slice_parameter_buffer(&sp, vasp, st->bits_eaten);
 }
 
 
