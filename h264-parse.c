@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "h264-parse.h"
 
-#define NOT_IMPLEMENTED     assert(0 && "not implemented")
+#define NOT_IMPLEMENTED(str)        assert(0 && "not implemented" && str)
 
 struct slice_parameters {
     int nal_ref_idc;
@@ -125,7 +125,7 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
     sp.nal_unit_type = rbsp_get_u(st, 5);
 
     if (14 == sp.nal_unit_type || 20 == sp.nal_unit_type) {
-        NOT_IMPLEMENTED;
+        NOT_IMPLEMENTED("nal unit types 14 and 20");
     }
 
     sp.first_mb_in_slice = rbsp_get_uev(st);
@@ -191,7 +191,7 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
     }
 
     if (20 == sp.nal_unit_type) {
-        NOT_IMPLEMENTED;
+        NOT_IMPLEMENTED("nal unit type 20");
     } else {
         parse_ref_pic_list_modification(st, vdppi, &sp);
     }
@@ -247,7 +247,7 @@ parse_ref_pic_list_modification(rbsp_state_t *st, const VdpPictureInfoH264 *vdpp
     if (2 != sp->slice_type && 4 != sp->slice_type) {
         int ref_pic_list_modification_flag_l0 = rbsp_get_u(st, 1);
         if (ref_pic_list_modification_flag_l0) {
-            NOT_IMPLEMENTED;    // TODO: implement this
+            NOT_IMPLEMENTED("ref pic list modification 0"); // TODO: implement this
             int modification_of_pic_nums_idc;
             do {
                 modification_of_pic_nums_idc = rbsp_get_uev(st);
@@ -266,7 +266,7 @@ parse_ref_pic_list_modification(rbsp_state_t *st, const VdpPictureInfoH264 *vdpp
     if (1 == sp->slice_type) {
         int ref_pic_list_modification_flag_l1 = rbsp_get_u(st, 1);
         if (ref_pic_list_modification_flag_l1) {
-            NOT_IMPLEMENTED;    // TODO: implement this
+            NOT_IMPLEMENTED("ref pic list modification 1"); // TODO: implement this
             int modification_of_pic_nums_idc;
             do {
                 modification_of_pic_nums_idc = rbsp_get_uev(st);
@@ -362,7 +362,7 @@ parse_dec_ref_pic_marking(rbsp_state_t *st, struct slice_parameters *sp)
     } else {
         int adaptive_ref_pic_marking_mode_flag = rbsp_get_u(st, 1);
         if (adaptive_ref_pic_marking_mode_flag) {
-            NOT_IMPLEMENTED;    // TODO: implement
+            NOT_IMPLEMENTED("adaptive ref pic marking");    // TODO: implement
             int memory_management_control_operation;
             do {
                 memory_management_control_operation = rbsp_get_uev(st);
