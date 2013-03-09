@@ -286,7 +286,6 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                 goto error;
             }
         }
-        fprintf(stderr, "dstSurfData->va_surf = %d\n", dstSurfData->va_surf);
 
         pic_param->CurrPic.picture_id           = dstSurfData->va_surf;
         pic_param->CurrPic.frame_idx            = vdppi->frame_num;
@@ -310,18 +309,23 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
             pic_param->ReferenceFrames[k].BottomFieldOrderCnt = 0;
         }
 
-        int va_ref_frame_count = 0;
+        int va_num_ref_frames = 0;
         for (int k = 0; k < vdppi->num_ref_frames; k ++) {
-            fprintf(stderr, "num_ref_frames = %d\n", vdppi->num_ref_frames);
-            fprintf(stderr, "vdppi->referenceFrames[k].surface = %d\n", vdppi->referenceFrames[k].surface);
-            if (VDP_INVALID_HANDLE == vdppi->referenceFrames[k].surface)
+            if (VDP_INVALID_HANDLE == vdppi->referenceFrames[k].surface) {
+                pic_param->ReferenceFrames[k].picture_id = VA_INVALID_ID;
+                pic_param->ReferenceFrames[k].flags = VA_PICTURE_H264_INVALID;
                 continue;
-            va_ref_frame_count ++;
-            VdpVideoSurfaceData *vdpSurfData =
-                handlestorage_get(vdppi->referenceFrames[k].surface, HANDLETYPE_VIDEO_SURFACE);
-            VAPictureH264 *va_ref = &(pic_param->ReferenceFrames[k]);
-            if (NULL == vdpSurfData) goto error;
+            }
+
             VdpReferenceFrameH264 const *vdp_ref = &(vdppi->referenceFrames[k]);
+            VdpVideoSurfaceData *vdpSurfData =
+                handlestorage_get(vdp_ref->surface, HANDLETYPE_VIDEO_SURFACE);
+            VAPictureH264 *va_ref = &(pic_param->ReferenceFrames[k]);
+            if (NULL == vdpSurfData) {
+                fprintf(stderr, "NULL == vdpSurfData");
+                goto error;
+            }
+            va_num_ref_frames ++;
 
             if (VA_INVALID_SURFACE == vdpSurfData->va_surf) {
                 vdpSurfData->va_surf = decoderData->render_targets[decoderData->next_surface];
@@ -331,7 +335,6 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                     goto error;
                 }
             }
-            fprintf(stderr, "vdpSurfData->va_surf = %x\n", vdpSurfData->va_surf);
 
             va_ref->picture_id = vdpSurfData->va_surf;
             va_ref->frame_idx = vdp_ref->frame_idx;
@@ -348,7 +351,7 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         pic_param->picture_height_in_mbs_minus1         = (decoderData->height - 1) / 16;
         pic_param->bit_depth_luma_minus8                = 0; // TODO: deal with more than 8 bits
         pic_param->bit_depth_chroma_minus8              = 0; // same for luma
-        pic_param->num_ref_frames                       = va_ref_frame_count;
+        pic_param->num_ref_frames                       = vdppi->num_ref_frames;
 
 #define SEQ_FIELDS(fieldname) pic_param->seq_fields.bits.fieldname
 #define PIC_FIELDS(fieldname) pic_param->pic_fields.bits.fieldname
@@ -364,7 +367,7 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         SEQ_FIELDS(pic_order_cnt_type)                  = vdppi->pic_order_cnt_type;
         SEQ_FIELDS(log2_max_pic_order_cnt_lsb_minus4)   = vdppi->log2_max_pic_order_cnt_lsb_minus4;
         SEQ_FIELDS(delta_pic_order_always_zero_flag)    = vdppi->delta_pic_order_always_zero_flag;
-        pic_param->num_slice_groups_minus1              = 0; // ???
+        pic_param->num_slice_groups_minus1              = vdppi->slice_count - 1; // ???
         fprintf(stderr, "slice_count = %d\n", vdppi->slice_count);
         fprintf(stderr, "bitstream_buffer_count = %d\n", bitstream_buffer_count);
 
@@ -442,6 +445,11 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         int ChromaArrayType = pic_param->seq_fields.bits.chroma_format_idc;
 
         parse_slice_header(&st, vdppi, ChromaArrayType, &sp_h264);
+
+        for (int k = 0; k < 16; k ++) {
+            sp_h264.RefPicList0[k] = pic_param->ReferenceFrames[k];
+            sp_h264.RefPicList1[k] = pic_param->ReferenceFrames[k];
+        }
 
         status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceParameterBufferType,
             sizeof(VASliceParameterBufferH264), 1, &sp_h264, &slice_parameters_buf);
