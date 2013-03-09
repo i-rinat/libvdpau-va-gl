@@ -404,10 +404,13 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         status = vaMapBuffer(va_dpy, iq_matrix_buf, (void **)&iq_matrix);
         if (VA_STATUS_SUCCESS != status) goto error;
 
-        memcpy(iq_matrix->ScalingList4x4, vdppi->scaling_lists_4x4,
-            sizeof(iq_matrix->ScalingList4x4));
-        memcpy(iq_matrix->ScalingList8x8, vdppi->scaling_lists_8x8,
-            sizeof(iq_matrix->ScalingList8x8));
+        for (int j = 0; j < 6; j ++)
+            for (int k = 0; k < 16; k ++)
+                iq_matrix->ScalingList4x4[j][k] = vdppi->scaling_lists_4x4[j][k];
+
+        for (int j = 0; j < 2; j ++)
+            for (int k = 0; k < 64; k ++)
+                iq_matrix->ScalingList8x8[j][k] = vdppi->scaling_lists_8x8[j][k];
 
         vaUnmapBuffer(va_dpy, pic_param_buf);
         vaUnmapBuffer(va_dpy, iq_matrix_buf);
