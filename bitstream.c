@@ -10,6 +10,7 @@ rbsp_attach_buffer(rbsp_state_t *state, const uint8_t *buf, size_t byte_count)
     state->cur_ptr      = buf;
     state->bit_ptr      = 7;
     state->zeros_in_row = 0;
+    state->bits_eaten   = 0;
 }
 
 inline
@@ -46,6 +47,7 @@ rbsp_consume_bit(rbsp_state_t *state)
         state->bit_ptr = 7;
         rbsp_consume_byte(state);   // handles emulation prevention bytes
     }
+    state->bits_eaten += 1;
     return value;
 }
 

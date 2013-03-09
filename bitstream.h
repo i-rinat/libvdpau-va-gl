@@ -11,6 +11,7 @@ typedef struct _rbsp_state_struct {
     const uint8_t  *cur_ptr;        ///< pointer to currently processed byte
     int             bit_ptr;        ///< pointer to currently processed bit
     int             zeros_in_row;   ///< number of consequetive zero bytes so far
+    int             bits_eaten;     ///< bit offset of current position not including EPB
 } rbsp_state_t;
 
 
