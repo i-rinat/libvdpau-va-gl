@@ -45,21 +45,24 @@ struct slice_parameters {
     unsigned int disable_deblocking_filter_idc;
     int slice_alpha_c0_offset_div2;
     int slice_beta_offset_div2;
+
+    VAPictureH264 RefPicList0[32];
+    VAPictureH264 RefPicList1[32];
 };
 
 static
 void
-parse_ref_pic_list_modification(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
+parse_ref_pic_list_modification(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
                                 struct slice_parameters *sp);
 
 static
 void
-parse_pred_weight_table(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
+parse_pred_weight_table(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
                         const int ChromaArrayType, struct slice_parameters *sp);
 
 static
 void
-fill_default_pred_weight_table(const VdpPictureInfoH264 *vdppi, struct slice_parameters *sp);
+fill_default_pred_weight_table(const VAPictureParameterBufferH264 *vapp, struct slice_parameters *sp);
 
 static
 void
@@ -68,6 +71,7 @@ parse_dec_ref_pic_marking(rbsp_state_t *st, struct slice_parameters *sp);
 static
 void
 do_fill_va_slice_parameter_buffer(struct slice_parameters const * const sp,
+                                  VAPictureParameterBufferH264 const * const vapp,
                                   VASliceParameterBufferH264 *vasp, int bit_offset)
 {
     vasp->slice_data_bit_offset = bit_offset;
@@ -85,6 +89,10 @@ do_fill_va_slice_parameter_buffer(struct slice_parameters const * const sp,
     //~ VAPictureH264 RefPicList1[32];	/* See 8.2.4.2 */
 
     // TODO: supply correct values
+    for (int k = 0; k < vapp->num_ref_frames; k ++) {
+        vasp->RefPicList0[k] = sp->RefPicList0[k];
+        vasp->RefPicList1[k] = sp->RefPicList1[k];
+    }
 
     vasp->luma_log2_weight_denom = sp->luma_log2_weight_denom;
     vasp->chroma_log2_weight_denom = sp->luma_log2_weight_denom;
@@ -109,8 +117,9 @@ do_fill_va_slice_parameter_buffer(struct slice_parameters const * const sp,
 }
 
 void
-parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
-                   const int ChromaArrayType, VASliceParameterBufferH264 *vasp)
+parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
+                   const int ChromaArrayType, unsigned int p_num_ref_idx_l0_active_minus1,
+                   unsigned int p_num_ref_idx_l1_active_minus1, VASliceParameterBufferH264 *vasp)
 {
     struct slice_parameters sp;
 
@@ -130,10 +139,10 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
 
     // TODO: separate_colour_plane_flag is 0 for all but YUV444. Now ok, but should detect properly.
 
-    sp.frame_num = rbsp_get_u(st, vdppi->log2_max_frame_num_minus4 + 4);
+    sp.frame_num = rbsp_get_u(st, vapp->seq_fields.bits.log2_max_frame_num_minus4 + 4);
     sp.field_pic_flag = 0;
     sp.bottom_field_flag = 0;
-    if (!vdppi->frame_mbs_only_flag) {
+    if (!vapp->seq_fields.bits.frame_mbs_only_flag) {
         sp.field_pic_flag = rbsp_get_u(st, 1);
         if (sp.field_pic_flag) {
             sp.bottom_field_flag = rbsp_get_u(st, 1);
@@ -145,22 +154,27 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
 
     sp.pic_order_cnt_lsb = 0;
     sp.delta_pic_order_cnt_bottom = 0;
-    if (0 == vdppi->pic_order_cnt_type) {
-        sp.pic_order_cnt_lsb = rbsp_get_u(st, vdppi->log2_max_pic_order_cnt_lsb_minus4 + 4);
-        if (vdppi->pic_order_present_flag && !vdppi->field_pic_flag) {
+    if (0 == vapp->seq_fields.bits.pic_order_cnt_type) {
+        sp.pic_order_cnt_lsb =
+            rbsp_get_u(st, vapp->seq_fields.bits.log2_max_pic_order_cnt_lsb_minus4 + 4);
+        if (vapp->pic_fields.bits.pic_order_present_flag &&
+            !vapp->pic_fields.bits.field_pic_flag)
+        {
             sp.delta_pic_order_cnt_bottom = rbsp_get_sev(st);
         }
     }
 
     sp.delta_pic_order_cnt[0] = sp.delta_pic_order_cnt[1] = 0;
-    if (1 == vdppi->pic_order_cnt_type && !vdppi->delta_pic_order_always_zero_flag) {
+    if (1 == vapp->seq_fields.bits.pic_order_cnt_type &&
+        !vapp->seq_fields.bits.delta_pic_order_always_zero_flag)
+    {
         sp.delta_pic_order_cnt[0] = rbsp_get_sev(st);
-        if (vdppi->pic_order_present_flag && !vdppi->field_pic_flag)
+        if (vapp->pic_fields.bits.pic_order_present_flag && !vapp->pic_fields.bits.field_pic_flag)
             sp.delta_pic_order_cnt[1] = rbsp_get_sev(st);
     }
 
     sp.redundant_pic_cnt = 0;
-    if (vdppi->redundant_pic_cnt_present_flag)
+    if (vapp->pic_fields.bits.redundant_pic_cnt_present_flag)
         sp.redundant_pic_cnt = rbsp_get_uev(st);
 
     sp.direct_spatial_mv_pred_flag = 0;
@@ -173,8 +187,8 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
     if (SLICE_TYPE_P == sp.slice_type || SLICE_TYPE_SP == sp.slice_type ||
         SLICE_TYPE_B == sp.slice_type)
     {
-        sp.num_ref_idx_l0_active_minus1 = vdppi->num_ref_idx_l0_active_minus1;
-        sp.num_ref_idx_l1_active_minus1 = vdppi->num_ref_idx_l1_active_minus1;
+        sp.num_ref_idx_l0_active_minus1 = p_num_ref_idx_l0_active_minus1;
+        sp.num_ref_idx_l1_active_minus1 = p_num_ref_idx_l1_active_minus1;
 
         sp.num_ref_idx_active_override_flag = rbsp_get_u(st, 1);
         if (sp.num_ref_idx_active_override_flag) {
@@ -187,15 +201,15 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
     if (20 == sp.nal_unit_type) {
         NOT_IMPLEMENTED("nal unit type 20");
     } else {
-        parse_ref_pic_list_modification(st, vdppi, &sp);
+        parse_ref_pic_list_modification(st, vapp, &sp);
     }
 
-    fill_default_pred_weight_table(vdppi, &sp);
-    if ((vdppi->weighted_pred_flag &&
+    fill_default_pred_weight_table(vapp, &sp);
+    if ((vapp->pic_fields.bits.weighted_pred_flag &&
         (SLICE_TYPE_P == sp.slice_type || SLICE_TYPE_SP == sp.slice_type)) ||
-        (1 == vdppi->weighted_bipred_idc && SLICE_TYPE_B == sp.slice_type))
+        (1 == vapp->pic_fields.bits.weighted_bipred_idc && SLICE_TYPE_B == sp.slice_type))
     {
-        parse_pred_weight_table(st, vdppi, ChromaArrayType, &sp);
+        parse_pred_weight_table(st, vapp, ChromaArrayType, &sp);
     }
 
     if (sp.nal_ref_idc != 0) {
@@ -203,7 +217,7 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
     }
 
     sp.cabac_init_idc = 0;
-    if (vdppi->entropy_coding_mode_flag &&
+    if (vapp->pic_fields.bits.entropy_coding_mode_flag &&
         SLICE_TYPE_I != sp.slice_type && SLICE_TYPE_SI != sp.slice_type)
             sp.cabac_init_idc = rbsp_get_uev(st);
 
@@ -220,7 +234,7 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
     sp.disable_deblocking_filter_idc = 0;
     sp.slice_alpha_c0_offset_div2 = 0;
     sp.slice_beta_offset_div2 = 0;
-    if (vdppi->deblocking_filter_control_present_flag) {
+    if (vapp->pic_fields.bits.deblocking_filter_control_present_flag) {
         sp.disable_deblocking_filter_idc = rbsp_get_uev(st);
         if (1 != sp.disable_deblocking_filter_idc) {
             sp.slice_alpha_c0_offset_div2 = rbsp_get_sev(st);
@@ -228,30 +242,50 @@ parse_slice_header(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
         }
     }
 
-    do_fill_va_slice_parameter_buffer(&sp, vasp, st->bits_eaten);
+    do_fill_va_slice_parameter_buffer(&sp, vapp, vasp, st->bits_eaten);
 }
 
 
 static
 void
-parse_ref_pic_list_modification(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
+parse_ref_pic_list_modification(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
                                 struct slice_parameters *sp)
 {
-    (void)vdppi;
     if (2 != sp->slice_type && 4 != sp->slice_type) {
         int ref_pic_list_modification_flag_l0 = rbsp_get_u(st, 1);
         if (ref_pic_list_modification_flag_l0) {
-            NOT_IMPLEMENTED("ref pic list modification 0"); // TODO: implement this
+            //NOT_IMPLEMENTED("ref pic list modification 0"); // TODO: implement this
             int modification_of_pic_nums_idc;
+            int refPos = 0;
+            int remapped_picture = vapp->frame_num;
+            if (vapp->pic_fields.bits.field_pic_flag) {
+                remapped_picture *= 2;
+                if (vapp->CurrPic.flags & VA_PICTURE_H264_BOTTOM_FIELD) remapped_picture ++;
+            }
             do {
                 modification_of_pic_nums_idc = rbsp_get_uev(st);
-                if (0 == modification_of_pic_nums_idc ||
-                    1 == modification_of_pic_nums_idc)
-                {
-                    fprintf(stderr, "abs_diff_pic_num_minus1 = %d\n", rbsp_get_uev(st));
+                if (modification_of_pic_nums_idc < 2) {
+                    int abs_diff_pic_num_minus1 = rbsp_get_uev(st);
+                    if (0 == modification_of_pic_nums_idc) {
+                        remapped_picture -= (abs_diff_pic_num_minus1 + 1);
+                    } else { // == 1
+                        remapped_picture += (abs_diff_pic_num_minus1 + 1);
+                    }
+                    unsigned int j;
+                    for (j = refPos; j < vapp->num_ref_frames; j ++) {
+                        if (sp->RefPicList0[j].frame_idx == remapped_picture &&
+                            (sp->RefPicList0[j].flags & VA_PICTURE_H264_SHORT_TERM_REFERENCE))
+                                break;
+                    }
+                    assert (j < vapp->num_ref_frames);
+                    VAPictureH264 swp = sp->RefPicList0[j];
+                    for (int k = j; k > refPos; k --) sp->RefPicList0[k] = sp->RefPicList0[k-1];
+                    sp->RefPicList0[refPos] = swp;
                 } else if (2 == modification_of_pic_nums_idc) {
+                    NOT_IMPLEMENTED("long");
                     fprintf(stderr, "long_term_pic_num = %d\n", rbsp_get_uev(st));
                 }
+                refPos ++;
             } while (modification_of_pic_nums_idc != 3);
 
         }
@@ -278,21 +312,23 @@ parse_ref_pic_list_modification(rbsp_state_t *st, const VdpPictureInfoH264 *vdpp
 
 static
 void
-fill_default_pred_weight_table(const VdpPictureInfoH264 *vdppi, struct slice_parameters *sp)
+fill_default_pred_weight_table(const VAPictureParameterBufferH264 *vapp,
+                               struct slice_parameters *sp)
 {
+    (void)vapp; // TODO: do I need this param?
     sp->luma_log2_weight_denom = 0;
     sp->chroma_log2_weight_denom = 0;
     sp->luma_weight_l0_flag = 0;
     sp->luma_weight_l1_flag = 0;
     sp->chroma_weight_l0_flag = 0;
     sp->chroma_weight_l1_flag = 0;
-    for (int k = 0; k < vdppi->num_ref_idx_l0_active_minus1 + 1; k ++) {
+    for (int k = 0; k < sp->num_ref_idx_l0_active_minus1 + 1; k ++) {
         sp->luma_weight_l0[k] = 1;
         sp->luma_offset_l0[k] = 0;
         sp->chroma_weight_l0[k][0] = sp->chroma_weight_l0[k][1] = 1;
         sp->chroma_offset_l0[k][0] = sp->chroma_offset_l0[k][1] = 0;
     }
-    for (int k = 0; k < vdppi->num_ref_idx_l1_active_minus1 + 1; k ++) {
+    for (int k = 0; k < sp->num_ref_idx_l1_active_minus1 + 1; k ++) {
         sp->luma_weight_l1[k] = 1;
         sp->luma_offset_l1[k] = 0;
         sp->chroma_weight_l1[k][0] = sp->chroma_weight_l1[k][1] = 1;
@@ -302,14 +338,15 @@ fill_default_pred_weight_table(const VdpPictureInfoH264 *vdppi, struct slice_par
 
 static
 void
-parse_pred_weight_table(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
+parse_pred_weight_table(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
                         const int ChromaArrayType, struct slice_parameters *sp)
 {
+    (void)vapp; // TODO: do I need this param?
     sp->luma_log2_weight_denom = rbsp_get_uev(st);
     if (0 != ChromaArrayType)
         sp->chroma_log2_weight_denom = rbsp_get_uev(st);
 
-    for (int k = 0; k <= vdppi->num_ref_idx_l0_active_minus1; k ++) {
+    for (int k = 0; k <= sp->num_ref_idx_l0_active_minus1; k ++) {
         sp->luma_weight_l0_flag = rbsp_get_u(st, 1);
         if (sp->luma_weight_l0_flag) {
             sp->luma_weight_l0[k] = rbsp_get_sev(st);
@@ -327,7 +364,7 @@ parse_pred_weight_table(rbsp_state_t *st, const VdpPictureInfoH264 *vdppi,
     }
 
     if (1 == sp->slice_type) {
-        for (int k = 0; k <= vdppi->num_ref_idx_l1_active_minus1; k ++) {
+        for (int k = 0; k <= sp->num_ref_idx_l1_active_minus1; k ++) {
             sp->luma_weight_l1_flag = rbsp_get_u(st, 1);
             if (sp->luma_weight_l1_flag) {
                 sp->luma_weight_l1[k] = rbsp_get_sev(st);

@@ -447,7 +447,8 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         // but if we limiting to YUV420, that's ok
         int ChromaArrayType = pic_param->seq_fields.bits.chroma_format_idc;
 
-        parse_slice_header(&st, vdppi, ChromaArrayType, &sp_h264);
+        parse_slice_header(&st, pic_param, ChromaArrayType, vdppi->num_ref_idx_l0_active_minus1,
+            vdppi->num_ref_idx_l1_active_minus1, &sp_h264);
 
         // TODO: fill RefPicList0 and 1
         for (int k = 0; k < vdppi->num_ref_frames; k ++) {
