@@ -308,23 +308,21 @@ parse_ref_pic_list_modification(rbsp_state_t *st, const VAPictureParameterBuffer
                 modification_of_pic_nums_idc = rbsp_get_uev(st);
                 if (modification_of_pic_nums_idc < 2) {
                     int abs_diff_pic_num_minus1 = rbsp_get_uev(st);
-                    fprintf(stderr, ":abs_diff_pic_num_minus1 = %d\n", abs_diff_pic_num_minus1);
                     if (0 == modification_of_pic_nums_idc) {
                         remapped_picture -= (abs_diff_pic_num_minus1 + 1);
-                        fprintf(stderr, "minus\n");
                     } else { // == 1
                         remapped_picture += (abs_diff_pic_num_minus1 + 1);
-                        fprintf(stderr, "plus\n");
                     }
                     // wrap
                     int max_frame_num = 1 << (vapp->seq_fields.bits.log2_max_frame_num_minus4 + 4);
                     if (remapped_picture < 0) remapped_picture += max_frame_num;
                     if (remapped_picture >= max_frame_num) remapped_picture -= max_frame_num;
 
-                    if (remapped_picture > vapp->frame_num)
-                        assert(0);
+                    fprintf(stderr, "predicted = %d / %d / %d\n", remapped_picture, vapp->frame_num, max_frame_num);
+                    int picNumL0 = remapped_picture > vapp->frame_num ?
+                                    remapped_picture - max_frame_num : remapped_picture;
 
-                    fprintf(stderr, "predicted = %d\n", remapped_picture);
+                    fprintf(stderr, "predicted = %d\n", picNumL0);
                     fprintf(stderr, "refIdxL0 = %d\n", refIdxL0);
 
                     fprintf(stderr, "RefPicList0 before reorder: ");
@@ -336,7 +334,7 @@ parse_ref_pic_list_modification(rbsp_state_t *st, const VAPictureParameterBuffer
                     for (j = 0; j < vapp->num_ref_frames; j ++) {
                         if (vapp->ReferenceFrames[j].flags & VA_PICTURE_H264_INVALID)
                             continue;
-                        if (vapp->ReferenceFrames[j].frame_idx == remapped_picture &&
+                        if (vapp->ReferenceFrames[j].frame_idx == picNumL0 &&
                             (vapp->ReferenceFrames[j].flags & VA_PICTURE_H264_SHORT_TERM_REFERENCE))
                                 break;
                     }
@@ -347,7 +345,7 @@ parse_ref_pic_list_modification(rbsp_state_t *st, const VAPictureParameterBuffer
                     sp->RefPicList0[refIdxL0 ++] = swp;
                     j = refIdxL0;
                     for (int k = refIdxL0; k <= sp->num_ref_idx_l0_active_minus1 + 1; k ++) {
-                        if (sp->RefPicList0[k].frame_idx != remapped_picture &&
+                        if (sp->RefPicList0[k].frame_idx != picNumL0 &&
                             (sp->RefPicList0[k].flags & VA_PICTURE_H264_SHORT_TERM_REFERENCE))
                                 sp->RefPicList0[j++] = sp->RefPicList0[k];
                     }
