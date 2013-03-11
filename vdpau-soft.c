@@ -450,17 +450,16 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         parse_slice_header(&st, pic_param, ChromaArrayType, vdppi->num_ref_idx_l0_active_minus1,
             vdppi->num_ref_idx_l1_active_minus1, &sp_h264);
 
-        // TODO: fill RefPicList0 and 1
-        for (int k = 0; k < vdppi->num_ref_frames; k ++) {
-            sp_h264.RefPicList0[k] = pic_param->ReferenceFrames[k];
-            sp_h264.RefPicList1[k] = pic_param->ReferenceFrames[k];
-            fprintf(stderr, "RefPicList0[%d].picture_id = %d\n",k,sp_h264.RefPicList0[k].picture_id);
-            fprintf(stderr, "RefPicList0[%d].frame_idx = %d\n",k,sp_h264.RefPicList0[k].frame_idx);
-            fprintf(stderr, "RefPicList0[%d].flags = %d\n",k,sp_h264.RefPicList0[k].flags);
-            fprintf(stderr, "RefPicList0[%d].TopFieldOrderCnt = %d\n",k,sp_h264.RefPicList0[k].TopFieldOrderCnt);
-            fprintf(stderr, "RefPicList0[%d].BottomFieldOrderCnt = %d\n",k,sp_h264.RefPicList0[k].BottomFieldOrderCnt);
+        for (int k = 0; k < sp_h264.num_ref_idx_l0_active_minus1 + 1; k ++) {
+            if (-1 == sp_h264.RefPicList0[k].picture_id) continue;
+            fprintf(stderr, "a RefPicList0[%d].picture_id = %d\n",k,sp_h264.RefPicList0[k].picture_id);
+            fprintf(stderr, "a RefPicList0[%d].frame_idx = %d\n",k,sp_h264.RefPicList0[k].frame_idx);
+            fprintf(stderr, "a RefPicList0[%d].flags = %d\n",k,sp_h264.RefPicList0[k].flags);
+            fprintf(stderr, "a RefPicList0[%d].TopFieldOrderCnt = %d\n",k,sp_h264.RefPicList0[k].TopFieldOrderCnt);
+            fprintf(stderr, "a RefPicList0[%d].BottomFieldOrderCnt = %d\n",k,sp_h264.RefPicList0[k].BottomFieldOrderCnt);
             fprintf(stderr, "-----------------------------------------\n");
         }
+
 
         status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceParameterBufferType,
             sizeof(VASliceParameterBufferH264), 1, &sp_h264, &slice_parameters_buf);

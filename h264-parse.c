@@ -85,11 +85,8 @@ do_fill_va_slice_parameter_buffer(struct slice_parameters const * const sp,
     vasp->disable_deblocking_filter_idc = sp->disable_deblocking_filter_idc;
     vasp->slice_alpha_c0_offset_div2 = sp->slice_alpha_c0_offset_div2;
     vasp->slice_beta_offset_div2 = sp->slice_beta_offset_div2;
-    //~ VAPictureH264 RefPicList0[32];	/* See 8.2.4.2 */
-    //~ VAPictureH264 RefPicList1[32];	/* See 8.2.4.2 */
 
-    // TODO: supply correct values
-    for (int k = 0; k < vapp->num_ref_frames; k ++) {
+    for (int k = 0; k < 32; k ++) {
         vasp->RefPicList0[k] = sp->RefPicList0[k];
         vasp->RefPicList1[k] = sp->RefPicList1[k];
     }
@@ -116,12 +113,47 @@ do_fill_va_slice_parameter_buffer(struct slice_parameters const * const sp,
     for (int k = 0; k < 32; k ++) vasp->chroma_offset_l1[k][1] = sp->chroma_offset_l1[k][1];
 }
 
+static
+void
+zeroify_refpiclist_entry(VAPictureH264 *p)
+{
+    p->picture_id       = VA_INVALID_SURFACE;
+    p->frame_idx        = 0;
+    p->flags            = VA_PICTURE_H264_INVALID;
+    p->TopFieldOrderCnt = 0;
+    p->BottomFieldOrderCnt  = 0;
+}
+
 void
 parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
                    const int ChromaArrayType, unsigned int p_num_ref_idx_l0_active_minus1,
                    unsigned int p_num_ref_idx_l1_active_minus1, VASliceParameterBufferH264 *vasp)
 {
     struct slice_parameters sp;
+
+    for (int k = 0; k < 32; k ++) {
+        zeroify_refpiclist_entry(&sp.RefPicList0[k]);
+        zeroify_refpiclist_entry(&sp.RefPicList1[k]);
+    }
+
+    // TODO: properly sort
+    int ptr = 0;
+    for (int k = 0; k < vapp->num_ref_frames; k ++) {
+        if (vapp->ReferenceFrames[k].flags & VA_PICTURE_H264_INVALID)
+            continue;
+        sp.RefPicList0[ptr] = vapp->ReferenceFrames[k];
+        ptr ++;
+    }
+
+    for (int k = 0; k < vapp->num_ref_frames; k ++) {
+        fprintf(stderr, "╭─────────────────────────────────────────\n");
+        fprintf(stderr, "│ref picture_id = %d\n", vapp->ReferenceFrames[k].picture_id);
+        fprintf(stderr, "│ref frame_idx = %d\n", vapp->ReferenceFrames[k].frame_idx);
+        fprintf(stderr, "│ref flags = %d\n", vapp->ReferenceFrames[k].flags);
+        fprintf(stderr, "│ref TopFieldOrderCnt = %d\n", vapp->ReferenceFrames[k].TopFieldOrderCnt);
+        fprintf(stderr, "│ref BottomFieldOrderCnt = %d\n", vapp->ReferenceFrames[k].BottomFieldOrderCnt);
+        fprintf(stderr, "╰─────────────────────────────────────────\n");
+    }
 
     rbsp_get_u(st, 1); // forbidden_zero_bit
     sp.nal_ref_idc = rbsp_get_u(st, 2);
@@ -242,6 +274,15 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
         }
     }
 
+    if (vapp->num_slice_groups_minus1 > 0 && vapp->slice_group_map_type >= 3 &&
+        vapp->slice_group_map_type <= 5)
+    {
+        NOT_IMPLEMENTED("don't know what length to consume\n");
+    }
+
+    fprintf(stderr, "num_ref_idx_l0_active_minus1 = %d\n", sp.num_ref_idx_l0_active_minus1);
+    fprintf(stderr, "num_ref_idx_l1_active_minus1 = %d\n", sp.num_ref_idx_l1_active_minus1);
+
     do_fill_va_slice_parameter_buffer(&sp, vapp, vasp, st->bits_eaten);
 }
 
@@ -256,8 +297,9 @@ parse_ref_pic_list_modification(rbsp_state_t *st, const VAPictureParameterBuffer
         if (ref_pic_list_modification_flag_l0) {
             //NOT_IMPLEMENTED("ref pic list modification 0"); // TODO: implement this
             int modification_of_pic_nums_idc;
-            int refPos = 0;
+            int refIdxL0 = 0;
             int remapped_picture = vapp->frame_num;
+            fprintf(stderr, "pred (i) = %d\n", vapp->frame_num);
             if (vapp->pic_fields.bits.field_pic_flag) {
                 remapped_picture *= 2;
                 if (vapp->CurrPic.flags & VA_PICTURE_H264_BOTTOM_FIELD) remapped_picture ++;
@@ -266,26 +308,60 @@ parse_ref_pic_list_modification(rbsp_state_t *st, const VAPictureParameterBuffer
                 modification_of_pic_nums_idc = rbsp_get_uev(st);
                 if (modification_of_pic_nums_idc < 2) {
                     int abs_diff_pic_num_minus1 = rbsp_get_uev(st);
+                    fprintf(stderr, ":abs_diff_pic_num_minus1 = %d\n", abs_diff_pic_num_minus1);
                     if (0 == modification_of_pic_nums_idc) {
                         remapped_picture -= (abs_diff_pic_num_minus1 + 1);
+                        fprintf(stderr, "minus\n");
                     } else { // == 1
                         remapped_picture += (abs_diff_pic_num_minus1 + 1);
+                        fprintf(stderr, "plus\n");
                     }
-                    unsigned int j;
-                    for (j = refPos; j < vapp->num_ref_frames; j ++) {
-                        if (sp->RefPicList0[j].frame_idx == remapped_picture &&
-                            (sp->RefPicList0[j].flags & VA_PICTURE_H264_SHORT_TERM_REFERENCE))
+                    // wrap
+                    int max_frame_num = 1 << (vapp->seq_fields.bits.log2_max_frame_num_minus4 + 4);
+                    if (remapped_picture < 0) remapped_picture += max_frame_num;
+                    if (remapped_picture >= max_frame_num) remapped_picture -= max_frame_num;
+
+                    if (remapped_picture > vapp->frame_num)
+                        assert(0);
+
+                    fprintf(stderr, "predicted = %d\n", remapped_picture);
+                    fprintf(stderr, "refIdxL0 = %d\n", refIdxL0);
+
+                    fprintf(stderr, "RefPicList0 before reorder: ");
+                    for (int k = 0; k <= sp->num_ref_idx_l0_active_minus1; k ++)
+                        fprintf(stderr, " %d", sp->RefPicList0[k].frame_idx);
+                    fprintf(stderr, "\n");
+
+                    int j;
+                    for (j = 0; j < vapp->num_ref_frames; j ++) {
+                        if (vapp->ReferenceFrames[j].flags & VA_PICTURE_H264_INVALID)
+                            continue;
+                        if (vapp->ReferenceFrames[j].frame_idx == remapped_picture &&
+                            (vapp->ReferenceFrames[j].flags & VA_PICTURE_H264_SHORT_TERM_REFERENCE))
                                 break;
                     }
                     assert (j < vapp->num_ref_frames);
-                    VAPictureH264 swp = sp->RefPicList0[j];
-                    for (int k = j; k > refPos; k --) sp->RefPicList0[k] = sp->RefPicList0[k-1];
-                    sp->RefPicList0[refPos] = swp;
+                    VAPictureH264 swp = vapp->ReferenceFrames[j];
+                    for (int k = sp->num_ref_idx_l0_active_minus1; k > refIdxL0; k --)
+                        sp->RefPicList0[k] = sp->RefPicList0[k-1];
+                    sp->RefPicList0[refIdxL0 ++] = swp;
+                    j = refIdxL0;
+                    for (int k = refIdxL0; k <= sp->num_ref_idx_l0_active_minus1 + 1; k ++) {
+                        if (sp->RefPicList0[k].frame_idx != remapped_picture &&
+                            (sp->RefPicList0[k].flags & VA_PICTURE_H264_SHORT_TERM_REFERENCE))
+                                sp->RefPicList0[j++] = sp->RefPicList0[k];
+                    }
+
+                    fprintf(stderr, "RefPicList0 after reorder: ");
+                    for (int k = 0; k <= sp->num_ref_idx_l0_active_minus1; k ++)
+                        fprintf(stderr, " %d", sp->RefPicList0[k].frame_idx);
+                    fprintf(stderr, "\n");
+
                 } else if (2 == modification_of_pic_nums_idc) {
                     NOT_IMPLEMENTED("long");
                     fprintf(stderr, "long_term_pic_num = %d\n", rbsp_get_uev(st));
                 }
-                refPos ++;
+
             } while (modification_of_pic_nums_idc != 3);
 
         }
