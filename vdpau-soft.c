@@ -482,16 +482,29 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         char *buf;
         vaMapBuffer(va_dpy, q.buf, (void**)&buf);
 
+        if (q.pitches[0] == dstSurfData->width) {
+            memcpy(dstSurfData->y_plane, buf, dstSurfData->width * dstSurfData->height);
+        } else {
+            char *src_buf_luma = buf;
+            char *dst_buf_luma = dstSurfData->y_plane;
+            for (unsigned int y = 0; y < dstSurfData->height; y ++) {
+                memcpy(dst_buf_luma, src_buf_luma, dstSurfData->width);
+                dst_buf_luma += dstSurfData->stride;
+                src_buf_luma += q.pitches[0];
+            }
+        }
+
         switch (q.format.fourcc) {
         case VA_FOURCC('N', 'V', '1', '2'):
             do {
-                memcpy(dstSurfData->y_plane, buf, dstSurfData->width * dstSurfData->height);
-                char const *src_ptr = buf + q.offsets[1];
-                char *dst_ptr_u = dstSurfData->u_plane;
-                char *dst_ptr_v = dstSurfData->v_plane;
-                for (int k = 0; k < dstSurfData->width * dstSurfData->height / 4; k ++) {
-                    *dst_ptr_u++ = *src_ptr++;
-                    *dst_ptr_v++ = *src_ptr++;
+                for (int y = 0; y < dstSurfData->height / 2; y ++) {
+                    char *dst_ptr_u = dstSurfData->u_plane + y * dstSurfData->stride / 2;
+                    char *dst_ptr_v = dstSurfData->v_plane + y * dstSurfData->stride / 2;
+                    char const *src_ptr = buf + q.offsets[1] + y * q.pitches[1];
+                    for (int x = 0; x < dstSurfData->width / 2; x ++) {
+                        *dst_ptr_u++ = *src_ptr++;
+                        *dst_ptr_v++ = *src_ptr++;
+                    }
                 }
             } while (0);
             break;
