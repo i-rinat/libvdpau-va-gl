@@ -299,11 +299,6 @@ parse_ref_pic_list_modification(rbsp_state_t *st, const VAPictureParameterBuffer
             int modification_of_pic_nums_idc;
             int refIdxL0 = 0;
             int remapped_picture = vapp->frame_num;
-            fprintf(stderr, "pred (i) = %d\n", vapp->frame_num);
-            if (vapp->pic_fields.bits.field_pic_flag) {
-                remapped_picture *= 2;
-                if (vapp->CurrPic.flags & VA_PICTURE_H264_BOTTOM_FIELD) remapped_picture ++;
-            }
             do {
                 modification_of_pic_nums_idc = rbsp_get_uev(st);
                 if (modification_of_pic_nums_idc < 2) {
