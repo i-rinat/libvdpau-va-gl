@@ -481,11 +481,30 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         vaDeriveImage(va_dpy, dstSurfData->va_surf, &q);
         char *buf;
         vaMapBuffer(va_dpy, q.buf, (void**)&buf);
-        memcpy(dstSurfData->y_plane, buf, dstSurfData->width * dstSurfData->height);
-        buf += dstSurfData->width * dstSurfData->height;
-        memcpy(dstSurfData->v_plane, buf, dstSurfData->width * dstSurfData->height / 4);
-        buf += dstSurfData->width * dstSurfData->height / 4;
-        memcpy(dstSurfData->u_plane, buf, dstSurfData->width * dstSurfData->height / 4);
+
+        switch (q.format.fourcc) {
+        case VA_FOURCC('N', 'V', '1', '2'):
+            do {
+                memcpy(dstSurfData->y_plane, buf, dstSurfData->width * dstSurfData->height);
+                char const *src_ptr = buf + q.offsets[1];
+                char *dst_ptr_u = dstSurfData->u_plane;
+                char *dst_ptr_v = dstSurfData->v_plane;
+                for (int k = 0; k < dstSurfData->width * dstSurfData->height / 4; k ++) {
+                    *dst_ptr_u++ = *src_ptr++;
+                    *dst_ptr_v++ = *src_ptr++;
+                }
+            } while (0);
+            break;
+        case VA_FOURCC('Y', 'V', '1', '2'):
+            memcpy(dstSurfData->y_plane, buf, dstSurfData->width * dstSurfData->height);
+            memcpy(dstSurfData->v_plane, buf + q.offsets[0], dstSurfData->width * dstSurfData->height / 4);
+            memcpy(dstSurfData->u_plane, buf + q.offsets[1], dstSurfData->width * dstSurfData->height / 4);
+            break;
+        default:
+            printf("fourcc code = %08x\n", q.format.fourcc);
+            assert(0 && "not implemeted FOURCC conversion");
+        }
+
         vaUnmapBuffer(va_dpy, q.buf);
         vaDestroyImage(va_dpy, q.image_id);
 
