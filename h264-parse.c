@@ -61,12 +61,11 @@ parse_ref_pic_list_modification(rbsp_state_t *st, const VAPictureParameterBuffer
 
 static
 void
-parse_pred_weight_table(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
-                        const int ChromaArrayType, struct slice_parameters *sp);
+parse_pred_weight_table(rbsp_state_t *st, const int ChromaArrayType, struct slice_parameters *sp);
 
 static
 void
-fill_default_pred_weight_table(const VAPictureParameterBufferH264 *vapp, struct slice_parameters *sp);
+fill_default_pred_weight_table(struct slice_parameters *sp);
 
 static
 void
@@ -353,12 +352,12 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
         parse_ref_pic_list_modification(st, vapp, &sp);
     }
 
-    fill_default_pred_weight_table(vapp, &sp);
+    fill_default_pred_weight_table(&sp);
     if ((vapp->pic_fields.bits.weighted_pred_flag &&
         (SLICE_TYPE_P == sp.slice_type || SLICE_TYPE_SP == sp.slice_type)) ||
         (1 == vapp->pic_fields.bits.weighted_bipred_idc && SLICE_TYPE_B == sp.slice_type))
     {
-        parse_pred_weight_table(st, vapp, ChromaArrayType, &sp);
+        parse_pred_weight_table(st, ChromaArrayType, &sp);
     }
 
     if (sp.nal_ref_idc != 0) {
@@ -482,10 +481,8 @@ parse_ref_pic_list_modification(rbsp_state_t *st, const VAPictureParameterBuffer
 
 static
 void
-fill_default_pred_weight_table(const VAPictureParameterBufferH264 *vapp,
-                               struct slice_parameters *sp)
+fill_default_pred_weight_table(struct slice_parameters *sp)
 {
-    (void)vapp; // TODO: do I need this param?
     sp->luma_log2_weight_denom = 0;
     sp->chroma_log2_weight_denom = 0;
     sp->luma_weight_l0_flag = 0;
@@ -508,10 +505,8 @@ fill_default_pred_weight_table(const VAPictureParameterBufferH264 *vapp,
 
 static
 void
-parse_pred_weight_table(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
-                        const int ChromaArrayType, struct slice_parameters *sp)
+parse_pred_weight_table(rbsp_state_t *st, const int ChromaArrayType, struct slice_parameters *sp)
 {
-    (void)vapp; // TODO: do I need this param?
     sp->luma_log2_weight_denom = rbsp_get_uev(st);
     if (0 != ChromaArrayType)
         sp->chroma_log2_weight_denom = rbsp_get_uev(st);
