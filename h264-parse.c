@@ -125,27 +125,29 @@ zeroify_refpiclist_entry(VAPictureH264 *p)
     p->BottomFieldOrderCnt  = 0;
 }
 
+static
 void
-parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
-                   const int ChromaArrayType, unsigned int p_num_ref_idx_l0_active_minus1,
-                   unsigned int p_num_ref_idx_l1_active_minus1, VASliceParameterBufferH264 *vasp)
+fill_ref_pic_list(struct slice_parameters *sp, const VAPictureParameterBufferH264 *vapp)
 {
-    struct slice_parameters sp;
-
-    for (int k = 0; k < 32; k ++) {
-        zeroify_refpiclist_entry(&sp.RefPicList0[k]);
-        zeroify_refpiclist_entry(&sp.RefPicList1[k]);
-    }
-
     // TODO: properly sort
-    int ptr = 0;
-    for (int k = 0; k < vapp->num_ref_frames; k ++) {
-        if (vapp->ReferenceFrames[k].flags & VA_PICTURE_H264_INVALID)
-            continue;
-        sp.RefPicList0[ptr] = vapp->ReferenceFrames[k];
-        ptr ++;
-    }
+    if (SLICE_TYPE_P == sp->slice_type || SLICE_TYPE_SP == sp->slice_type) {
+        int ptr = 0;
+        for (int k = 0; k < vapp->num_ref_frames; k ++) {
+            if (vapp->ReferenceFrames[k].flags & VA_PICTURE_H264_INVALID)
+                continue;
+            sp->RefPicList0[ptr] = vapp->ReferenceFrames[k];
+            sp->RefPicList1[ptr] = vapp->ReferenceFrames[k];
+            ptr ++;
+        }
+    } else if (SLICE_TYPE_B == sp->slice_type) {
 
+    }
+}
+
+static
+void
+dump_vapp_reference_frames(const VAPictureParameterBufferH264 *vapp)
+{
     for (int k = 0; k < vapp->num_ref_frames; k ++) {
         fprintf(stderr, "╭─────────────────────────────────────────\n");
         fprintf(stderr, "│ref picture_id = %d\n", vapp->ReferenceFrames[k].picture_id);
@@ -166,6 +168,22 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
         fprintf(stderr, "│ref BottomFieldOrderCnt = %d\n", vapp->ReferenceFrames[k].BottomFieldOrderCnt);
         fprintf(stderr, "╰─────────────────────────────────────────\n");
     }
+}
+
+
+void
+parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
+                   const int ChromaArrayType, unsigned int p_num_ref_idx_l0_active_minus1,
+                   unsigned int p_num_ref_idx_l1_active_minus1, VASliceParameterBufferH264 *vasp)
+{
+    struct slice_parameters sp;
+
+    for (int k = 0; k < 32; k ++) {
+        zeroify_refpiclist_entry(&sp.RefPicList0[k]);
+        zeroify_refpiclist_entry(&sp.RefPicList1[k]);
+    }
+
+    dump_vapp_reference_frames(vapp);
 
     rbsp_get_u(st, 1); // forbidden_zero_bit
     sp.nal_ref_idc = rbsp_get_u(st, 2);
@@ -178,6 +196,9 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
     sp.first_mb_in_slice = rbsp_get_uev(st);
     sp.slice_type = rbsp_get_uev(st);
     if (sp.slice_type > 4) sp.slice_type -= 5;    // wrap 5-9 to 0-4
+
+    // as now we know slice_type, time to fill RefPicListX
+    fill_ref_pic_list(&sp, vapp);
 
     sp.pic_parameter_set_id = rbsp_get_uev(st);
 
