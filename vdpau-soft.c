@@ -445,6 +445,7 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         parse_slice_header(&st, pic_param, ChromaArrayType, vdppi->num_ref_idx_l0_active_minus1,
             vdppi->num_ref_idx_l1_active_minus1, &sp_h264);
 
+        /*
         for (int k = 0; k < sp_h264.num_ref_idx_l0_active_minus1 + 1; k ++) {
             if (VA_INVALID_SURFACE == sp_h264.RefPicList0[k].picture_id) continue;
             fprintf(stderr, "a RefPicList0[%d].picture_id = %d\n",k,sp_h264.RefPicList0[k].picture_id);
@@ -454,6 +455,7 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
             fprintf(stderr, "a RefPicList0[%d].BottomFieldOrderCnt = %d\n",k,sp_h264.RefPicList0[k].BottomFieldOrderCnt);
             fprintf(stderr, "-----------------------------------------\n");
         }
+        */
 
 
         status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceParameterBufferType,

@@ -295,7 +295,7 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
         zeroify_refpiclist_entry(&sp.RefPicList1[k]);
     }
 
-    dump_vapp_reference_frames(vapp);
+    // dump_vapp_reference_frames(vapp);
 
     rbsp_get_u(st, 1); // forbidden_zero_bit
     sp.nal_ref_idc = rbsp_get_u(st, 2);
