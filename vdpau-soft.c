@@ -27,6 +27,8 @@
 #define NUM_RENDER_TARGETS_H264     21
 
 
+#define DESCRIBE(xparam, format)    fprintf(stderr, #xparam " = %" #format "\n", xparam)
+
 static char const *
 implemetation_description_string = "OpenGL/libswscale backend for VDPAU";
 
