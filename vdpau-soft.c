@@ -427,19 +427,6 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         status = vaRenderPicture(va_dpy, decoderData->context_id, &pic_param_buf, 1);
         status = vaRenderPicture(va_dpy, decoderData->context_id, &iq_matrix_buf, 1);
 
-        // TODO: debug code, remove
-
-        //~ rbsp_state_t st;
-        //~ rbsp_attach_buffer(&st, bitstream_buffers[1].bitstream, bitstream_buffers[1].bitstream_bytes);
-        //~ int c;
-        //~ int x = 0;
-        //~ while ((c = rbsp_consume_byte(&st)) != -1) {
-            //~ if (x % 16 == 0) fprintf(stderr, "\n%04x  {", x);
-            //~ fprintf(stderr, " %02x", c);
-            //~ x ++;
-        //~ }
-        //~ fprintf(stderr, "\n");
-
         // Slice parameters
         VABufferID slice_parameters_buf;
         VASliceParameterBufferH264 sp_h264;
