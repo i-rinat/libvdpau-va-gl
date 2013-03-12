@@ -1,5 +1,7 @@
+#define _GNU_SOURCE
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "h264-parse.h"
 
 #define NOT_IMPLEMENTED(str)        assert(0 && "not implemented" && str)
@@ -126,21 +128,131 @@ zeroify_refpiclist_entry(VAPictureH264 *p)
 }
 
 static
+int
+comparison_function_1(const void *p1, const void *p2, void *context)
+{
+    const int idx_1 = *(const int *)p1;
+    const int idx_2 = *(const int *)p2;
+
+    struct {
+        int descending;
+        int what;
+        const VAPictureH264 *ReferenceFrames;
+    } *ctx = context;
+
+    int value1 = 0, value2 = 0;
+    switch (ctx->what) {
+    case 1:         // top field
+        value1 = ctx->ReferenceFrames[idx_1].TopFieldOrderCnt;
+        value2 = ctx->ReferenceFrames[idx_2].TopFieldOrderCnt;
+        break;
+    case 2:         // bottom field
+        value1 = ctx->ReferenceFrames[idx_1].BottomFieldOrderCnt;
+        value2 = ctx->ReferenceFrames[idx_2].BottomFieldOrderCnt;
+        break;
+    case 3:         // frame_idx
+        value1 = ctx->ReferenceFrames[idx_1].frame_idx;
+        value2 = ctx->ReferenceFrames[idx_2].frame_idx;
+        break;
+    default:
+        assert(0 && "wrong what field");
+    }
+
+    int result;
+    if (value1 < value2)
+        result = -1;
+    else if (value1 > value2)
+        result = 1;
+    else
+        result = 0;
+
+    if (ctx->descending) return -result;
+    return result;
+}
+
+static
 void
 fill_ref_pic_list(struct slice_parameters *sp, const VAPictureParameterBufferH264 *vapp)
 {
-    // TODO: properly sort
-    if (SLICE_TYPE_P == sp->slice_type || SLICE_TYPE_SP == sp->slice_type) {
-        int ptr = 0;
-        for (int k = 0; k < vapp->num_ref_frames; k ++) {
-            if (vapp->ReferenceFrames[k].flags & VA_PICTURE_H264_INVALID)
-                continue;
-            sp->RefPicList0[ptr] = vapp->ReferenceFrames[k];
-            sp->RefPicList1[ptr] = vapp->ReferenceFrames[k];
-            ptr ++;
-        }
-    } else if (SLICE_TYPE_B == sp->slice_type) {
+    int idcs_asc[32], idcs_desc[32];
+    struct {
+        int descending;
+        int what;
+        const VAPictureH264 *ReferenceFrames;
+    } ctx;
 
+    if (SLICE_TYPE_I == sp->slice_type || SLICE_TYPE_SI == sp->slice_type)
+        return;
+
+    ctx.ReferenceFrames = vapp->ReferenceFrames;
+
+    int frame_count = 0;
+    for (int k = 0; k < vapp->num_ref_frames; k ++) {
+        if (vapp->ReferenceFrames[k].flags & VA_PICTURE_H264_INVALID)
+            continue;
+        sp->RefPicList0[frame_count] = vapp->ReferenceFrames[k];
+        idcs_asc[frame_count] = idcs_desc[frame_count] = k;
+        frame_count ++;
+    }
+
+    if (SLICE_TYPE_P == sp->slice_type || SLICE_TYPE_SP == sp->slice_type) {
+        // TODO: implement interlaced P slices
+        ctx.what = 3;
+        ctx.descending = 0;
+        qsort_r(idcs_asc, frame_count, sizeof(idcs_asc[0]), &comparison_function_1, &ctx);
+        ctx.descending = 1;
+        qsort_r(idcs_desc, frame_count, sizeof(idcs_desc[0]), &comparison_function_1, &ctx);
+
+        int ptr = 0;
+        for (int k = 0; k < frame_count; k ++)
+            if (vapp->ReferenceFrames[idcs_desc[k]].flags & VA_PICTURE_H264_SHORT_TERM_REFERENCE)
+                sp->RefPicList0[ptr++] = vapp->ReferenceFrames[idcs_desc[k]];
+
+        for (int k = 0; k < frame_count; k ++)
+            if (vapp->ReferenceFrames[idcs_asc[k]].flags & VA_PICTURE_H264_LONG_TERM_REFERENCE)
+                sp->RefPicList0[ptr++] = vapp->ReferenceFrames[idcs_asc[k]];
+
+    } else if (SLICE_TYPE_B == sp->slice_type && !vapp->pic_fields.bits.field_pic_flag) {
+        ctx.what = 1;
+        ctx.descending = 0;
+        qsort_r(idcs_asc, frame_count, sizeof(idcs_asc[0]), &comparison_function_1, &ctx);
+        ctx.descending = 1;
+        qsort_r(idcs_desc, frame_count, sizeof(idcs_desc[0]), &comparison_function_1, &ctx);
+
+        int ptr0 = 0;
+        int ptr1 = 0;
+        for (int k = 0; k < frame_count; k ++) {
+            const VAPictureH264 *rf = &vapp->ReferenceFrames[idcs_desc[k]];
+            if (rf->flags & VA_PICTURE_H264_SHORT_TERM_REFERENCE)
+                if (rf->TopFieldOrderCnt < vapp->CurrPic.TopFieldOrderCnt)
+                    sp->RefPicList0[ptr0++] = *rf;
+
+            rf = &vapp->ReferenceFrames[idcs_asc[k]];
+            if (rf->flags & VA_PICTURE_H264_SHORT_TERM_REFERENCE)
+                if (rf->TopFieldOrderCnt >= vapp->CurrPic.TopFieldOrderCnt)
+                    sp->RefPicList1[ptr1++] = *rf;
+        }
+        for (int k = 0; k < frame_count; k ++) {
+            const VAPictureH264 *rf = &vapp->ReferenceFrames[idcs_asc[k]];
+            if (rf->flags & VA_PICTURE_H264_SHORT_TERM_REFERENCE)
+                if (rf->TopFieldOrderCnt >= vapp->CurrPic.TopFieldOrderCnt)
+                    sp->RefPicList0[ptr0++] = *rf;
+
+            rf = &vapp->ReferenceFrames[idcs_desc[k]];
+            if (rf->flags & VA_PICTURE_H264_SHORT_TERM_REFERENCE)
+                if (rf->TopFieldOrderCnt < vapp->CurrPic.TopFieldOrderCnt)
+                    sp->RefPicList1[ptr1++] = *rf;
+        }
+        for (int k = 0; k < frame_count; k ++) {
+            const VAPictureH264 *rf = &vapp->ReferenceFrames[idcs_asc[k]];
+            if (rf->flags & VA_PICTURE_H264_LONG_TERM_REFERENCE) {
+                sp->RefPicList0[ptr0++] = *rf;
+                sp->RefPicList1[ptr1++] = *rf;
+            }
+        }
+    } else {
+        // TODO: implement interlaced B slices
+        assert(0 && "not implemeted: interlaced SLICE_TYPE_B sorting");
     }
 }
 
