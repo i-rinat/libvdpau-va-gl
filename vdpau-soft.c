@@ -339,8 +339,15 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
             va_ref->frame_idx = vdp_ref->frame_idx;
             va_ref->flags = vdp_ref->is_long_term ? VA_PICTURE_H264_LONG_TERM_REFERENCE
                                                   : VA_PICTURE_H264_SHORT_TERM_REFERENCE;
-            if (vdp_ref->top_is_reference)    va_ref->flags |= VA_PICTURE_H264_TOP_FIELD;
-            if (vdp_ref->bottom_is_reference) va_ref->flags |= VA_PICTURE_H264_BOTTOM_FIELD;
+
+            if (vdp_ref->top_is_reference && vdp_ref->bottom_is_reference) {
+                // Full frame. This block intentionally left blank. No flags set.
+            } else {
+                if (vdp_ref->top_is_reference)
+                    va_ref->flags |= VA_PICTURE_H264_TOP_FIELD;
+                else
+                    va_ref->flags |= VA_PICTURE_H264_BOTTOM_FIELD;
+            }
 
             va_ref->TopFieldOrderCnt    = vdp_ref->field_order_cnt[0];
             va_ref->BottomFieldOrderCnt = vdp_ref->field_order_cnt[1];
