@@ -73,7 +73,6 @@ parse_dec_ref_pic_marking(rbsp_state_t *st, struct slice_parameters *sp);
 static
 void
 do_fill_va_slice_parameter_buffer(struct slice_parameters const * const sp,
-                                  VAPictureParameterBufferH264 const * const vapp,
                                   VASliceParameterBufferH264 *vasp, int bit_offset)
 {
     vasp->slice_data_bit_offset = bit_offset;
@@ -296,7 +295,7 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
     fprintf(stderr, "num_ref_idx_l0_active_minus1 = %d\n", sp.num_ref_idx_l0_active_minus1);
     fprintf(stderr, "num_ref_idx_l1_active_minus1 = %d\n", sp.num_ref_idx_l1_active_minus1);
 
-    do_fill_va_slice_parameter_buffer(&sp, vapp, vasp, st->bits_eaten);
+    do_fill_va_slice_parameter_buffer(&sp, vasp, st->bits_eaten);
 }
 
 
