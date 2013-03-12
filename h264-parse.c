@@ -4,6 +4,8 @@
 
 #define NOT_IMPLEMENTED(str)        assert(0 && "not implemented" && str)
 
+#define DESCRIBE(xparam, format)    fprintf(stderr, #xparam " = %" #format "\n", xparam)
+
 struct slice_parameters {
     int nal_ref_idc;
     int nal_unit_type;
