@@ -292,9 +292,6 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
         NOT_IMPLEMENTED("don't know what length to consume\n");
     }
 
-    fprintf(stderr, "num_ref_idx_l0_active_minus1 = %d\n", sp.num_ref_idx_l0_active_minus1);
-    fprintf(stderr, "num_ref_idx_l1_active_minus1 = %d\n", sp.num_ref_idx_l1_active_minus1);
-
     do_fill_va_slice_parameter_buffer(&sp, vasp, st->bits_eaten);
 }
 
