@@ -203,6 +203,7 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
     sp.pic_parameter_set_id = rbsp_get_uev(st);
 
     // TODO: separate_colour_plane_flag is 0 for all but YUV444. Now ok, but should detect properly.
+    // See 7.3.3
 
     sp.frame_num = rbsp_get_u(st, vapp->seq_fields.bits.log2_max_frame_num_minus4 + 4);
     sp.field_pic_flag = 0;
