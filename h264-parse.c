@@ -292,38 +292,30 @@ void
 parse_ref_pic_list_modification(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
                                 struct slice_parameters *sp)
 {
+    const int MaxFrameNum = 1 << (vapp->seq_fields.bits.log2_max_frame_num_minus4 + 4);
+    const int MaxPicNum = (vapp->pic_fields.bits.field_pic_flag) ? 2*MaxFrameNum : MaxFrameNum;
+
     if (2 != sp->slice_type && 4 != sp->slice_type) {
         int ref_pic_list_modification_flag_l0 = rbsp_get_u(st, 1);
         if (ref_pic_list_modification_flag_l0) {
-            //NOT_IMPLEMENTED("ref pic list modification 0"); // TODO: implement this
             int modification_of_pic_nums_idc;
             int refIdxL0 = 0;
-            int remapped_picture = vapp->frame_num;
+            unsigned int picNumL0 = vapp->frame_num;
             do {
                 modification_of_pic_nums_idc = rbsp_get_uev(st);
                 if (modification_of_pic_nums_idc < 2) {
                     int abs_diff_pic_num_minus1 = rbsp_get_uev(st);
                     if (0 == modification_of_pic_nums_idc) {
-                        remapped_picture -= (abs_diff_pic_num_minus1 + 1);
-                    } else { // == 1
-                        remapped_picture += (abs_diff_pic_num_minus1 + 1);
+                        picNumL0 -= (abs_diff_pic_num_minus1 + 1);
+                    } else { // 1 == modification_of_pic_nums_idc
+                        picNumL0 += (abs_diff_pic_num_minus1 + 1);
                     }
-                    // wrap
-                    int max_frame_num = 1 << (vapp->seq_fields.bits.log2_max_frame_num_minus4 + 4);
-                    if (remapped_picture < 0) remapped_picture += max_frame_num;
-                    if (remapped_picture >= max_frame_num) remapped_picture -= max_frame_num;
 
-                    fprintf(stderr, "predicted = %d / %d / %d\n", remapped_picture, vapp->frame_num, max_frame_num);
-                    int picNumL0 = remapped_picture > vapp->frame_num ?
-                                    remapped_picture - max_frame_num : remapped_picture;
+                    // wrap picNumL0
+                    picNumL0 &= (MaxPicNum - 1);
 
-                    fprintf(stderr, "predicted = %d\n", picNumL0);
-                    fprintf(stderr, "refIdxL0 = %d\n", refIdxL0);
-
-                    fprintf(stderr, "RefPicList0 before reorder: ");
-                    for (int k = 0; k <= sp->num_ref_idx_l0_active_minus1; k ++)
-                        fprintf(stderr, " %d", sp->RefPicList0[k].frame_idx);
-                    fprintf(stderr, "\n");
+                    // there is no need to subtract MaxPicNum as in (8-36) in 8.2.4.3.1
+                    // because frame_num already wrapped
 
                     int j;
                     for (j = 0; j < vapp->num_ref_frames; j ++) {
@@ -344,11 +336,6 @@ parse_ref_pic_list_modification(rbsp_state_t *st, const VAPictureParameterBuffer
                             (sp->RefPicList0[k].flags & VA_PICTURE_H264_SHORT_TERM_REFERENCE))
                                 sp->RefPicList0[j++] = sp->RefPicList0[k];
                     }
-
-                    fprintf(stderr, "RefPicList0 after reorder: ");
-                    for (int k = 0; k <= sp->num_ref_idx_l0_active_minus1; k ++)
-                        fprintf(stderr, " %d", sp->RefPicList0[k].frame_idx);
-                    fprintf(stderr, "\n");
 
                 } else if (2 == modification_of_pic_nums_idc) {
                     NOT_IMPLEMENTED("long");
