@@ -592,26 +592,26 @@ parse_dec_ref_pic_marking(rbsp_state_t *st, struct slice_parameters *sp)
     } else {
         int adaptive_ref_pic_marking_mode_flag = rbsp_get_u(st, 1);
         if (adaptive_ref_pic_marking_mode_flag) {
-            NOT_IMPLEMENTED("adaptive ref pic marking");    // TODO: implement
+            // no need to do any action, just consume bits. All management should be done
+            // on client side
             int memory_management_control_operation;
             do {
                 memory_management_control_operation = rbsp_get_uev(st);
-                fprintf(stderr, "memory_management_control_operation = %d\n", memory_management_control_operation);
                 if (1 == memory_management_control_operation ||
                     3 == memory_management_control_operation)
                 {
-                    fprintf(stderr, "difference_of_pic_nums_minus1 = %d\n", rbsp_get_uev(st));
+                    rbsp_get_uev(st);   // difference_of_pic_nums_minus1
                 }
                 if (2 == memory_management_control_operation) {
-                    fprintf(stderr, "long_term_pic_num = %d\n", rbsp_get_uev(st));
+                    rbsp_get_uev(st);   // long_term_pic_num
                 }
                 if (3 == memory_management_control_operation ||
                     6 == memory_management_control_operation)
                 {
-                    fprintf(stderr, "long_term_frame_idx = %d\n", rbsp_get_uev(st));
+                    rbsp_get_uev(st);   // long_term_frame_idx
                 }
                 if (4 == memory_management_control_operation) {
-                    fprintf(stderr, "max_long_term_frame_idx_plus1 = %d\n", rbsp_get_uev(st));
+                    rbsp_get_uev(st);   // max_long_term_frame_idx_plus1
                 }
             } while (memory_management_control_operation != 0);
         }
