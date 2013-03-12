@@ -446,7 +446,7 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
             vdppi->num_ref_idx_l1_active_minus1, &sp_h264);
 
         for (int k = 0; k < sp_h264.num_ref_idx_l0_active_minus1 + 1; k ++) {
-            if (-1 == sp_h264.RefPicList0[k].picture_id) continue;
+            if (VA_INVALID_SURFACE == sp_h264.RefPicList0[k].picture_id) continue;
             fprintf(stderr, "a RefPicList0[%d].picture_id = %d\n",k,sp_h264.RefPicList0[k].picture_id);
             fprintf(stderr, "a RefPicList0[%d].frame_idx = %d\n",k,sp_h264.RefPicList0[k].frame_idx);
             fprintf(stderr, "a RefPicList0[%d].flags = %d\n",k,sp_h264.RefPicList0[k].flags);
@@ -492,11 +492,11 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         switch (q.format.fourcc) {
         case VA_FOURCC('N', 'V', '1', '2'):
             do {
-                for (int y = 0; y < dstSurfData->height / 2; y ++) {
+                for (unsigned int y = 0; y < dstSurfData->height / 2; y ++) {
                     char *dst_ptr_u = dstSurfData->u_plane + y * dstSurfData->stride / 2;
                     char *dst_ptr_v = dstSurfData->v_plane + y * dstSurfData->stride / 2;
                     char const *src_ptr = buf + q.offsets[1] + y * q.pitches[1];
-                    for (int x = 0; x < dstSurfData->width / 2; x ++) {
+                    for (unsigned int x = 0; x < dstSurfData->width / 2; x ++) {
                         *dst_ptr_u++ = *src_ptr++;
                         *dst_ptr_v++ = *src_ptr++;
                     }
