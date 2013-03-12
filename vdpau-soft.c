@@ -287,16 +287,14 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
             }
         }
 
-        pic_param->CurrPic.picture_id           = dstSurfData->va_surf;
-        pic_param->CurrPic.frame_idx            = vdppi->frame_num;
-
+        pic_param->CurrPic.picture_id   = dstSurfData->va_surf;
+        pic_param->CurrPic.frame_idx    = vdppi->frame_num;
+        pic_param->CurrPic.flags  = vdppi->is_reference ? VA_PICTURE_H264_SHORT_TERM_REFERENCE : 0;
         if (vdppi->field_pic_flag) {
-            pic_param->CurrPic.flags           |= vdppi->bottom_field_flag
-                                                  ? VA_PICTURE_H264_BOTTOM_FIELD
-                                                  : VA_PICTURE_H264_TOP_FIELD;
-        } else {
-            pic_param->CurrPic.flags            = 0;
+            pic_param->CurrPic.flags |=
+                vdppi->bottom_field_flag ? VA_PICTURE_H264_BOTTOM_FIELD : VA_PICTURE_H264_TOP_FIELD;
         }
+
         pic_param->CurrPic.TopFieldOrderCnt     = vdppi->field_order_cnt[0];
         pic_param->CurrPic.BottomFieldOrderCnt  = vdppi->field_order_cnt[1];
 
