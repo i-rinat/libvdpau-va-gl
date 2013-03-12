@@ -301,8 +301,9 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         // reference frames
         // mark all pictures invalid preliminary
         for (int k = 0; k < 16; k ++) {
-            pic_param->ReferenceFrames[k].picture_id = VA_INVALID_ID;
-            pic_param->ReferenceFrames[k].flags = VA_PICTURE_H264_INVALID;
+            pic_param->ReferenceFrames[k].picture_id    = VA_INVALID_SURFACE;
+            pic_param->ReferenceFrames[k].frame_idx     = 0;
+            pic_param->ReferenceFrames[k].flags         = VA_PICTURE_H264_INVALID;
             pic_param->ReferenceFrames[k].TopFieldOrderCnt = 0;
             pic_param->ReferenceFrames[k].BottomFieldOrderCnt = 0;
         }
