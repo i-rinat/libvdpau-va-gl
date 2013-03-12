@@ -149,7 +149,18 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
         fprintf(stderr, "╭─────────────────────────────────────────\n");
         fprintf(stderr, "│ref picture_id = %d\n", vapp->ReferenceFrames[k].picture_id);
         fprintf(stderr, "│ref frame_idx = %d\n", vapp->ReferenceFrames[k].frame_idx);
-        fprintf(stderr, "│ref flags = %d\n", vapp->ReferenceFrames[k].flags);
+        fprintf(stderr, "│ref flags = ");
+        if (vapp->ReferenceFrames[k].flags & VA_PICTURE_H264_INVALID)
+            fprintf(stderr, "INVALID ");
+        if (vapp->ReferenceFrames[k].flags & VA_PICTURE_H264_TOP_FIELD)
+            fprintf(stderr, "TOP_FIELD ");
+        if (vapp->ReferenceFrames[k].flags & VA_PICTURE_H264_BOTTOM_FIELD)
+            fprintf(stderr, "BOTTOM_FIELD ");
+        if (vapp->ReferenceFrames[k].flags & VA_PICTURE_H264_SHORT_TERM_REFERENCE)
+            fprintf(stderr, "SHORT_TERM_REFERENCE ");
+        if (vapp->ReferenceFrames[k].flags & VA_PICTURE_H264_LONG_TERM_REFERENCE)
+            fprintf(stderr, "LONG_TERM_REFERENCE");
+        fprintf(stderr, "\n");
         fprintf(stderr, "│ref TopFieldOrderCnt = %d\n", vapp->ReferenceFrames[k].TopFieldOrderCnt);
         fprintf(stderr, "│ref BottomFieldOrderCnt = %d\n", vapp->ReferenceFrames[k].BottomFieldOrderCnt);
         fprintf(stderr, "╰─────────────────────────────────────────\n");
