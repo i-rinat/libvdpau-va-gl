@@ -1,5 +1,6 @@
 #include "bitstream.h"
 #include <assert.h>
+#include <string.h>
 
 inline
 void
@@ -11,6 +12,37 @@ rbsp_attach_buffer(rbsp_state_t *state, const uint8_t *buf, size_t byte_count)
     state->bit_ptr      = 7;
     state->zeros_in_row = 0;
     state->bits_eaten   = 0;
+}
+
+inline
+int
+rbsp_navigate_to_nal_unit(rbsp_state_t *state)
+{
+    int found = 1;
+    int window[3] = {-1, -1, -1};
+    const int pattern[3] = {0, 0, 1};
+    do {
+        int c = rbsp_consume_byte(state);
+        if (c < 0) {    // no bytes left, no nal unit found
+            found = 0;
+            break;
+        }
+        window[0] = window[1];
+        window[1] = window[2];
+        window[2] = c;
+    } while (memcmp(window, pattern, sizeof(window)));
+
+    if (found)
+        return (int)(state->cur_ptr - state->buf_ptr);
+
+    return -1;
+}
+
+inline
+void
+rbsp_reset_bit_counter(rbsp_state_t *state)
+{
+    state->bits_eaten = 0;
 }
 
 inline

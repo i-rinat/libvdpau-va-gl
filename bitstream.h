@@ -33,6 +33,10 @@ void rbsp_attach_buffer(rbsp_state_t *state, const uint8_t *buf, size_t byte_cou
  */
 int rbsp_consume_byte(rbsp_state_t *state);
 
+int rbsp_navigate_to_nal_unit(rbsp_state_t *state);
+
+void rbsp_reset_bit_counter(rbsp_state_t *state);
+
 int
 rbsp_consume_bit(rbsp_state_t *state);
 
