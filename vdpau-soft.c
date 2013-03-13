@@ -1010,9 +1010,10 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
                                 uint32_t clip_width, uint32_t clip_height,
                                 VdpTime earliest_presentation_time)
 {
-    traceVdpPresentationQueueDisplay("{part}", presentation_queue, surface, clip_width, clip_height,
+    traceVdpPresentationQueueDisplay("{full}", presentation_queue, surface, clip_width, clip_height,
         earliest_presentation_time);
 
+    // TODO: take into accound earliest_presentation_time
     VdpOutputSurfaceData *surfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
     VdpPresentationQueueData *pqueueData =
         handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
@@ -1023,24 +1024,29 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     glXMakeCurrent(deviceData->display, pqueueData->target->drawable, deviceData->glc);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    const uint32_t target_width  = (clip_width > 0)  ? clip_width  : surfData->width;
+    const uint32_t target_height = (clip_height > 0) ? clip_height : surfData->height;
+
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, surfData->width - 1, surfData->height - 1, 0, -1.0, 1.0);
-    glViewport(0, 0, surfData->width, surfData->height);
+    glOrtho(0, target_width - 1, target_height - 1, 0, -1.0, 1.0);
+    glViewport(0, 0, target_width, target_height);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
     glMatrixMode(GL_TEXTURE);
     glLoadIdentity();
+    glScalef(1.0f/surfData->width, 1.0f/surfData->height, 1.0f);
 
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, surfData->tex_id);
     glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 0.0f); glVertex2i(0, 0);
-        glTexCoord2f(1.0f, 0.0f); glVertex2i(surfData->width - 1, 0);
-        glTexCoord2f(1.0f, 1.0f); glVertex2i(surfData->width - 1, surfData->height - 1);
-        glTexCoord2f(0.0f, 1.0f); glVertex2i(0, surfData->height - 1);
+        glTexCoord2i(0, 0); glVertex2i(0, 0);
+        glTexCoord2i(target_width - 1, 0); glVertex2i(target_width - 1, 0);
+        glTexCoord2i(target_width - 1, target_height - 1);
+        glVertex2i(target_width - 1, target_height - 1);
+        glTexCoord2i(0, target_height - 1); glVertex2i(0, target_height - 1);
     glEnd();
     glXSwapBuffers(deviceData->display, pqueueData->target->drawable);
 
