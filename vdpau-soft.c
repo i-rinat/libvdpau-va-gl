@@ -425,21 +425,44 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         status = vaRenderPicture(va_dpy, decoderData->context_id, &pic_param_buf, 1);
         status = vaRenderPicture(va_dpy, decoderData->context_id, &iq_matrix_buf, 1);
 
-        // Slice parameters
-        VABufferID slice_parameters_buf;
-        VASliceParameterBufferH264 sp_h264;
-        memset(&sp_h264, 0, sizeof(VASliceParameterBufferH264));
+        // merge bitstream buffers
+        int total_bitstream_bytes = 0;
+        for (unsigned int k = 0; k < bitstream_buffer_count; k ++)
+            total_bitstream_bytes += bitstream_buffers[k].bitstream_bytes;
 
-        sp_h264.slice_data_size               = bitstream_buffers[1].bitstream_bytes;
+        uint8_t *merged_bitstream = malloc(total_bitstream_bytes);
+        if (NULL == merged_bitstream)
+            goto error_resources;
+
+        do {
+            unsigned char *ptr = merged_bitstream;
+            for (unsigned int k = 0; k < bitstream_buffer_count; k ++) {
+                memcpy(ptr, bitstream_buffers[k].bitstream, bitstream_buffers[k].bitstream_bytes);
+                ptr += bitstream_buffers[k].bitstream_bytes;
+            }
+        } while(0);
+
+        // Slice parameters
+        VABufferID                  slice_parameters_buf;
+        VASliceParameterBufferH264  sp_h264;
+        rbsp_state_t                st;
+
+        rbsp_attach_buffer(&st, merged_bitstream, total_bitstream_bytes);
+        int nal_offset = rbsp_navigate_to_nal_unit(&st);
+        rbsp_reset_bit_counter(&st);
+        if (nal_offset < 0)
+            goto error_no_nal_header;
+
+        memset(&sp_h264, 0, sizeof(VASliceParameterBufferH264));
+        sp_h264.slice_data_size               = total_bitstream_bytes - nal_offset;
         sp_h264.slice_data_offset             = 0;
         sp_h264.slice_data_flag               = VA_SLICE_DATA_FLAG_ALL;
-        rbsp_state_t st;
-        rbsp_attach_buffer(&st, bitstream_buffers[1].bitstream, bitstream_buffers[1].bitstream_bytes);
 
         // TODO: this may be not entirely true for YUV444
         // but if we limiting to YUV420, that's ok
         int ChromaArrayType = pic_param->seq_fields.bits.chroma_format_idc;
 
+        // parse slice header and use its data to fill slice parameter buffer
         parse_slice_header(&st, pic_param, ChromaArrayType, vdppi->num_ref_idx_l0_active_minus1,
             vdppi->num_ref_idx_l1_active_minus1, &sp_h264);
 
@@ -450,13 +473,13 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
 
         VABufferID slice_buf;
         status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceDataBufferType,
-            bitstream_buffers[1].bitstream_bytes, 1, (char *)bitstream_buffers[1].bitstream,
-            &slice_buf);
+            total_bitstream_bytes - nal_offset, 1, merged_bitstream + nal_offset, &slice_buf);
         if (VA_STATUS_SUCCESS != status) goto error;
         status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_buf, 1);
 
         status = vaEndPicture(va_dpy, decoderData->context_id);
 
+        free(merged_bitstream);
 
         vaSyncSurface(va_dpy, dstSurfData->va_surf);
         VAImage q;
@@ -512,6 +535,11 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
 error:
     fprintf(stderr, "error: something gone wrong in softVdpDecoderRender\n");
     return VDP_STATUS_ERROR;
+error_no_nal_header:
+    fprintf(stderr, "softVdpDecoderRender: no NAL header\n");
+    return VDP_STATUS_ERROR;
+error_resources:
+    return VDP_STATUS_RESOURCES;
 }
 
 static
