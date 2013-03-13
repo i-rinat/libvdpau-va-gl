@@ -867,7 +867,11 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         video_surface_current, video_surface_future_count, video_surface_future, video_source_rect,
         destination_surface, destination_rect, destination_video_rect, layer_count, layers);
 
-    //TODO: handle rectangles
+    // TODO: current implementation ignores previous and future surfaces, using only current.
+    // Is that acceptable for interlaced video? Will VAAPI handle deinterlacing?
+
+    // TODO: background_surface. Is it safe to just ignore it?
+
     VdpVideoSurfaceData *srcSurfData =
         handlestorage_get(video_surface_current, HANDLETYPE_VIDEO_SURFACE);
     VdpOutputSurfaceData *dstSurfData =
@@ -876,36 +880,45 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     if (srcSurfData->device != dstSurfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     VdpDeviceData *deviceData = srcSurfData->device;
 
-    const uint32_t dstStride = dstSurfData->width & 3 ? (dstSurfData->width & ~3u) + 4
-                                                      : dstSurfData->width;
-    uint8_t *img_buf = malloc(dstStride * dstSurfData->height * 4);
+    // TODO: handle video_source_rect
+    // TODO: handle destination_rect
+    VdpRect dstVideoRect = {0, 0, dstSurfData->width, dstSurfData->height};
+    if (destination_video_rect)
+        dstVideoRect = *destination_video_rect;
+    const uint32_t dstVideoWidth  = dstVideoRect.x1 - dstVideoRect.x0;
+    const uint32_t dstVideoHeight = dstVideoRect.y1 - dstVideoRect.y0;
+
+    const uint32_t dstVideoStride = dstVideoWidth & 3 ? (dstVideoWidth & ~3u) + 4 : dstVideoWidth;
+    uint8_t *img_buf = malloc(dstVideoStride * dstVideoHeight * 4);
     if (NULL == img_buf) return VDP_STATUS_RESOURCES;
 
     struct SwsContext *sws_ctx =
         sws_getContext(srcSurfData->width, srcSurfData->height, PIX_FMT_YUV420P,
-            dstSurfData->width, dstSurfData->height,
+            dstVideoWidth, dstVideoHeight,
             PIX_FMT_RGBA, SWS_POINT, NULL, NULL, NULL);
 
     uint8_t const * const src_planes[] =
         { srcSurfData->y_plane, srcSurfData->v_plane, srcSurfData->u_plane, NULL };
     int src_strides[] = {srcSurfData->stride, srcSurfData->stride/2, srcSurfData->stride/2, 0};
     uint8_t *dst_planes[] = {img_buf, NULL, NULL, NULL};
-    int dst_strides[] = {dstStride * 4, 0, 0, 0};
+    int dst_strides[] = {dstVideoStride * 4, 0, 0, 0};
 
     int res = sws_scale(sws_ctx,
                         src_planes, src_strides, 0, srcSurfData->height,
                         dst_planes, dst_strides);
     sws_freeContext(sws_ctx);
-    if (res != (int)dstSurfData->height) {
+    if (res != (int)dstVideoHeight) {
         fprintf(stderr, "scaling failed\n");
         return VDP_STATUS_ERROR;
     }
 
     // copy converted image to texture
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, dstStride);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, dstVideoStride);
     glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, dstSurfData->width, dstSurfData->height,
+    glTexSubImage2D(GL_TEXTURE_2D, 0,
+        dstVideoRect.x0, dstVideoRect.y0,
+        dstVideoRect.x1 - dstVideoRect.x0, dstVideoRect.y1 - dstVideoRect.y0,
         GL_BGRA, GL_UNSIGNED_BYTE, img_buf);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     free(img_buf);
