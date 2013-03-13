@@ -205,7 +205,6 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
 
     *decoder = handlestorage_add(data);
 
-    fprintf(stderr, "debug: decoder created\n");
     return VDP_STATUS_OK;
 error:
     free(data);
