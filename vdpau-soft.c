@@ -81,6 +81,8 @@ typedef struct {
     void           *v_plane;
     void           *u_plane;
     VASurfaceID     va_surf;
+    void           *va_glx;
+    GLuint          tex_id;
 } VdpVideoSurfaceData;
 
 typedef struct {
@@ -474,7 +476,7 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         status = vaEndPicture(va_dpy, decoderData->context_id);
 
         free(merged_bitstream);
-
+        /*
         vaSyncSurface(va_dpy, dstSurfData->va_surf);
         VAImage q;
         vaDeriveImage(va_dpy, dstSurfData->va_surf, &q);
@@ -519,7 +521,7 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
 
         vaUnmapBuffer(va_dpy, q.buf);
         vaDestroyImage(va_dpy, q.image_id);
-
+        */
     } else {
         fprintf(stderr, "error: no implementation for profile\n");
         return VDP_STATUS_NO_IMPLEMENTATION;
@@ -885,6 +887,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     VdpRect dstVideoRect = {0, 0, dstSurfData->width, dstSurfData->height};
     if (destination_video_rect)
         dstVideoRect = *destination_video_rect;
+#if 0
     const uint32_t dstVideoWidth  = dstVideoRect.x1 - dstVideoRect.x0;
     const uint32_t dstVideoHeight = dstVideoRect.y1 - dstVideoRect.y0;
 
@@ -922,6 +925,61 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         GL_BGRA, GL_UNSIGNED_BYTE, img_buf);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     free(img_buf);
+#endif
+
+    // TODO: remove code below:
+    // experimental usage of VAAPI-GLX
+
+    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    VAStatus status;
+    if (NULL == srcSurfData->va_glx) {
+        glGenTextures(1, &srcSurfData->tex_id);
+        glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, srcSurfData->width, srcSurfData->height, 0,
+            GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+        status = vaCreateSurfaceGLX(deviceData->va_dpy, GL_TEXTURE_2D, srcSurfData->tex_id,
+                                    &srcSurfData->va_glx);
+        fprintf(stderr, "va status = %d\n", status);
+        if (VA_STATUS_SUCCESS != status)
+            return VDP_STATUS_ERROR;
+    }
+
+    status = vaCopySurfaceGLX(deviceData->va_dpy, srcSurfData->va_glx, srcSurfData->va_surf, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                           dstSurfData->tex_id, 0);
+    GLenum gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
+        fprintf(stderr, "framebuffer not ready, %d, %s\n", gl_status, gluErrorString(gl_status));
+        return VDP_STATUS_ERROR;
+    }
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, dstSurfData->width - 1, 0, dstSurfData->height - 1, -1.0f, 1.0f);
+    glViewport(0, 0, dstSurfData->width, dstSurfData->height);
+    glEnable(GL_TEXTURE_2D);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
+
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
+    glBegin(GL_QUADS);
+        glTexCoord2f(0, 0); glVertex2f(dstVideoRect.x0, dstVideoRect.y0);
+        glTexCoord2f(1, 0); glVertex2f(dstVideoRect.x1-1, dstVideoRect.y0);
+        glTexCoord2f(1, 1); glVertex2f(dstVideoRect.x1-1, dstVideoRect.y1-1);
+        glTexCoord2f(0, 1); glVertex2f(dstVideoRect.x0, dstVideoRect.y1-1);
+    glEnd();
 
     return VDP_STATUS_OK;
 }
@@ -1155,6 +1213,8 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
     data->stride = stride;
     data->height = height;
     data->va_surf = VA_INVALID_SURFACE;
+    data->va_glx = NULL;
+    data->tex_id = 0;
 
     //TODO: find valid storage size for chroma_type
     data->y_plane = malloc(stride * height);
@@ -1182,6 +1242,11 @@ softVdpVideoSurfaceDestroy(VdpVideoSurface surface)
     VdpVideoSurfaceData *data = handlestorage_get(surface, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
+
+    if (data->va_glx) {
+        glDeleteTextures(1, &data->tex_id);
+        vaDestroySurfaceGLX(data->device->va_dpy, data->va_glx);
+    }
 
     free(data->y_plane);
     free(data->v_plane);
