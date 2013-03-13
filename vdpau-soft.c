@@ -6,14 +6,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
 #include <sys/time.h>
 #include <va/va.h>
 #include <va/va_glx.h>
 #include <vdpau/vdpau.h>
 #include <vdpau/vdpau_x11.h>
-#include <X11/extensions/XShm.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glx.h>
@@ -55,9 +52,6 @@ typedef struct {
     HandleType                      type;
     VdpDeviceData                  *device;
     VdpPresentationQueueTargetData *target;
-    // TODO: remove XImage and XShmSegmentInfo
-    XShmSegmentInfo                 shminfo;
-    XImage                         *image;
     uint32_t                        prev_width;
     uint32_t                        prev_height;
 } VdpPresentationQueueData;
@@ -957,7 +951,6 @@ softVdpPresentationQueueCreate(VdpDevice device,
     data->type = HANDLETYPE_PRESENTATION_QUEUE;
     data->device = deviceData;
     data->target = targetData;
-    data->image = NULL;
     data->prev_width = 0;
     data->prev_height = 0;
     *presentation_queue = handlestorage_add(data);
@@ -974,12 +967,6 @@ softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
     VdpPresentationQueueData *data =
         handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
     if (NULL == data) return VDP_STATUS_INVALID_HANDLE;
-
-    if (data->image) {
-        XShmDetach(data->target->device->display, &data->shminfo);
-        free(data->image);
-        shmdt(data->shminfo.shmaddr);
-    }
 
     free(data);
     handlestorage_expunge(presentation_queue);
