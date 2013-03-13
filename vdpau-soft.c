@@ -1698,8 +1698,8 @@ static
 VdpStatus
 softVdpPreemptionCallbackRegister(VdpDevice device, VdpPreemptionCallback callback, void *context)
 {
-    traceVdpPreemptionCallbackRegister("{zilch}", device, callback, context);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    traceVdpPreemptionCallbackRegister("{zilch/fake success}", device, callback, context);
+    return VDP_STATUS_OK;
 }
 
 static
