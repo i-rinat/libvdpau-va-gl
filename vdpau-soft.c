@@ -83,6 +83,7 @@ typedef struct {
     VASurfaceID     va_surf;
     void           *va_glx;
     GLuint          tex_id;
+    int             va_available;
 } VdpVideoSurfaceData;
 
 typedef struct {
@@ -476,52 +477,10 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         status = vaEndPicture(va_dpy, decoderData->context_id);
 
         free(merged_bitstream);
-        /*
-        vaSyncSurface(va_dpy, dstSurfData->va_surf);
-        VAImage q;
-        vaDeriveImage(va_dpy, dstSurfData->va_surf, &q);
-        char *buf;
-        vaMapBuffer(va_dpy, q.buf, (void**)&buf);
 
-        if (q.pitches[0] == dstSurfData->width) {
-            memcpy(dstSurfData->y_plane, buf, dstSurfData->width * dstSurfData->height);
-        } else {
-            char *src_buf_luma = buf;
-            char *dst_buf_luma = dstSurfData->y_plane;
-            for (unsigned int y = 0; y < dstSurfData->height; y ++) {
-                memcpy(dst_buf_luma, src_buf_luma, dstSurfData->width);
-                dst_buf_luma += dstSurfData->stride;
-                src_buf_luma += q.pitches[0];
-            }
-        }
+        // mark this video surface as having VA available
+        dstSurfData->va_available = 1;
 
-        switch (q.format.fourcc) {
-        case VA_FOURCC('N', 'V', '1', '2'):
-            do {
-                for (unsigned int y = 0; y < dstSurfData->height / 2; y ++) {
-                    char *dst_ptr_u = dstSurfData->u_plane + y * dstSurfData->stride / 2;
-                    char *dst_ptr_v = dstSurfData->v_plane + y * dstSurfData->stride / 2;
-                    char const *src_ptr = buf + q.offsets[1] + y * q.pitches[1];
-                    for (unsigned int x = 0; x < dstSurfData->width / 2; x ++) {
-                        *dst_ptr_u++ = *src_ptr++;
-                        *dst_ptr_v++ = *src_ptr++;
-                    }
-                }
-            } while (0);
-            break;
-        case VA_FOURCC('Y', 'V', '1', '2'):
-            memcpy(dstSurfData->y_plane, buf, dstSurfData->width * dstSurfData->height);
-            memcpy(dstSurfData->v_plane, buf + q.offsets[0], dstSurfData->width * dstSurfData->height / 4);
-            memcpy(dstSurfData->u_plane, buf + q.offsets[1], dstSurfData->width * dstSurfData->height / 4);
-            break;
-        default:
-            printf("fourcc code = %08x\n", q.format.fourcc);
-            assert(0 && "not implemeted FOURCC conversion");
-        }
-
-        vaUnmapBuffer(va_dpy, q.buf);
-        vaDestroyImage(va_dpy, q.image_id);
-        */
     } else {
         fprintf(stderr, "error: no implementation for profile\n");
         return VDP_STATUS_NO_IMPLEMENTATION;
@@ -887,99 +846,101 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     VdpRect dstVideoRect = {0, 0, dstSurfData->width, dstSurfData->height};
     if (destination_video_rect)
         dstVideoRect = *destination_video_rect;
-#if 0
-    const uint32_t dstVideoWidth  = dstVideoRect.x1 - dstVideoRect.x0;
-    const uint32_t dstVideoHeight = dstVideoRect.y1 - dstVideoRect.y0;
-
-    const uint32_t dstVideoStride = dstVideoWidth & 3 ? (dstVideoWidth & ~3u) + 4 : dstVideoWidth;
-    uint8_t *img_buf = malloc(dstVideoStride * dstVideoHeight * 4);
-    if (NULL == img_buf) return VDP_STATUS_RESOURCES;
-
-    struct SwsContext *sws_ctx =
-        sws_getContext(srcSurfData->width, srcSurfData->height, PIX_FMT_YUV420P,
-            dstVideoWidth, dstVideoHeight,
-            PIX_FMT_RGBA, SWS_POINT, NULL, NULL, NULL);
-
-    uint8_t const * const src_planes[] =
-        { srcSurfData->y_plane, srcSurfData->v_plane, srcSurfData->u_plane, NULL };
-    int src_strides[] = {srcSurfData->stride, srcSurfData->stride/2, srcSurfData->stride/2, 0};
-    uint8_t *dst_planes[] = {img_buf, NULL, NULL, NULL};
-    int dst_strides[] = {dstVideoStride * 4, 0, 0, 0};
-
-    int res = sws_scale(sws_ctx,
-                        src_planes, src_strides, 0, srcSurfData->height,
-                        dst_planes, dst_strides);
-    sws_freeContext(sws_ctx);
-    if (res != (int)dstVideoHeight) {
-        fprintf(stderr, "scaling failed\n");
-        return VDP_STATUS_ERROR;
-    }
-
-    // copy converted image to texture
-    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, dstVideoStride);
-    glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
-    glTexSubImage2D(GL_TEXTURE_2D, 0,
-        dstVideoRect.x0, dstVideoRect.y0,
-        dstVideoRect.x1 - dstVideoRect.x0, dstVideoRect.y1 - dstVideoRect.y0,
-        GL_BGRA, GL_UNSIGNED_BYTE, img_buf);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    free(img_buf);
-#endif
-
-    // TODO: remove code below:
-    // experimental usage of VAAPI-GLX
 
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
-    VAStatus status;
-    if (NULL == srcSurfData->va_glx) {
-        glGenTextures(1, &srcSurfData->tex_id);
-        glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, srcSurfData->width, srcSurfData->height, 0,
-            GL_BGRA, GL_UNSIGNED_BYTE, NULL);
-        status = vaCreateSurfaceGLX(deviceData->va_dpy, GL_TEXTURE_2D, srcSurfData->tex_id,
-                                    &srcSurfData->va_glx);
-        fprintf(stderr, "va status = %d\n", status);
-        if (VA_STATUS_SUCCESS != status)
+
+    if (srcSurfData->va_available) {
+        VAStatus status;
+        if (NULL == srcSurfData->va_glx) {
+            glGenTextures(1, &srcSurfData->tex_id);
+            glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, srcSurfData->width, srcSurfData->height, 0,
+                GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+            status = vaCreateSurfaceGLX(deviceData->va_dpy, GL_TEXTURE_2D, srcSurfData->tex_id,
+                                        &srcSurfData->va_glx);
+            if (VA_STATUS_SUCCESS != status)
+                return VDP_STATUS_ERROR;
+        }
+
+        status = vaCopySurfaceGLX(deviceData->va_dpy, srcSurfData->va_glx, srcSurfData->va_surf, 0);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                               dstSurfData->tex_id, 0);
+        GLenum gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
+            fprintf(stderr, "framebuffer not ready, %d, %s\n", gl_status, gluErrorString(gl_status));
             return VDP_STATUS_ERROR;
+        }
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(0, dstSurfData->width - 1, 0, dstSurfData->height - 1, -1.0f, 1.0f);
+        glViewport(0, 0, dstSurfData->width, dstSurfData->height);
+        glEnable(GL_TEXTURE_2D);
+
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+        glMatrixMode(GL_TEXTURE);
+        glLoadIdentity();
+
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
+        glBegin(GL_QUADS);
+            glTexCoord2f(0, 0); glVertex2f(dstVideoRect.x0, dstVideoRect.y0);
+            glTexCoord2f(1, 0); glVertex2f(dstVideoRect.x1-1, dstVideoRect.y0);
+            glTexCoord2f(1, 1); glVertex2f(dstVideoRect.x1-1, dstVideoRect.y1-1);
+            glTexCoord2f(0, 1); glVertex2f(dstVideoRect.x0, dstVideoRect.y1-1);
+        glEnd();
+
+    } else {
+        // fall back to software convertion
+        // TODO: make sure not to do scaling in software, only colorspace conversion
+        // TODO: use GL shaders to do colorspace conversion job
+        const uint32_t dstVideoWidth  = dstVideoRect.x1 - dstVideoRect.x0;
+        const uint32_t dstVideoHeight = dstVideoRect.y1 - dstVideoRect.y0;
+
+        const uint32_t dstVideoStride = (dstVideoWidth & 3) ? (dstVideoWidth & ~3u) + 4
+                                                            : dstVideoWidth;
+        uint8_t *img_buf = malloc(dstVideoStride * dstVideoHeight * 4);
+        if (NULL == img_buf) return VDP_STATUS_RESOURCES;
+
+        struct SwsContext *sws_ctx =
+            sws_getContext(srcSurfData->width, srcSurfData->height, PIX_FMT_YUV420P,
+                dstVideoWidth, dstVideoHeight,
+                PIX_FMT_RGBA, SWS_POINT, NULL, NULL, NULL);
+
+        uint8_t const * const src_planes[] =
+            { srcSurfData->y_plane, srcSurfData->v_plane, srcSurfData->u_plane, NULL };
+        int src_strides[] = {srcSurfData->stride, srcSurfData->stride/2, srcSurfData->stride/2, 0};
+        uint8_t *dst_planes[] = {img_buf, NULL, NULL, NULL};
+        int dst_strides[] = {dstVideoStride * 4, 0, 0, 0};
+
+        int res = sws_scale(sws_ctx,
+                            src_planes, src_strides, 0, srcSurfData->height,
+                            dst_planes, dst_strides);
+        sws_freeContext(sws_ctx);
+        if (res != (int)dstVideoHeight) {
+            fprintf(stderr, "scaling failed\n");
+            return VDP_STATUS_ERROR;
+        }
+
+        // copy converted image to texture
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, dstVideoStride);
+        glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
+        glTexSubImage2D(GL_TEXTURE_2D, 0,
+            dstVideoRect.x0, dstVideoRect.y0,
+            dstVideoRect.x1 - dstVideoRect.x0, dstVideoRect.y1 - dstVideoRect.y0,
+            GL_BGRA, GL_UNSIGNED_BYTE, img_buf);
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+        free(img_buf);
     }
-
-    status = vaCopySurfaceGLX(deviceData->va_dpy, srcSurfData->va_glx, srcSurfData->va_surf, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                           dstSurfData->tex_id, 0);
-    GLenum gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
-        fprintf(stderr, "framebuffer not ready, %d, %s\n", gl_status, gluErrorString(gl_status));
-        return VDP_STATUS_ERROR;
-    }
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, dstSurfData->width - 1, 0, dstSurfData->height - 1, -1.0f, 1.0f);
-    glViewport(0, 0, dstSurfData->width, dstSurfData->height);
-    glEnable(GL_TEXTURE_2D);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    glMatrixMode(GL_TEXTURE);
-    glLoadIdentity();
-
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
-    glBegin(GL_QUADS);
-        glTexCoord2f(0, 0); glVertex2f(dstVideoRect.x0, dstVideoRect.y0);
-        glTexCoord2f(1, 0); glVertex2f(dstVideoRect.x1-1, dstVideoRect.y0);
-        glTexCoord2f(1, 1); glVertex2f(dstVideoRect.x1-1, dstVideoRect.y1-1);
-        glTexCoord2f(0, 1); glVertex2f(dstVideoRect.x0, dstVideoRect.y1-1);
-    glEnd();
 
     return VDP_STATUS_OK;
 }
@@ -1215,6 +1176,7 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
     data->va_surf = VA_INVALID_SURFACE;
     data->va_glx = NULL;
     data->tex_id = 0;
+    data->va_available = 0;
 
     //TODO: find valid storage size for chroma_type
     data->y_plane = malloc(stride * height);
