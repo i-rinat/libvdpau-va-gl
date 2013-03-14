@@ -307,7 +307,6 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         for (int k = 0; k < 16; k ++)
             reset_va_picture_h264(&pic_param->ReferenceFrames[k]);
 
-        int va_num_ref_frames = 0;
         for (int k = 0; k < vdppi->num_ref_frames; k ++) {
             if (VDP_INVALID_HANDLE == vdppi->referenceFrames[k].surface) {
                 reset_va_picture_h264(&pic_param->ReferenceFrames[k]);
@@ -322,7 +321,6 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                 fprintf(stderr, "NULL == vdpSurfData");
                 goto error;
             }
-            va_num_ref_frames ++;
 
             // take new VA surface from buffer if needed
             if (VA_INVALID_SURFACE == vdpSurfData->va_surf) {
