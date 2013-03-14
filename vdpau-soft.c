@@ -390,6 +390,19 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
 #undef SEQ_FIELDS
 #undef PIC_FIELDS
 
+static
+void
+h264_translate_iq_matrix(VAIQMatrixBufferH264 *iq_matrix, const VdpPictureInfoH264 *vdppi)
+{
+    for (int j = 0; j < 6; j ++)
+        for (int k = 0; k < 16; k ++)
+            iq_matrix->ScalingList4x4[j][k] = vdppi->scaling_lists_4x4[j][k];
+
+    for (int j = 0; j < 2; j ++)
+        for (int k = 0; k < 64; k ++)
+            iq_matrix->ScalingList8x8[j][k] = vdppi->scaling_lists_8x8[j][k];
+}
+
 
 
         //  IQ Matrix
@@ -403,15 +416,7 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         status = vaMapBuffer(va_dpy, iq_matrix_buf, (void **)&iq_matrix);
         if (VA_STATUS_SUCCESS != status) goto error;
 
-        for (int j = 0; j < 6; j ++)
-            for (int k = 0; k < 16; k ++)
-                iq_matrix->ScalingList4x4[j][k] = vdppi->scaling_lists_4x4[j][k];
-
-        for (int j = 0; j < 2; j ++)
-            for (int k = 0; k < 64; k ++)
-                iq_matrix->ScalingList8x8[j][k] = vdppi->scaling_lists_8x8[j][k];
-
-        vaUnmapBuffer(va_dpy, pic_param_buf);
+        h264_translate_iq_matrix(iq_matrix, vdppi);
         vaUnmapBuffer(va_dpy, iq_matrix_buf);
 
         status = vaBeginPicture(va_dpy, decoderData->context_id, dstSurfData->va_surf);
