@@ -115,9 +115,8 @@ do_fill_va_slice_parameter_buffer(struct slice_parameters const * const sp,
     for (int k = 0; k < 32; k ++) vasp->chroma_offset_l1[k][1] = sp->chroma_offset_l1[k][1];
 }
 
-static
 void
-zeroify_refpiclist_entry(VAPictureH264 *p)
+reset_va_picture_h264(VAPictureH264 *p)
 {
     p->picture_id       = VA_INVALID_SURFACE;
     p->frame_idx        = 0;
@@ -263,8 +262,8 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
     struct slice_parameters sp;
 
     for (int k = 0; k < 32; k ++) {
-        zeroify_refpiclist_entry(&sp.RefPicList0[k]);
-        zeroify_refpiclist_entry(&sp.RefPicList1[k]);
+        reset_va_picture_h264(&sp.RefPicList0[k]);
+        reset_va_picture_h264(&sp.RefPicList1[k]);
     }
 
     rbsp_get_u(st, 1); // forbidden_zero_bit
