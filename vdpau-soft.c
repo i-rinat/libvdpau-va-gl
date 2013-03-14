@@ -175,6 +175,10 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
 
     VAProfile va_profile;
     switch (profile) {
+    case VDP_DECODER_PROFILE_H264_BASELINE:
+        va_profile = VAProfileH264Baseline;
+        data->num_render_targets = 21;
+        break;
     case VDP_DECODER_PROFILE_H264_MAIN:
         va_profile = VAProfileH264Main;
         data->num_render_targets = 21;
