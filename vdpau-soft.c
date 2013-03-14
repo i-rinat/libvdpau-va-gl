@@ -250,106 +250,86 @@ softVdpDecoderGetParameters(VdpDecoder decoder, VdpDecoderProfile *profile,
 
 static
 VdpStatus
-softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
-                     VdpPictureInfo const *picture_info, uint32_t bitstream_buffer_count,
-                     VdpBitstreamBuffer const *bitstream_buffers)
+h264_translate_reference_frames(VdpVideoSurfaceData *dstSurfData, VdpDecoderData *decoderData,
+                                VAPictureParameterBufferH264 *pic_param,
+                                const VdpPictureInfoH264 *vdppi)
 {
-    traceVdpDecoderRender("{WIP}", decoder, target, picture_info, bitstream_buffer_count,
-        bitstream_buffers);
+    // take new VA surface from buffer if needed
+    if (VA_INVALID_SURFACE == dstSurfData->va_surf) {
+        if (decoderData->next_surface_idx >= decoderData->num_render_targets)
+            return VDP_STATUS_RESOURCES;
+        dstSurfData->va_surf = decoderData->render_targets[decoderData->next_surface_idx];
+        decoderData->next_surface_idx ++;
+    }
 
-    VdpDecoderData *decoderData = handlestorage_get(decoder, HANDLETYPE_DECODER);
-    VdpVideoSurfaceData *dstSurfData = handlestorage_get(target, HANDLETYPE_VIDEO_SURFACE);
-    if (NULL == decoderData || NULL == dstSurfData) return VDP_STATUS_INVALID_HANDLE;
-    VdpDeviceData *deviceData = decoderData->device;
-    VADisplay va_dpy = deviceData->va_dpy;
-    VAStatus status;
+    // current frame
+    pic_param->CurrPic.picture_id   = dstSurfData->va_surf;
+    pic_param->CurrPic.frame_idx    = vdppi->frame_num;
+    pic_param->CurrPic.flags  = vdppi->is_reference ? VA_PICTURE_H264_SHORT_TERM_REFERENCE : 0;
+    if (vdppi->field_pic_flag) {
+        pic_param->CurrPic.flags |=
+            vdppi->bottom_field_flag ? VA_PICTURE_H264_BOTTOM_FIELD : VA_PICTURE_H264_TOP_FIELD;
+    }
 
-    if (VDP_DECODER_PROFILE_H264_MAIN == decoderData->profile ||
-        VDP_DECODER_PROFILE_H264_HIGH == decoderData->profile)
-    {
-        VdpPictureInfoH264 const *vdppi = (void *)picture_info;
+    pic_param->CurrPic.TopFieldOrderCnt     = vdppi->field_order_cnt[0];
+    pic_param->CurrPic.BottomFieldOrderCnt  = vdppi->field_order_cnt[1];
 
-        // TODO: figure out where to get level
-        uint32_t level = 41;
+    // mark all pictures invalid preliminary
+    for (int k = 0; k < 16; k ++)
+        reset_va_picture_h264(&pic_param->ReferenceFrames[k]);
 
-        // preparing picture parameters
-        VABufferID pic_param_buf;
-        VAPictureParameterBufferH264 *pic_param;
+    // reference frames
+    for (int k = 0; k < vdppi->num_ref_frames; k ++) {
+        if (VDP_INVALID_HANDLE == vdppi->referenceFrames[k].surface) {
+            reset_va_picture_h264(&pic_param->ReferenceFrames[k]);
+            continue;
+        }
 
-        status = vaCreateBuffer(va_dpy, decoderData->context_id, VAPictureParameterBufferType,
-            sizeof(VAPictureParameterBufferH264), 1, NULL, &pic_param_buf);
-        if (VA_STATUS_SUCCESS != status) goto error;
-
-        status = vaMapBuffer(va_dpy, pic_param_buf, (void **)&pic_param);
-        if (VA_STATUS_SUCCESS != status) goto error;
+        VdpReferenceFrameH264 const *vdp_ref = &(vdppi->referenceFrames[k]);
+        VdpVideoSurfaceData *vdpSurfData =
+            handlestorage_get(vdp_ref->surface, HANDLETYPE_VIDEO_SURFACE);
+        VAPictureH264 *va_ref = &(pic_param->ReferenceFrames[k]);
+        if (NULL == vdpSurfData) {
+            fprintf(stderr, "NULL == vdpSurfData");
+            return VDP_STATUS_ERROR;
+        }
 
         // take new VA surface from buffer if needed
-        if (VA_INVALID_SURFACE == dstSurfData->va_surf) {
+        if (VA_INVALID_SURFACE == vdpSurfData->va_surf) {
             if (decoderData->next_surface_idx >= decoderData->num_render_targets)
-                goto error_no_surfaces_left;
-            dstSurfData->va_surf = decoderData->render_targets[decoderData->next_surface_idx];
+                return VDP_STATUS_RESOURCES;
+            vdpSurfData->va_surf = decoderData->render_targets[decoderData->next_surface_idx];
             decoderData->next_surface_idx ++;
         }
 
-        pic_param->CurrPic.picture_id   = dstSurfData->va_surf;
-        pic_param->CurrPic.frame_idx    = vdppi->frame_num;
-        pic_param->CurrPic.flags  = vdppi->is_reference ? VA_PICTURE_H264_SHORT_TERM_REFERENCE : 0;
-        if (vdppi->field_pic_flag) {
-            pic_param->CurrPic.flags |=
-                vdppi->bottom_field_flag ? VA_PICTURE_H264_BOTTOM_FIELD : VA_PICTURE_H264_TOP_FIELD;
+        va_ref->picture_id = vdpSurfData->va_surf;
+        va_ref->frame_idx = vdp_ref->frame_idx;
+        va_ref->flags = vdp_ref->is_long_term ? VA_PICTURE_H264_LONG_TERM_REFERENCE
+                                              : VA_PICTURE_H264_SHORT_TERM_REFERENCE;
+
+        if (vdp_ref->top_is_reference && vdp_ref->bottom_is_reference) {
+            // Full frame. This block intentionally left blank. No flags set.
+        } else {
+            if (vdp_ref->top_is_reference)
+                va_ref->flags |= VA_PICTURE_H264_TOP_FIELD;
+            else
+                va_ref->flags |= VA_PICTURE_H264_BOTTOM_FIELD;
         }
 
-        pic_param->CurrPic.TopFieldOrderCnt     = vdppi->field_order_cnt[0];
-        pic_param->CurrPic.BottomFieldOrderCnt  = vdppi->field_order_cnt[1];
+        va_ref->TopFieldOrderCnt    = vdp_ref->field_order_cnt[0];
+        va_ref->BottomFieldOrderCnt = vdp_ref->field_order_cnt[1];
+    }
 
-        // reference frames
-        // mark all pictures invalid preliminary
-        for (int k = 0; k < 16; k ++)
-            reset_va_picture_h264(&pic_param->ReferenceFrames[k]);
+    return VDP_STATUS_OK;
+}
 
-        for (int k = 0; k < vdppi->num_ref_frames; k ++) {
-            if (VDP_INVALID_HANDLE == vdppi->referenceFrames[k].surface) {
-                reset_va_picture_h264(&pic_param->ReferenceFrames[k]);
-                continue;
-            }
-
-            VdpReferenceFrameH264 const *vdp_ref = &(vdppi->referenceFrames[k]);
-            VdpVideoSurfaceData *vdpSurfData =
-                handlestorage_get(vdp_ref->surface, HANDLETYPE_VIDEO_SURFACE);
-            VAPictureH264 *va_ref = &(pic_param->ReferenceFrames[k]);
-            if (NULL == vdpSurfData) {
-                fprintf(stderr, "NULL == vdpSurfData");
-                goto error;
-            }
-
-            // take new VA surface from buffer if needed
-            if (VA_INVALID_SURFACE == vdpSurfData->va_surf) {
-                if (decoderData->next_surface_idx >= decoderData->num_render_targets)
-                    goto error_no_surfaces_left;
-                vdpSurfData->va_surf = decoderData->render_targets[decoderData->next_surface_idx];
-                decoderData->next_surface_idx ++;
-            }
-
-            va_ref->picture_id = vdpSurfData->va_surf;
-            va_ref->frame_idx = vdp_ref->frame_idx;
-            va_ref->flags = vdp_ref->is_long_term ? VA_PICTURE_H264_LONG_TERM_REFERENCE
-                                                  : VA_PICTURE_H264_SHORT_TERM_REFERENCE;
-
-            if (vdp_ref->top_is_reference && vdp_ref->bottom_is_reference) {
-                // Full frame. This block intentionally left blank. No flags set.
-            } else {
-                if (vdp_ref->top_is_reference)
-                    va_ref->flags |= VA_PICTURE_H264_TOP_FIELD;
-                else
-                    va_ref->flags |= VA_PICTURE_H264_BOTTOM_FIELD;
-            }
-
-            va_ref->TopFieldOrderCnt    = vdp_ref->field_order_cnt[0];
-            va_ref->BottomFieldOrderCnt = vdp_ref->field_order_cnt[1];
-        }
-
-        pic_param->picture_width_in_mbs_minus1          = (decoderData->width - 1) / 16;
-        pic_param->picture_height_in_mbs_minus1         = (decoderData->height - 1) / 16;
+static
+void
+h264_translate_pic_param(VAPictureParameterBufferH264 *pic_param, uint32_t width, uint32_t height,
+                         const VdpPictureInfoH264 *vdppi, uint32_t level)
+{
+        pic_param->picture_width_in_mbs_minus1          = (width - 1) / 16;
+        pic_param->picture_height_in_mbs_minus1         = (height - 1) / 16;
         pic_param->bit_depth_luma_minus8                = 0; // TODO: deal with more than 8 bits
         pic_param->bit_depth_chroma_minus8              = 0; // same for luma
         pic_param->num_ref_frames                       = vdppi->num_ref_frames;
@@ -389,6 +369,7 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         pic_param->frame_num                            = vdppi->frame_num;
 #undef SEQ_FIELDS
 #undef PIC_FIELDS
+}
 
 static
 void
@@ -403,7 +384,50 @@ h264_translate_iq_matrix(VAIQMatrixBufferH264 *iq_matrix, const VdpPictureInfoH2
             iq_matrix->ScalingList8x8[j][k] = vdppi->scaling_lists_8x8[j][k];
 }
 
+static
+VdpStatus
+softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
+                     VdpPictureInfo const *picture_info, uint32_t bitstream_buffer_count,
+                     VdpBitstreamBuffer const *bitstream_buffers)
+{
+    traceVdpDecoderRender("{WIP}", decoder, target, picture_info, bitstream_buffer_count,
+        bitstream_buffers);
 
+    VdpDecoderData *decoderData = handlestorage_get(decoder, HANDLETYPE_DECODER);
+    VdpVideoSurfaceData *dstSurfData = handlestorage_get(target, HANDLETYPE_VIDEO_SURFACE);
+    if (NULL == decoderData || NULL == dstSurfData) return VDP_STATUS_INVALID_HANDLE;
+    VdpDeviceData *deviceData = decoderData->device;
+    VADisplay va_dpy = deviceData->va_dpy;
+    VAStatus status;
+    VdpStatus vs;
+
+    if (VDP_DECODER_PROFILE_H264_MAIN == decoderData->profile ||
+        VDP_DECODER_PROFILE_H264_HIGH == decoderData->profile)
+    {
+        VdpPictureInfoH264 const *vdppi = (void *)picture_info;
+
+        // TODO: figure out where to get level
+        uint32_t level = 41;
+
+        // preparing picture parameters
+        VABufferID pic_param_buf;
+        VAPictureParameterBufferH264 *pic_param;
+
+        status = vaCreateBuffer(va_dpy, decoderData->context_id, VAPictureParameterBufferType,
+            sizeof(VAPictureParameterBufferH264), 1, NULL, &pic_param_buf);
+        if (VA_STATUS_SUCCESS != status) goto error;
+
+        status = vaMapBuffer(va_dpy, pic_param_buf, (void **)&pic_param);
+        if (VA_STATUS_SUCCESS != status) goto error;
+
+        vs = h264_translate_reference_frames(dstSurfData, decoderData, pic_param, vdppi);
+        if (VDP_STATUS_RESOURCES == vs)
+            goto error_no_surfaces_left;
+        if (VDP_STATUS_OK != vs)
+            goto error;
+
+        h264_translate_pic_param(pic_param, decoderData->width, decoderData->height, vdppi, level);
+        vaUnmapBuffer(va_dpy, pic_param_buf);
 
         //  IQ Matrix
         VABufferID iq_matrix_buf;
@@ -419,6 +443,7 @@ h264_translate_iq_matrix(VAIQMatrixBufferH264 *iq_matrix, const VdpPictureInfoH2
         h264_translate_iq_matrix(iq_matrix, vdppi);
         vaUnmapBuffer(va_dpy, iq_matrix_buf);
 
+        // send data to decoding hardware
         status = vaBeginPicture(va_dpy, decoderData->context_id, dstSurfData->va_surf);
         status = vaRenderPicture(va_dpy, decoderData->context_id, &pic_param_buf, 1);
         status = vaRenderPicture(va_dpy, decoderData->context_id, &iq_matrix_buf, 1);
@@ -473,8 +498,8 @@ h264_translate_iq_matrix(VAIQMatrixBufferH264 *iq_matrix, const VdpPictureInfoH2
         status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceDataBufferType,
             total_bitstream_bytes - nal_offset, 1, merged_bitstream + nal_offset, &slice_buf);
         if (VA_STATUS_SUCCESS != status) goto error;
-        status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_buf, 1);
 
+        status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_buf, 1);
         status = vaEndPicture(va_dpy, decoderData->context_id);
 
         free(merged_bitstream);
