@@ -1312,8 +1312,10 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     if (NULL == data) return VDP_STATUS_RESOURCES;
 
     //TODO: other format handling
-    if (rgba_format != VDP_RGBA_FORMAT_B8G8R8A8)
+    if (rgba_format != VDP_RGBA_FORMAT_B8G8R8A8) {
+        free(data);
         return VDP_STATUS_INVALID_RGBA_FORMAT;
+    }
 
     data->type = HANDLETYPE_BITMAP_SURFACE;
     data->device = deviceData;
@@ -1980,6 +1982,7 @@ softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
     vi = glXChooseVisual(display, screen, att);
     if (NULL == vi) {
         traceTrace("error: glXChooseVisual\n");
+        free(data);
         return VDP_STATUS_ERROR;
     }
 
