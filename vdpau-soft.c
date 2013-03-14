@@ -105,7 +105,7 @@ typedef struct {
     VAConfigID          config_id;
     VASurfaceID         render_targets[MAX_RENDER_TARGETS];
     uint32_t            num_render_targets;
-    uint32_t            next_surface;
+    uint32_t            next_surface_idx;
     VAContextID         context_id;
 } VdpDecoderData;
 
@@ -171,21 +171,21 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
     data->width = width;
     data->height = height;
     data->max_references = max_references;
-    data->next_surface = 0;
+    data->next_surface_idx = 0;
 
     VAProfile va_profile;
     switch (profile) {
     case VDP_DECODER_PROFILE_H264_BASELINE:
         va_profile = VAProfileH264Baseline;
-        data->num_render_targets = 21;
+        data->num_render_targets = NUM_RENDER_TARGETS_H264;
         break;
     case VDP_DECODER_PROFILE_H264_MAIN:
         va_profile = VAProfileH264Main;
-        data->num_render_targets = 21;
+        data->num_render_targets = NUM_RENDER_TARGETS_H264;
         break;
     case VDP_DECODER_PROFILE_H264_HIGH:
         va_profile = VAProfileH264High;
-        data->num_render_targets = 21;
+        data->num_render_targets = NUM_RENDER_TARGETS_H264;
         break;
     default:
         fprintf(stderr, "not implemented decoder\n");
@@ -197,7 +197,11 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
     status = vaCreateConfig(va_dpy, va_profile, VAEntrypointVLD, NULL, 0, &data->config_id);
     if (VA_STATUS_SUCCESS != status) goto error;
 
-    // create surfaces
+    // Create surfaces. All video surfaces created here, rather than in VdpVideoSurfaceCreate.
+    // VAAPI requires surfaces to be bound with context on its creation time, while VDPAU allows
+    // to do it later. So here is a trick: VDP video surfaces get their va_surf dynamically in
+    // DecoderRender.
+
     // TODO: check format of surfaces created
     status = vaCreateSurfaces(va_dpy, width, height, VA_RT_FORMAT_YUV420,
         data->num_render_targets, data->render_targets);
@@ -279,14 +283,12 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         status = vaMapBuffer(va_dpy, pic_param_buf, (void **)&pic_param);
         if (VA_STATUS_SUCCESS != status) goto error;
 
-        // TODO: move duplicated code to other function
+        // take new VA surface from buffer if needed
         if (VA_INVALID_SURFACE == dstSurfData->va_surf) {
-            dstSurfData->va_surf = decoderData->render_targets[decoderData->next_surface];
-            decoderData->next_surface ++;
-            if (decoderData->next_surface >= MAX_RENDER_TARGETS) {
-                fprintf(stderr, "error: oops, no more surfaces\n");
-                goto error;
-            }
+            if (decoderData->next_surface_idx >= decoderData->num_render_targets)
+                goto error_no_surfaces_left;
+            dstSurfData->va_surf = decoderData->render_targets[decoderData->next_surface_idx];
+            decoderData->next_surface_idx ++;
         }
 
         pic_param->CurrPic.picture_id   = dstSurfData->va_surf;
@@ -322,13 +324,12 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
             }
             va_num_ref_frames ++;
 
+            // take new VA surface from buffer if needed
             if (VA_INVALID_SURFACE == vdpSurfData->va_surf) {
-                vdpSurfData->va_surf = decoderData->render_targets[decoderData->next_surface];
-                decoderData->next_surface ++;
-                if (decoderData->next_surface >= MAX_RENDER_TARGETS) {
-                    fprintf(stderr, "oops, no more surfaces\n");
-                    goto error;
-                }
+                if (decoderData->next_surface_idx >= decoderData->num_render_targets)
+                    goto error_no_surfaces_left;
+                vdpSurfData->va_surf = decoderData->render_targets[decoderData->next_surface_idx];
+                decoderData->next_surface_idx ++;
             }
 
             va_ref->picture_id = vdpSurfData->va_surf;
@@ -492,6 +493,9 @@ error_no_nal_header:
     return VDP_STATUS_ERROR;
 error_resources:
     return VDP_STATUS_RESOURCES;
+error_no_surfaces_left:
+    fprintf(stderr, "no surfaces left in buffer\n");
+    return VDP_STATUS_ERROR;
 }
 
 static
