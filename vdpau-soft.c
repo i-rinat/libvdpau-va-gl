@@ -686,9 +686,8 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
 
     VdpRect dstRect = {0, 0, surfData->width, surfData->height};
     if (destination_rect) dstRect = *destination_rect;
-    const uint32_t dstWidth = dstRect.x1 - dstRect.x0;
-    const uint32_t dstHeight = dstRect.y1 - dstRect.y0;
-    const uint32_t dstPointCount = dstWidth * dstHeight;
+    const uint32_t dstRectWidth = dstRect.x1 - dstRect.x0;
+    const uint32_t dstRectHeight = dstRect.y1 - dstRect.y0;
 
     // there is no other formats anyway
     if (VDP_COLOR_TABLE_FORMAT_B8G8R8X8 != color_table_format)
@@ -702,12 +701,19 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
     case VDP_INDEXED_FORMAT_I8A8:
         // TODO: use shader?
         do {
-            uint32_t *unpacked_buf = malloc(4 * dstPointCount);
-            const uint8_t *src_ptr = source_data[0];
-            for (unsigned int k = 0; k < dstPointCount; k ++) {
-                uint8_t i = *src_ptr++;
-                uint32_t a = (*src_ptr++) << 24;
-                unpacked_buf[k] = (color_table32[i] & 0x00ffffff) + a;
+            uint32_t *unpacked_buf = malloc(4 * dstRectWidth * dstRectHeight);
+            if (NULL == unpacked_buf)
+                return VDP_STATUS_RESOURCES;
+
+            for (unsigned int y = 0; y < dstRectHeight; y ++) {
+                const uint8_t *src_ptr = source_data[0];
+                src_ptr += y * source_pitch[0];
+                uint32_t *dst_ptr = unpacked_buf + y * dstRectWidth;
+                for (unsigned int x = 0; x < dstRectWidth; x ++) {
+                    const uint8_t i = *src_ptr++;
+                    const uint32_t a = (*src_ptr++) << 24;
+                    dst_ptr[x] = (color_table32[i] & 0x00ffffff) + a;
+                }
             }
 
             // TODO: is it worth to generate full-size texture once and then reuse?
@@ -721,7 +727,7 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dstWidth, dstHeight, 0, GL_BGRA,
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dstRectWidth, dstRectHeight, 0, GL_BGRA,
                 GL_UNSIGNED_BYTE, unpacked_buf);
             free(unpacked_buf);
         } while (0);
@@ -758,7 +764,7 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
 
     // blend
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    glBlendEquation(GL_FUNC_SUBTRACT);
+    glBlendEquation(GL_FUNC_ADD);
 
     glBegin(GL_QUADS);
     glTexCoord2i(0, 0); glVertex2f(dstRect.x0,   dstRect.y0);
