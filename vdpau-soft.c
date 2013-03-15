@@ -93,6 +93,9 @@ typedef struct {
     GLuint          tex_id;
     uint32_t        width;
     uint32_t        height;
+    GLuint          gl_internal_format;
+    GLuint          gl_format;
+    GLuint          gl_type;
 } VdpBitmapSurfaceData;
 
 typedef struct {
@@ -1434,8 +1437,35 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     VdpBitmapSurfaceData *data = (VdpBitmapSurfaceData *)calloc(1, sizeof(VdpBitmapSurfaceData));
     if (NULL == data) return VDP_STATUS_RESOURCES;
 
-    //TODO: other format handling
-    if (rgba_format != VDP_RGBA_FORMAT_B8G8R8A8) {
+    switch (rgba_format) {
+    case VDP_RGBA_FORMAT_B8G8R8A8:
+        data->gl_internal_format = GL_RGBA;
+        data->gl_format = GL_BGRA;
+        data->gl_type = GL_UNSIGNED_BYTE;
+        break;
+    case VDP_RGBA_FORMAT_R8G8B8A8:
+        data->gl_internal_format = GL_RGBA;
+        data->gl_format = GL_RGBA;
+        data->gl_type = GL_UNSIGNED_BYTE;
+        break;
+    case VDP_RGBA_FORMAT_R10G10B10A2:
+        data->gl_internal_format = GL_RGB10_A2;
+        data->gl_format = GL_RGBA;
+        data->gl_type = GL_UNSIGNED_INT_10_10_10_2;
+        break;
+    case VDP_RGBA_FORMAT_B10G10R10A2:
+        data->gl_internal_format = GL_RGB10_A2;
+        data->gl_format = GL_BGRA;
+        data->gl_type = GL_UNSIGNED_INT_10_10_10_2;
+        break;
+    case VDP_RGBA_FORMAT_A8:
+        data->gl_internal_format = GL_R8;
+        data->gl_format = GL_RED;
+        data->gl_type = GL_UNSIGNED_BYTE;
+        break;
+    default:
+        fprintf(stderr, "VdpBitmapSurfaceCreate: %s not implemented\n",
+                reverse_rgba_format(rgba_format));
         free(data);
         return VDP_STATUS_INVALID_RGBA_FORMAT;
     }
@@ -1453,7 +1483,21 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, data->gl_internal_format, width, height, 0,
+                 data->gl_format, data->gl_type, NULL);
+    GLuint gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        // Requested RGBA format was wrong
+        fprintf(stderr, "VdpBitmapSurfaceCreate: gl error (%d, %s)\n", gl_error,
+                gluErrorString(gl_error));
+        free(data);
+        return VDP_STATUS_INVALID_RGBA_FORMAT;
+    }
+    if (VDP_RGBA_FORMAT_A8 == rgba_format) {
+        // map red channel to alpha
+        GLint swizzle_mask[] = {GL_ZERO, GL_ZERO, GL_ZERO, GL_RED};
+        glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle_mask);
+    }
 
     *surface = handlestorage_add(data);
     return VDP_STATUS_OK;
