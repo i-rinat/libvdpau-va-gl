@@ -686,8 +686,6 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
 
     VdpRect dstRect = {0, 0, surfData->width, surfData->height};
     if (destination_rect) dstRect = *destination_rect;
-    const uint32_t dstRectWidth = dstRect.x1 - dstRect.x0;
-    const uint32_t dstRectHeight = dstRect.y1 - dstRect.y0;
 
     // there is no other formats anyway
     if (VDP_COLOR_TABLE_FORMAT_B8G8R8X8 != color_table_format)
@@ -695,12 +693,13 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
     const uint32_t *color_table32 = color_table;
 
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
-    GLuint tex_id;
 
     switch (source_indexed_format) {
     case VDP_INDEXED_FORMAT_I8A8:
         // TODO: use shader?
         do {
+            const uint32_t dstRectWidth = dstRect.x1 - dstRect.x0;
+            const uint32_t dstRectHeight = dstRect.y1 - dstRect.y0;
             uint32_t *unpacked_buf = malloc(4 * dstRectWidth * dstRectHeight);
             if (NULL == unpacked_buf)
                 return VDP_STATUS_RESOURCES;
@@ -716,20 +715,12 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
                 }
             }
 
-            // TODO: is it worth to generate full-size texture once and then reuse?
-            // There is a way to avoid generating and deleting textures each time. One can
-            // generate full-size texture on first use and then update its part with help
-            // of glTexSubImage2D. That will save creation/deletion at cost of large texture
-            // storage.
-            glGenTextures(1, &tex_id);
-            glBindTexture(GL_TEXTURE_2D, tex_id);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dstRectWidth, dstRectHeight, 0, GL_BGRA,
-                GL_UNSIGNED_BYTE, unpacked_buf);
+            glBindTexture(GL_TEXTURE_2D, surfData->tex_id);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, dstRect.x0, dstRect.y0,
+                            dstRect.x1 - dstRect.x0, dstRect.y1 - dstRect.y0,
+                            GL_BGRA, GL_UNSIGNED_BYTE, unpacked_buf);
             free(unpacked_buf);
+            return VDP_STATUS_OK;
         } while (0);
         break;
     default:
@@ -737,48 +728,6 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
             reverse_indexed_format(source_indexed_format));
         return VDP_STATUS_INVALID_INDEXED_FORMAT;
     }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                           surfData->tex_id, 0);
-    GLenum gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
-        fprintf(stderr, "VdpOutputSurfacePutBitsIndexed: framebuffer not ready (%d, %s)\n",
-            gl_status, gluErrorString(gl_status));
-        goto error;
-    }
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, surfData->width-1, 0, surfData->height-1, -1.0f, 1.0f);
-    glViewport(0, 0, surfData->width, surfData->height);
-    glEnable(GL_TEXTURE_2D);
-    glEnable(GL_BLEND);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    glBindTexture(GL_TEXTURE_2D, tex_id);
-
-    glMatrixMode(GL_TEXTURE);
-    glLoadIdentity();
-
-    // blend
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    glBlendEquation(GL_FUNC_ADD);
-
-    glBegin(GL_QUADS);
-    glTexCoord2i(0, 0); glVertex2f(dstRect.x0,   dstRect.y0);
-    glTexCoord2i(1, 0); glVertex2f(dstRect.x1-1, dstRect.y0);
-    glTexCoord2i(1, 1); glVertex2f(dstRect.x1-1, dstRect.y1-1);
-    glTexCoord2i(0, 1); glVertex2f(dstRect.x0,   dstRect.y1-1);
-    glEnd();
-
-    glDeleteTextures(1, &tex_id);
-
-    return VDP_STATUS_OK;
-error:
-    glDeleteTextures(1, &tex_id);
-    return VDP_STATUS_ERROR;
 }
 
 static
