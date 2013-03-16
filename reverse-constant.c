@@ -491,3 +491,15 @@ reverse_color_standard(VdpColorStandard color_standard)
         return "Unknown color standard";
     }
 }
+
+const char *
+reverse_output_surface_render_rotate(int flags)
+{
+    switch (flags & 3) {
+    case VDP_OUTPUT_SURFACE_RENDER_ROTATE_0: return "VDP_OUTPUT_SURFACE_RENDER_ROTATE_0";
+    case VDP_OUTPUT_SURFACE_RENDER_ROTATE_90: return "VDP_OUTPUT_SURFACE_RENDER_ROTATE_90";
+    case VDP_OUTPUT_SURFACE_RENDER_ROTATE_180: return "VDP_OUTPUT_SURFACE_RENDER_ROTATE_180";
+    case VDP_OUTPUT_SURFACE_RENDER_ROTATE_270: return "VDP_OUTPUT_SURFACE_RENDER_ROTATE_270";
+    default: return "Unknown render rotate";
+    }
+}

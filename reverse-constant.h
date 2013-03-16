@@ -19,5 +19,6 @@ const char * reverse_decoder_profile(VdpDecoderProfile profile);
 const char * reverse_indexed_format(VdpIndexedFormat indexed_format);
 const char * reverse_color_table_format(VdpColorTableFormat color_table_format);
 const char * reverse_color_standard(VdpColorStandard color_standard);
+const char * reverse_output_surface_render_rotate(int flags);
 
 #endif /* REVERSE_CONSTANT_H_ */
