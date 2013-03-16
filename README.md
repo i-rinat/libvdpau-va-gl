@@ -1,7 +1,7 @@
 About
 =====
 
-OpenGL/software/VAAPI(?) backend for VDPAU. Work in progress.
+VAAPI/OpenGL backend for VDPAU. Work in progress.
 
 
 Install
@@ -10,4 +10,4 @@ Install
    2. `mkdir build; cd build`
    3. `cmake -DCMAKE_BUILD_TYPE=Release ..`
    4. `sudo make install`
-   5. Add `VDPAU_DRIVER=fake` to your environment
+   5. Add `VDPAU_DRIVER=va_gl` to your environment

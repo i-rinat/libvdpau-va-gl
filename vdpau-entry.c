@@ -20,7 +20,7 @@ library_constructor(void)
 #else
     traceEnableTracing(1);
 #endif
-    if (getenv("VDPAU_FAKE_NOLOG"))
+    if (getenv("VDPAU_VA_GL_NOLOG"))
         traceEnableTracing(0);
 }
 

@@ -1,4 +1,4 @@
-project (fake-vdpau)
+project (libvdpau-va-gl)
 cmake_minimum_required (VERSION 2.6)
 add_definitions(-std=c99 -Wall -fvisibility=hidden -ggdb)
 
@@ -13,7 +13,7 @@ include_directories (
 	${SOMELIBS_INCLUDE_DIRS}
 )
 
-add_library (vdpau_fake SHARED
+add_library (vdpau_va_gl SHARED
 	vdpau-soft.c
 	vdpau-entry.c
 	vdpau-trace.c
@@ -23,13 +23,13 @@ add_library (vdpau_fake SHARED
 	h264-parse.c
 )
 
-target_link_libraries (vdpau_fake
+target_link_libraries (vdpau_va_gl
 	${SOMELIBS_LIBRARIES}
 )
 
-set_target_properties (vdpau_fake
+set_target_properties (vdpau_va_gl
 	PROPERTIES
 	VERSION 1
 )
 
-install (TARGETS vdpau_fake DESTINATION lib)
+install (TARGETS vdpau_va_gl DESTINATION lib)
