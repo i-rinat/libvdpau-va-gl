@@ -789,8 +789,8 @@ traceVdpOutputSurfaceRenderOutputSurface(const char *impl_state,
     fprintf(tlog, "%s%s VdpOutputSurfaceRenderOutputSurface destination_surface=%d, "
         "destination_rect=%s,\n", trace_header, impl_state,
         destination_surface, rect2string(destination_rect));
-    fprintf(tlog, "%s      source_surface=%d, source_rect=%s, colors=%p, flags=%d\n",
-        trace_header_blank, source_surface, rect2string(source_rect), colors, flags);
+    fprintf(tlog, "%s      source_surface=%d, source_rect=%s\n",
+        trace_header_blank, source_surface, rect2string(source_rect));
     fprintf(tlog,   "%s      blend_state.blend_factor_source_color=%s\n"
                     "%s      blend_state.blend_factor_destination_color=%s\n"
                     "%s      blend_state.blend_factor_source_alpha=%s\n"
@@ -807,6 +807,26 @@ traceVdpOutputSurfaceRenderOutputSurface(const char *impl_state,
         trace_header_blank,
         blend_state->blend_constant.red, blend_state->blend_constant.green,
         blend_state->blend_constant.blue, blend_state->blend_constant.alpha);
+    fprintf(tlog, "%s      flags = %s", trace_header_blank,
+            reverse_output_surface_render_rotate(flags));
+    if (flags & VDP_OUTPUT_SURFACE_RENDER_COLOR_PER_VERTEX)
+        fprintf(tlog, "| VDP_OUTPUT_SURFACE_RENDER_COLOR_PER_VERTEX");
+    fprintf(tlog, "\n");
+
+    int color_count = 0;
+    if (colors) {
+        if (flags & VDP_OUTPUT_SURFACE_RENDER_COLOR_PER_VERTEX)
+            color_count = 4;
+        else
+            color_count = 1;
+    }
+    fprintf(tlog, "%s      colors=[", trace_header_blank);
+    for (int k = 0; k < color_count; k ++) {
+        if (k > 0) fprintf(tlog, ", ");
+        fprintf(tlog, "(%f,%f,%f,%f)", colors[k].red, colors[k].green, colors[k].blue,
+                colors[k].alpha);
+    }
+    fprintf(tlog, "]\n");
 }
 
 void
@@ -822,8 +842,8 @@ traceVdpOutputSurfaceRenderBitmapSurface(const char *impl_state,
     fprintf(tlog, "%s%s VdpOutputSurfaceRenderBitmapSurface destination_surface=%d, "
         "destination_rect=%s,\n", trace_header, impl_state,
         destination_surface, rect2string(destination_rect));
-    fprintf(tlog, "%s      source_surface=%d, source_rect=%s, colors=%p, flags=%d\n",
-        trace_header_blank, source_surface, rect2string(source_rect), colors, flags);
+    fprintf(tlog, "%s      source_surface=%d, source_rect=%s\n",
+        trace_header_blank, source_surface, rect2string(source_rect));
     fprintf(tlog,   "%s      blend_state.blend_factor_source_color=%s\n"
                     "%s      blend_state.blend_factor_destination_color=%s\n"
                     "%s      blend_state.blend_factor_source_alpha=%s\n"
@@ -840,6 +860,26 @@ traceVdpOutputSurfaceRenderBitmapSurface(const char *impl_state,
         trace_header_blank,
         blend_state->blend_constant.red, blend_state->blend_constant.green,
         blend_state->blend_constant.blue, blend_state->blend_constant.alpha);
+    fprintf(tlog, "%s      flags = %s", trace_header_blank,
+            reverse_output_surface_render_rotate(flags));
+    if (flags & VDP_OUTPUT_SURFACE_RENDER_COLOR_PER_VERTEX)
+        fprintf(tlog, "| VDP_OUTPUT_SURFACE_RENDER_COLOR_PER_VERTEX");
+    fprintf(tlog, "\n");
+
+    int color_count = 0;
+    if (colors) {
+        if (flags & VDP_OUTPUT_SURFACE_RENDER_COLOR_PER_VERTEX)
+            color_count = 4;
+        else
+            color_count = 1;
+    }
+    fprintf(tlog, "%s      colors=[", trace_header_blank);
+    for (int k = 0; k < color_count; k ++) {
+        if (k > 0) fprintf(tlog, ", ");
+        fprintf(tlog, "(%f,%f,%f,%f)", colors[k].red, colors[k].green, colors[k].blue,
+                colors[k].alpha);
+    }
+    fprintf(tlog, "]\n");
 }
 
 void
