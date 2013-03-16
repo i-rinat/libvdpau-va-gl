@@ -1414,7 +1414,7 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
         data->gl_type = GL_UNSIGNED_INT_10_10_10_2;
         break;
     case VDP_RGBA_FORMAT_A8:
-        data->gl_internal_format = GL_R8;
+        data->gl_internal_format = GL_RGBA;
         data->gl_format = GL_RED;
         data->gl_type = GL_UNSIGNED_BYTE;
         break;
