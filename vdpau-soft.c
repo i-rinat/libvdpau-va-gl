@@ -1450,7 +1450,7 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     }
     if (VDP_RGBA_FORMAT_A8 == rgba_format) {
         // map red channel to alpha
-        GLint swizzle_mask[] = {GL_ZERO, GL_ZERO, GL_ZERO, GL_RED};
+        GLint swizzle_mask[] = {GL_ONE, GL_ONE, GL_ONE, GL_RED};
         glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle_mask);
     }
 
@@ -1838,12 +1838,16 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     glBlendFuncSeparate(bs.srcFuncRGB, bs.dstFuncRGB, bs.srcFuncAlpha, bs.dstFuncAlpha);
     glBlendEquationSeparate(bs.modeRGB, bs.modeAlpha);
 
+    if (colors)
+        glColor4f(colors[0].red, colors[0].green, colors[0].blue, colors[0].alpha);
+
     glBegin(GL_QUADS);
     glTexCoord2i(s_rect.x0,   s_rect.y0);   glVertex2f(d_rect.x0,   d_rect.y0);
     glTexCoord2i(s_rect.x1-1, s_rect.y0);   glVertex2f(d_rect.x1-1, d_rect.y0);
     glTexCoord2i(s_rect.x1-1, s_rect.y1-1); glVertex2f(d_rect.x1-1, d_rect.y1-1);
     glTexCoord2i(s_rect.x0,   s_rect.y1-1); glVertex2f(d_rect.x0,   d_rect.y1-1);
     glEnd();
+    glColor4f(0, 0, 0, 0);
 
     return VDP_STATUS_OK;
 }
