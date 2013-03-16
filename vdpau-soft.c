@@ -1500,19 +1500,23 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = dstSurfData->device;
 
-    //TODO: fix handling other formats
-    if (VDP_RGBA_FORMAT_B8G8R8A8 != dstSurfData->rgba_format)
-        return VDP_STATUS_INVALID_RGBA_FORMAT;
+    const unsigned int pixel_bytes = (VDP_RGBA_FORMAT_A8 == dstSurfData->rgba_format) ? 1 : 4;
 
     VdpRect d_rect = {0, 0, dstSurfData->width, dstSurfData->height};
     if (destination_rect) d_rect = *destination_rect;
 
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0]/4);
+
     glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0]/pixel_bytes);
+    if (4 != pixel_bytes)
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexSubImage2D(GL_TEXTURE_2D, 0, d_rect.x0, d_rect.y0,
-        d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0, GL_BGRA, GL_UNSIGNED_BYTE, source_data[0]);
+        d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0,
+        dstSurfData->gl_format, dstSurfData->gl_type, source_data[0]);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    if (4 != pixel_bytes)
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
     return VDP_STATUS_OK;
 }
