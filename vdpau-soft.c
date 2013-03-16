@@ -1761,7 +1761,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     // TODO: handle colors for every corner
     // TODO: handle rotation (flags)
     if (colors)
-        glColor3f(colors[0].red, colors[0].green, colors[0].blue);
+        glColor4f(colors[0].red, colors[0].green, colors[0].blue, colors[0].alpha);
 
     glBegin(GL_QUADS);
     glTexCoord2i(s_rect.x0,   s_rect.y0);   glVertex2f(d_rect.x0,   d_rect.y0);
@@ -1848,7 +1848,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     // TODO: handle colors for every corner
     // TODO: handle rotation (flags)
     if (colors)
-        glColor3f(colors[0].red, colors[0].green, colors[0].blue);
+        glColor4f(colors[0].red, colors[0].green, colors[0].blue, colors[0].alpha);
 
     glBegin(GL_QUADS);
     glTexCoord2i(s_rect.x0,   s_rect.y0);   glVertex2f(d_rect.x0,   d_rect.y0);
