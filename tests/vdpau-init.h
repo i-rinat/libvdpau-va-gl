@@ -3,6 +3,11 @@
 #include <vdpau/vdpau.h>
 #include <vdpau/vdpau_x11.h>
 
+#define ASSERT_OK(expr) \
+    do { \
+        VdpStatus status = expr; \
+        assert (VDP_STATUS_OK == status); \
+    } while (0)
 
 extern VdpGetErrorString       *vdp_get_error_string;
 extern VdpGetApiVersion        *vdp_get_api_version;
