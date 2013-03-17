@@ -1,6 +1,7 @@
 // Create two output surfaces (B8G8R8A8) of 4x4, fill first with opaque black
-// and second with black and one red dot (opaque too).
-// Render second into first. Check that red dot do not gets smoothed.
+// and second with black and two red dots (opaque too).
+// Render second into first. Check that red dots do not get smoothed.
+// The dot at (1, 1) checks for smoothing, one at (3,3) checks for edge condition.
 
 #include <assert.h>
 #include <stdio.h>
@@ -29,15 +30,15 @@ int main(void)
         0xff000000, 0xff000000, 0xff000000, 0xff000000
     };
 
-    uint32_t one_red_dot[] = {
+    uint32_t two_red_dots[] = {
         0xff000000, 0xff000000, 0xff000000, 0xff000000,
         0xff000000, 0xffff0000, 0xff000000, 0xff000000,
         0xff000000, 0xff000000, 0xff000000, 0xff000000,
-        0xff000000, 0xff000000, 0xff000000, 0xff000000
+        0xff000000, 0xff000000, 0xff000000, 0xffff0000
     };
 
     const void * const source_data_1[] = {black_box};
-    const void * const source_data_2[] = {one_red_dot};
+    const void * const source_data_2[] = {two_red_dots};
     uint32_t source_pitches[] = { 4 * 4 };
 
     // upload data
@@ -70,16 +71,17 @@ int main(void)
     }
     printf("----------\n");
     for (int k = 0; k < 16; k ++) {
-        printf("%x ", one_red_dot[k]);
+        printf("%x ", two_red_dots[k]);
         if (3 == k % 4) printf("\n");
     }
 
-    // compare recieve_buf with one_red_dot
-    if (memcpy(receive_buf, one_red_dot, 4*4*4)) {
+    // compare recieve_buf with two_red_dots
+    if (memcmp(receive_buf, two_red_dots, 4*4*4)) {
         // not equal
+        printf("fail\n");
         return 1;
     }
 
-    printf("pass.\n");
+    printf("pass\n");
     return 0;
 }
