@@ -696,9 +696,23 @@ VdpStatus
 softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *source_data,
                                   uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
-    traceVdpOutputSurfacePutBitsNative("{zilch}", surface, source_data, source_pitches,
+    traceVdpOutputSurfacePutBitsNative("{full}", surface, source_data, source_pitches,
         destination_rect);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+
+    VdpOutputSurfaceData *destSurfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
+    if (NULL == destSurfData) return VDP_STATUS_INVALID_HANDLE;
+    VdpDeviceData *deviceData = destSurfData->device;
+
+    VdpRect destRect = {0, 0, destSurfData->width, destSurfData->height};
+    if (destination_rect) destRect = *destination_rect;
+
+    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glBindTexture(GL_TEXTURE_2D, destSurfData->tex_id);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, destRect.x0, destRect.y0,
+                    destRect.x1 - destRect.x0, destRect.y1 - destRect.y0,
+                    destSurfData->gl_format, destSurfData->gl_type, source_data[0]);
+
+    return VDP_STATUS_OK;
 }
 
 static
