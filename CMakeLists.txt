@@ -5,6 +5,10 @@ add_definitions(-std=c99 -Wall -fvisibility=hidden -ggdb)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SOMELIBS vdpau glib-2.0 libswscale libva-glx gl glu REQUIRED)
 
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
+enable_testing()
+add_subdirectory(tests)
+
 link_directories (
 	${SOMELIBS_LIBRARY_DIRS}
 )
