@@ -8,7 +8,7 @@
 
 int main(void)
 {
-	char buf[] = {0xa6, 0x42, 0x98, 0xe2, 0x3f};
+	unsigned char buf[] = {0xa6, 0x42, 0x98, 0xe2, 0x3f};
     rbsp_state_t st;
     rbsp_attach_buffer(&st, buf, 5);
     assert (0 == rbsp_get_uev(&st));
@@ -45,18 +45,18 @@ int main(void)
     assert ( 0 == rbsp_get_sev(&st));
     assert ( 0 == rbsp_get_sev(&st));
 
-    char buf2[] = {0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0x00};
+    unsigned char buf2[] = {0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0x00};
     rbsp_attach_buffer(&st, buf2, 8);
     for (int k = 0; k < 6 * 8; k ++) {
         assert (0 == rbsp_get_u(&st, 1));
     }
 
-    char buf3[] = {0x00, 0x00, 0x03, 0xff, 0xff};
+    unsigned char buf3[] = {0x00, 0x00, 0x03, 0xff, 0xff};
     rbsp_attach_buffer(&st, buf3, 5);
     for (int k = 0; k < 16; k ++) assert (0 == rbsp_get_u(&st, 1));
     for (int k = 0; k < 16; k ++) assert (1 == rbsp_get_u(&st, 1));
 
-    char buf4[] = {0x00, 0x00, 0x00, 0x03, 0xff};
+    unsigned char buf4[] = {0x00, 0x00, 0x00, 0x03, 0xff};
     rbsp_attach_buffer(&st, buf4, 5);
     for (int k = 0; k < 24; k ++) assert (0 == rbsp_get_u(&st, 1));
     for (int k = 0; k < 8; k ++) assert (1 == rbsp_get_u(&st, 1));
