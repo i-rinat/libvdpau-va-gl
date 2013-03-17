@@ -99,7 +99,7 @@ vdpau_init_functions(VdpDevice *device)
     } while(0)
 
     GET_ADDR(VDP_FUNC_ID_GET_ERROR_STRING,          vdp_get_error_string);
-    // GET_ADDR(VDP_FUNC_ID_GET_PROC_ADDRESS, );
+
     GET_ADDR(VDP_FUNC_ID_GET_API_VERSION,           vdp_get_api_version);
     GET_ADDR(VDP_FUNC_ID_GET_INFORMATION_STRING,    vdp_get_information_string);
     GET_ADDR(VDP_FUNC_ID_DEVICE_DESTROY,            vdp_device_destroy);
