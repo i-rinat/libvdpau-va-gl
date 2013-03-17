@@ -11,7 +11,7 @@ extern VdpDeviceDestroy        *vdp_device_destroy;
 extern VdpGenerateCSCMatrix    *vdp_generate_csc_matrix;
 
 extern VdpVideoSurfaceQueryCapabilities                *vdp_video_surface_query_capabilities;
-extern VdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities *vdp_video_surface_query_get_putBits_y_cb_cr_capabilities;
+extern VdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities *vdp_video_surface_query_get_put_bits_y_cb_cr_capabilities;
 extern VdpVideoSurfaceCreate                           *vdp_video_surface_create;
 extern VdpVideoSurfaceDestroy                          *vdp_video_surface_destroy;
 extern VdpVideoSurfaceGetParameters                    *vdp_video_surface_get_parameters;
@@ -68,10 +68,9 @@ extern VdpPresentationQueueSetBackgroundColor  *vdp_presentation_queue_set_backg
 extern VdpPresentationQueueGetBackgroundColor  *vdp_presentation_queue_get_background_color;
 extern VdpPresentationQueueGetTime             *vdp_presentation_queue_get_time;
 extern VdpPresentationQueueDisplay             *vdp_presentation_queue_display;
-extern VdpPresentationQueueBlockUntilSurfaceIdle *vdpPresentation_queue_block_until_surface_idle;
+extern VdpPresentationQueueBlockUntilSurfaceIdle *vdp_presentation_queue_block_until_surface_idle;
 extern VdpPresentationQueueQuerySurfaceStatus  *vdp_presentation_queue_query_surface_status;
 
-extern VdpPreemptionCallback           *vdp_preemption_callback;
 extern VdpPreemptionCallbackRegister   *vdp_preemption_callback_register;
 
 extern VdpGetProcAddress   *vdp_get_proc_address;
