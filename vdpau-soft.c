@@ -686,9 +686,25 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
                                   void *const *destination_data,
                                   uint32_t const *destination_pitches)
 {
-    traceVdpOutputSurfaceGetBitsNative("{zilch}", surface, source_rect, destination_data,
+    traceVdpOutputSurfaceGetBitsNative("{WIP}", surface, source_rect, destination_data,
         destination_pitches);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+
+    VdpOutputSurfaceData *srcSurfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
+    if (NULL == srcSurfData) return VDP_STATUS_INVALID_HANDLE;
+    VdpDeviceData *deviceData = srcSurfData->device;
+
+    VdpRect srcRect = {0, 0, srcSurfData->width, srcSurfData->height};
+    if (source_rect) srcRect = *source_rect;
+
+    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                            srcSurfData->tex_id, 0);
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+    glReadPixels(srcRect.x0, srcRect.y0, srcRect.x1 - srcRect.x0, srcRect.y1 - srcRect.y0,
+                 srcSurfData->gl_format, srcSurfData->gl_type, destination_data[0]);
+
+    return VDP_STATUS_OK;
 }
 
 static
