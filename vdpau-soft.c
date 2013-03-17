@@ -1825,10 +1825,10 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
         glColor4f(colors[0].red, colors[0].green, colors[0].blue, colors[0].alpha);
 
     glBegin(GL_QUADS);
-    glTexCoord2i(s_rect.x0,   s_rect.y0);   glVertex2f(d_rect.x0,   d_rect.y0);
-    glTexCoord2i(s_rect.x1-1, s_rect.y0);   glVertex2f(d_rect.x1-1, d_rect.y0);
-    glTexCoord2i(s_rect.x1-1, s_rect.y1-1); glVertex2f(d_rect.x1-1, d_rect.y1-1);
-    glTexCoord2i(s_rect.x0,   s_rect.y1-1); glVertex2f(d_rect.x0,   d_rect.y1-1);
+    glTexCoord2i(s_rect.x0, s_rect.y0); glVertex2f(d_rect.x0,   d_rect.y0);
+    glTexCoord2i(s_rect.x1, s_rect.y0); glVertex2f(d_rect.x1-1, d_rect.y0);
+    glTexCoord2i(s_rect.x1, s_rect.y1); glVertex2f(d_rect.x1-1, d_rect.y1-1);
+    glTexCoord2i(s_rect.x0, s_rect.y1); glVertex2f(d_rect.x0,   d_rect.y1-1);
     glEnd();
 
     glColor4f(1, 1, 1, 1);
