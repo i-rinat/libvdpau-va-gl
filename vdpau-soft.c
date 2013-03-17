@@ -62,12 +62,15 @@ typedef struct {
 } VdpVideoMixerData;
 
 typedef struct {
-    HandleType          type;
-    VdpDeviceData      *device;
-    VdpRGBAFormat       rgba_format;
-    GLuint              tex_id;
-    uint32_t            width;
-    uint32_t            height;
+    HandleType      type;
+    VdpDeviceData  *device;
+    VdpRGBAFormat   rgba_format;
+    GLuint          tex_id;
+    uint32_t        width;
+    uint32_t        height;
+    GLuint          gl_internal_format;
+    GLuint          gl_format;
+    GLuint          gl_type;
 } VdpOutputSurfaceData;
 
 typedef struct {
@@ -591,15 +594,42 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     if (width > 4096 || height > 4096)
         return VDP_STATUS_INVALID_SIZE;
 
-    //TODO: other formats
-    if (VDP_RGBA_FORMAT_B8G8R8A8 != rgba_format) {
-        fprintf(stderr, "error: unsupported rgba format: %s\n", reverse_rgba_format(rgba_format));
-        return VDP_STATUS_INVALID_RGBA_FORMAT;
-    }
-
     VdpOutputSurfaceData *data = (VdpOutputSurfaceData *)calloc(1, sizeof(VdpOutputSurfaceData));
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
+
+    switch (rgba_format) {
+    case VDP_RGBA_FORMAT_B8G8R8A8:
+        data->gl_internal_format = GL_RGBA;
+        data->gl_format = GL_BGRA;
+        data->gl_type = GL_UNSIGNED_BYTE;
+        break;
+    case VDP_RGBA_FORMAT_R8G8B8A8:
+        data->gl_internal_format = GL_RGBA;
+        data->gl_format = GL_RGBA;
+        data->gl_type = GL_UNSIGNED_BYTE;
+        break;
+    case VDP_RGBA_FORMAT_R10G10B10A2:
+        data->gl_internal_format = GL_RGB10_A2;
+        data->gl_format = GL_RGBA;
+        data->gl_type = GL_UNSIGNED_INT_10_10_10_2;
+        break;
+    case VDP_RGBA_FORMAT_B10G10R10A2:
+        data->gl_internal_format = GL_RGB10_A2;
+        data->gl_format = GL_BGRA;
+        data->gl_type = GL_UNSIGNED_INT_10_10_10_2;
+        break;
+    case VDP_RGBA_FORMAT_A8:
+        data->gl_internal_format = GL_RGBA;
+        data->gl_format = GL_RED;
+        data->gl_type = GL_UNSIGNED_BYTE;
+        break;
+    default:
+        fprintf(stderr, "VdpOutputSurfaceCreate: %s not implemented\n",
+                reverse_rgba_format(rgba_format));
+        free(data);
+        return VDP_STATUS_INVALID_RGBA_FORMAT;
+    }
 
     data->type = HANDLETYPE_OUTPUT_SURFACE;
     data->width = width;
@@ -615,7 +645,8 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // reserve texture
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, data->gl_internal_format, width, height, 0, data->gl_format,
+                 data->gl_type, NULL);
 
     *surface = handlestorage_add(data);
     return VDP_STATUS_OK;
