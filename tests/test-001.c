@@ -64,10 +64,15 @@ int main(void)
     void * const dest_data[] = {receive_buf};
     ASSERT_OK(vdp_output_surface_get_bits_native(out_surface_1, NULL, dest_data, source_pitches));
 
-    for (int k = 0; k < 16; k ++) printf("%x ", receive_buf[k]);
-    printf("\n");
-    for (int k = 0; k < 16; k ++) printf("%x ", one_red_dot[k]);
-    printf("\n");
+    for (int k = 0; k < 16; k ++) {
+        printf("%x ", receive_buf[k]);
+        if (3 == k % 4) printf("\n");
+    }
+    printf("----------\n");
+    for (int k = 0; k < 16; k ++) {
+        printf("%x ", one_red_dot[k]);
+        if (3 == k % 4) printf("\n");
+    }
 
     // compare recieve_buf with one_red_dot
     if (memcpy(receive_buf, one_red_dot, 4*4*4)) {
