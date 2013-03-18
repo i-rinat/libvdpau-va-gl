@@ -715,18 +715,18 @@ softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *s
     traceVdpOutputSurfacePutBitsNative("{full}", surface, source_data, source_pitches,
         destination_rect);
 
-    VdpOutputSurfaceData *destSurfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
-    if (NULL == destSurfData) return VDP_STATUS_INVALID_HANDLE;
-    VdpDeviceData *deviceData = destSurfData->device;
+    VdpOutputSurfaceData *dstSurfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
+    if (NULL == dstSurfData) return VDP_STATUS_INVALID_HANDLE;
+    VdpDeviceData *deviceData = dstSurfData->device;
 
-    VdpRect destRect = {0, 0, destSurfData->width, destSurfData->height};
-    if (destination_rect) destRect = *destination_rect;
+    VdpRect dstRect = {0, 0, dstSurfData->width, dstSurfData->height};
+    if (destination_rect) dstRect = *destination_rect;
 
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
-    glBindTexture(GL_TEXTURE_2D, destSurfData->tex_id);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, destRect.x0, destRect.y0,
-                    destRect.x1 - destRect.x0, destRect.y1 - destRect.y0,
-                    destSurfData->gl_format, destSurfData->gl_type, source_data[0]);
+    glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, dstRect.x0, dstRect.y0,
+                    dstRect.x1 - dstRect.x0, dstRect.y1 - dstRect.y0,
+                    dstSurfData->gl_format, dstSurfData->gl_type, source_data[0]);
 
     return VDP_STATUS_OK;
 }
