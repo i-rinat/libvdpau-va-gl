@@ -695,14 +695,19 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
 
     VdpRect srcRect = {0, 0, srcSurfData->width, srcSurfData->height};
     if (source_rect) srcRect = *source_rect;
+    const unsigned int pixel_bytes = (VDP_RGBA_FORMAT_A8 == srcSurfData->rgba_format) ? 1 : 4;
 
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                             srcSurfData->tex_id, 0);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, destination_pitches[0]/pixel_bytes);
+    if (4 != pixel_bytes) glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glReadPixels(srcRect.x0, srcRect.y0, srcRect.x1 - srcRect.x0, srcRect.y1 - srcRect.y0,
                  srcSurfData->gl_format, srcSurfData->gl_type, destination_data[0]);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    if (4 != pixel_bytes) glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
     return VDP_STATUS_OK;
 }
@@ -721,12 +726,18 @@ softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *s
 
     VdpRect dstRect = {0, 0, dstSurfData->width, dstSurfData->height};
     if (destination_rect) dstRect = *destination_rect;
+    const unsigned int pixel_bytes = (VDP_RGBA_FORMAT_A8 == dstSurfData->rgba_format) ? 1 : 4;
 
     glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
+
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0]/pixel_bytes);
+    if (4 != pixel_bytes) glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexSubImage2D(GL_TEXTURE_2D, 0, dstRect.x0, dstRect.y0,
                     dstRect.x1 - dstRect.x0, dstRect.y1 - dstRect.y0,
                     dstSurfData->gl_format, dstSurfData->gl_type, source_data[0]);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    if (4 != pixel_bytes) glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
     return VDP_STATUS_OK;
 }
