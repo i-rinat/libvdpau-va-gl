@@ -65,6 +65,7 @@ int main(void)
     void * const dest_data[] = {receive_buf};
     ASSERT_OK(vdp_output_surface_get_bits_native(out_surface_1, NULL, dest_data, source_pitches));
 
+    printf("output surface\n");
     for (int k = 0; k < 16; k ++) {
         printf("%x ", receive_buf[k]);
         if (3 == k % 4) printf("\n");
@@ -77,9 +78,42 @@ int main(void)
 
     // compare recieve_buf with two_red_dots
     if (memcmp(receive_buf, two_red_dots, 4*4*4)) {
-        // not equal
         printf("fail\n");
         return 1;
+    }
+
+    // Check bitmap surface rendering smoothing issue
+    VdpBitmapSurface bmp_surface;
+    ASSERT_OK(vdp_bitmap_surface_create(device, VDP_RGBA_FORMAT_B8G8R8A8, 4, 4, 1, &bmp_surface));
+    ASSERT_OK(vdp_bitmap_surface_put_bits_native(bmp_surface, source_data_2, source_pitches, NULL));
+    VdpOutputSurfaceRenderBlendState blend_state_opaque_copy = {
+        .struct_version = VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION,
+        .blend_factor_source_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
+        .blend_factor_source_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
+        .blend_factor_destination_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
+        .blend_factor_destination_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
+        .blend_equation_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
+        .blend_equation_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
+        .blend_constant = {0, 0, 0, 0}
+    };
+    ASSERT_OK(vdp_output_surface_render_bitmap_surface(out_surface_1, NULL, bmp_surface, NULL,
+                NULL, &blend_state_opaque_copy, VDP_OUTPUT_SURFACE_RENDER_ROTATE_0));
+    ASSERT_OK(vdp_output_surface_get_bits_native(out_surface_1, NULL, dest_data, source_pitches));
+
+    printf("bitmap surface\n");
+    for (int k = 0; k < 16; k ++) {
+        printf("%x ", receive_buf[k]);
+        if (3 == k % 4) printf("\n");
+    }
+    printf("----------\n");
+    for (int k = 0; k < 16; k ++) {
+        printf("%x ", two_red_dots[k]);
+        if (3 == k % 4) printf("\n");
+    }
+
+    if (memcmp(receive_buf, two_red_dots, 4*4*4)) {
+        printf("fail\n");
+        return 2;
     }
 
     printf("pass\n");
