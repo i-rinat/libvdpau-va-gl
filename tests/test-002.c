@@ -58,9 +58,11 @@ int main(void)
     // Do check bitmap surface
     ASSERT_OK(vdp_bitmap_surface_create(device, VDP_RGBA_FORMAT_A8, 5, 5, 1, &bmp_surface));
     ASSERT_OK(vdp_bitmap_surface_put_bits_native(bmp_surface, source_data, source_pitches, NULL));
+
+    // draw alpha channel as color
     VdpOutputSurfaceRenderBlendState blend_state = {
         .struct_version = VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION,
-        .blend_factor_source_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
+        .blend_factor_source_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_SRC_ALPHA,
         .blend_factor_source_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
         .blend_factor_destination_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
         .blend_factor_destination_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
