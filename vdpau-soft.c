@@ -703,11 +703,11 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
                             srcSurfData->tex_id, 0);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, destination_pitches[0]/pixel_bytes);
-    if (4 != pixel_bytes) glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    if (4 != pixel_bytes) glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glReadPixels(srcRect.x0, srcRect.y0, srcRect.x1 - srcRect.x0, srcRect.y1 - srcRect.y0,
                  srcSurfData->gl_format, srcSurfData->gl_type, destination_data[0]);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    if (4 != pixel_bytes) glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    if (4 != pixel_bytes) glPixelStorei(GL_PACK_ALIGNMENT, 4);
 
     return VDP_STATUS_OK;
 }
