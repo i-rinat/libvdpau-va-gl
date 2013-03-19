@@ -1866,21 +1866,14 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
         handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
     VdpBitmapSurfaceData *srcSurfData =
         handlestorage_get(source_surface, HANDLETYPE_BITMAP_SURFACE);
-    if (NULL == dstSurfData || NULL == srcSurfData)
-        return VDP_STATUS_INVALID_HANDLE;
-    if (srcSurfData->device != dstSurfData->device)
-        return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+    if (NULL == dstSurfData || NULL == srcSurfData) return VDP_STATUS_INVALID_HANDLE;
+    if (srcSurfData->device != dstSurfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     VdpDeviceData *deviceData = srcSurfData->device;
 
-    const int srcWidth = srcSurfData->width;
-    const int srcHeight = srcSurfData->height;
-    const int dstWidth = dstSurfData->width;
-    const int dstHeight = dstSurfData->height;
-
-    VdpRect s_rect = {0, 0, srcWidth, srcHeight};
-    VdpRect d_rect = {0, 0, dstWidth, dstHeight};
-    if (source_rect) s_rect = *source_rect;
-    if (destination_rect) d_rect = *destination_rect;
+    VdpRect srcRect = {0, 0, srcSurfData->width, srcSurfData->height};
+    VdpRect dstRect = {0, 0, dstSurfData->width, dstSurfData->height};
+    if (source_rect) srcRect = *source_rect;
+    if (destination_rect) dstRect = *destination_rect;
 
     // select blend functions
     struct blend_state_struct bs = vdpBlendStateToGLBlendState(blend_state);
@@ -1898,8 +1891,8 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     }
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, dstWidth-1, 0, dstHeight-1, -1.0f, 1.0f);
-    glViewport(0, 0, dstWidth, dstHeight);
+    glOrtho(0, dstSurfData->width - 1, 0, dstSurfData->height - 1, -1.0f, 1.0f);
+    glViewport(0, 0, dstSurfData->width, dstSurfData->height);
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
 
@@ -1911,7 +1904,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
 
     glMatrixMode(GL_TEXTURE);
     glLoadIdentity();
-    glScalef(1.0f/srcWidth, 1.0f/srcHeight, 1.0f);
+    glScalef(1.0f/srcSurfData->width, 1.0f/srcSurfData->height, 1.0f);
 
     // blend
     glBlendFuncSeparate(bs.srcFuncRGB, bs.dstFuncRGB, bs.srcFuncAlpha, bs.dstFuncAlpha);
@@ -1923,10 +1916,10 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
         glColor4f(colors[0].red, colors[0].green, colors[0].blue, colors[0].alpha);
 
     glBegin(GL_QUADS);
-    glTexCoord2i(s_rect.x0, s_rect.y0);   glVertex2f(d_rect.x0,   d_rect.y0);
-    glTexCoord2i(s_rect.x1, s_rect.y0);   glVertex2f(d_rect.x1-1, d_rect.y0);
-    glTexCoord2i(s_rect.x1, s_rect.y1);   glVertex2f(d_rect.x1-1, d_rect.y1-1);
-    glTexCoord2i(s_rect.x0, s_rect.y1);   glVertex2f(d_rect.x0,   d_rect.y1-1);
+    glTexCoord2i(srcRect.x0, srcRect.y0);   glVertex2f(dstRect.x0,   dstRect.y0);
+    glTexCoord2i(srcRect.x1, srcRect.y0);   glVertex2f(dstRect.x1-1, dstRect.y0);
+    glTexCoord2i(srcRect.x1, srcRect.y1);   glVertex2f(dstRect.x1-1, dstRect.y1-1);
+    glTexCoord2i(srcRect.x0, srcRect.y1);   glVertex2f(dstRect.x0,   dstRect.y1-1);
     glEnd();
 
     glColor4f(1, 1, 1, 1);
