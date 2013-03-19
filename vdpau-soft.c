@@ -1878,7 +1878,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     const int dstHeight = dstSurfData->height;
 
     VdpRect s_rect = {0, 0, srcWidth, srcHeight};
-    VdpRect d_rect = {0, 0, dstWidth, srcHeight};
+    VdpRect d_rect = {0, 0, dstWidth, dstHeight};
     if (source_rect) s_rect = *source_rect;
     if (destination_rect) d_rect = *destination_rect;
 
