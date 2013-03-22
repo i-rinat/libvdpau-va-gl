@@ -1,8 +1,4 @@
 #include "vdpau-init.h"
-#ifdef NDEBUG
-#undef NDEBUG
-#endif
-#include <assert.h>
 
 
 VdpGetErrorString       *vdp_get_error_string = NULL;

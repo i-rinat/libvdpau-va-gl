@@ -1,5 +1,9 @@
 #ifndef __VDPAU_INIT_H
 #define __VDPAU_INIT_H
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+#include <assert.h>
 #include <vdpau/vdpau.h>
 #include <vdpau/vdpau_x11.h>
 

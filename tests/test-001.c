@@ -3,7 +3,6 @@
 // Render second into first. Check that red dots do not get smoothed.
 // The dot at (1, 1) checks for smoothing, one at (3,3) checks for edge condition.
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>

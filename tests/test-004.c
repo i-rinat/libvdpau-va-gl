@@ -5,7 +5,6 @@
 // Rendering the same pattern via both paths and then comparing results. Using opaque copy,
 // only source matters.
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

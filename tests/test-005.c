@@ -9,7 +9,6 @@
 //
 // coloring with color {0, 1, 0, 1}. This should be green with alpha == 1.
 
-#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

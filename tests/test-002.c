@@ -7,7 +7,6 @@
 // Bitmap surfaces checked too. But since there is no way to download data directly from
 // bitmap surface, we doing this via rendering to output surface.
 
-#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include "vdpau-init.h"
