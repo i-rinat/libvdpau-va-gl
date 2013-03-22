@@ -407,8 +407,9 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
     VAStatus status;
     VdpStatus vs;
 
-    if (VDP_DECODER_PROFILE_H264_MAIN == decoderData->profile ||
-        VDP_DECODER_PROFILE_H264_HIGH == decoderData->profile)
+    if (VDP_DECODER_PROFILE_H264_BASELINE == decoderData->profile ||
+        VDP_DECODER_PROFILE_H264_MAIN ==     decoderData->profile ||
+        VDP_DECODER_PROFILE_H264_HIGH ==     decoderData->profile)
     {
         VdpPictureInfoH264 const *vdppi = (void *)picture_info;
 
