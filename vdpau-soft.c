@@ -1385,9 +1385,60 @@ VdpStatus
 softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destination_ycbcr_format,
                                 void *const *destination_data, uint32_t const *destination_pitches)
 {
-    traceVdpVideoSurfaceGetBitsYCbCr("{zilch}", surface, destination_ycbcr_format,
+    traceVdpVideoSurfaceGetBitsYCbCr("{part}", surface, destination_ycbcr_format,
         destination_data, destination_pitches);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    VdpVideoSurfaceData *srcSurfData = handlestorage_get(surface, HANDLETYPE_VIDEO_SURFACE);
+    if (NULL == srcSurfData) return VDP_STATUS_INVALID_HANDLE;
+    VdpDeviceData *deviceData = srcSurfData->device;
+    VADisplay va_dpy = deviceData->va_dpy;
+
+    if (VDP_YCBCR_FORMAT_NV12 != destination_ycbcr_format) {
+        fprintf(stderr, "softVdpVideoSurfaceGetBitsYCbCr: not implemented YCbCr format: %s\n",
+                reverse_ycbcr_format(destination_ycbcr_format));
+        return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
+    }
+
+    if (srcSurfData->va_available) {
+        VAImage q;
+        vaDeriveImage(va_dpy, srcSurfData->va_surf, &q);
+        if (VA_FOURCC('N', 'V', '1', '2') == q.format.fourcc) {
+            uint8_t *img_data;
+            vaMapBuffer(va_dpy, q.buf, (void **)&img_data);
+            if (destination_pitches[0] == q.pitches[0] &&
+                destination_pitches[1] == q.pitches[1])
+            {
+                memcpy(destination_data[0], img_data + q.offsets[0], q.width * q.height);
+                memcpy(destination_data[1], img_data + q.offsets[1], q.width * q.height / 2);
+            } else {
+                uint8_t *src = img_data + q.offsets[0];
+                uint8_t *dst = destination_data[0];
+                for (unsigned int y = 0; y < q.height; y ++) {  // Y plane
+                    memcpy (dst, src, q.width);
+                    src += q.pitches[0];
+                    dst += destination_pitches[0];
+                }
+                src = img_data + q.offsets[1];
+                dst = destination_data[1];
+                for (unsigned int y = 0; y < q.height / 2; y ++) {  // UV plane
+                    memcpy(dst, src, q.width);  // q.width/2 samples of U and V each, hence q.width
+                    src += q.pitches[1];
+                    dst += destination_pitches[1];
+                }
+            }
+            vaUnmapBuffer(va_dpy, q.buf);
+        } else {
+            fprintf(stderr, "softVdpVideoSurfaceGetBitsYCbCr: VA surface is not a NV12\n");
+            vaDestroyImage(va_dpy, q.image_id);
+            return VDP_STATUS_ERROR;
+        }
+        vaDestroyImage(va_dpy, q.image_id);
+    } else {
+        // software fallback
+        fprintf(stderr, "softVdpVideoSurfaceGetBitsYCbCr: not implemented software fallback\n");
+        return VDP_STATUS_ERROR;
+    }
+
+    return VDP_STATUS_OK;
 }
 
 static
