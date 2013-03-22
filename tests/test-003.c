@@ -5,6 +5,8 @@
 // source/destination alpha  : one / src alpha
 // blend equation for color / alpha : add / add
 //
+// target surface filled with {0, 0, 0, 1}
+//
 // coloring with color {0, 1, 0, 1}. This should be green with alpha == 1.
 
 #include <assert.h>
