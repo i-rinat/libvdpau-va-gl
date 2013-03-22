@@ -27,7 +27,7 @@
 #define DESCRIBE(xparam, format)    fprintf(stderr, #xparam " = %" #format "\n", xparam)
 
 static char const *
-implemetation_description_string = "OpenGL/libswscale backend for VDPAU";
+implemetation_description_string = "OpenGL/VAAPI/libswscale backend for VDPAU";
 
 typedef struct {
     HandleType  type;
