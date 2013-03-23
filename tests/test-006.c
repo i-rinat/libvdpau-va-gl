@@ -25,7 +25,7 @@ int main(void)
     uint32_t buf[300*150];
     const void * const source_data[] = { buf };
     uint32_t source_pitches[] = { 4 * 300 };
-    for (int k = 0; k < 300*150; k ++) { buf[k] = 0xff000000 + (k) & 0xffffff; }
+    for (int k = 0; k < 300*150; k ++) { buf[k] = 0xff000000 + (k & 0xffffff); }
     ASSERT_OK(vdp_bitmap_surface_put_bits_native(bmp_surface, source_data, source_pitches, NULL));
     VdpTime vdpTime = 0;
     ASSERT_OK(vdp_presentation_queue_block_until_surface_idle(pq, out_surface, &vdpTime));
