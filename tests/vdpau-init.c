@@ -74,13 +74,25 @@ VdpGetProcAddress   *vdp_get_proc_address = NULL;
 
 VdpPresentationQueueTargetCreateX11      *vdp_presentation_queue_target_create_x11 = NULL;
 
+Display *saved_dpy = NULL;
+Window saved_window = 0;
+
 VdpStatus
 vdpau_init_functions(VdpDevice *device, Window *window, int do_map_window)
 {
-    Display *dpy = XOpenDisplay(NULL);
+    Display *dpy;
+    if (!saved_dpy) {
+        dpy = XOpenDisplay(NULL);
+        saved_dpy = dpy;
+    } else {
+        dpy = saved_dpy;
+    }
     if (window) {
         Window root = XDefaultRootWindow(dpy);
-        *window = XCreateSimpleWindow(dpy, root, 0, 0, 300, 300, 0, 0, 0);
+        if (!saved_window) {
+            saved_window = XCreateSimpleWindow(dpy, root, 0, 0, 300, 300, 0, 0, 0);
+        }
+        *window = saved_window;
         if (do_map_window)
             XMapWindow(dpy, *window);
     }
