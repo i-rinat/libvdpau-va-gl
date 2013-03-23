@@ -84,6 +84,7 @@ extern VdpPreemptionCallbackRegister   *vdp_preemption_callback_register;
 
 extern VdpGetProcAddress   *vdp_get_proc_address;
 
+extern VdpPresentationQueueTargetCreateX11      *vdp_presentation_queue_target_create_x11;
 
 VdpStatus vdpau_init_functions(VdpDevice *device, Window *window, int do_map_window);
 

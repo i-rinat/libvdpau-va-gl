@@ -72,6 +72,8 @@ VdpPreemptionCallbackRegister   *vdp_preemption_callback_register = NULL;
 
 VdpGetProcAddress   *vdp_get_proc_address = NULL;
 
+VdpPresentationQueueTargetCreateX11      *vdp_presentation_queue_target_create_x11 = NULL;
+
 VdpStatus
 vdpau_init_functions(VdpDevice *device, Window *window, int do_map_window)
 {
@@ -172,6 +174,8 @@ vdpau_init_functions(VdpDevice *device, Window *window, int do_map_window)
     GET_ADDR(VDP_FUNC_ID_PRESENTATION_QUEUE_QUERY_SURFACE_STATUS, vdp_presentation_queue_query_surface_status);
 
     GET_ADDR(VDP_FUNC_ID_PREEMPTION_CALLBACK_REGISTER, vdp_preemption_callback_register);
+
+    GET_ADDR(VDP_FUNC_ID_PRESENTATION_QUEUE_TARGET_CREATE_X11, vdp_presentation_queue_target_create_x11);
 
     return VDP_STATUS_OK;
 }
