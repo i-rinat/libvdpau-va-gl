@@ -73,12 +73,15 @@ VdpPreemptionCallbackRegister   *vdp_preemption_callback_register = NULL;
 VdpGetProcAddress   *vdp_get_proc_address = NULL;
 
 VdpStatus
-vdpau_init_functions(VdpDevice *device)
+vdpau_init_functions(VdpDevice *device, Window *window, int do_map_window)
 {
     Display *dpy = XOpenDisplay(NULL);
-    // Window root = XDefaultRootWindow(dpy);
-    // Window window = XCreateSimpleWindow(dpy, root, 0, 0, 300, 300, 0, 0, 0);
-    // XMapWindow(dpy, window);
+    if (window) {
+        Window root = XDefaultRootWindow(dpy);
+        *window = XCreateSimpleWindow(dpy, root, 0, 0, 300, 300, 0, 0, 0);
+        if (do_map_window)
+            XMapWindow(dpy, *window);
+    }
     XSync(dpy, 0);
 
     VdpStatus st = vdp_device_create_x11(dpy, 0, device, &vdp_get_proc_address);

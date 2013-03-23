@@ -39,7 +39,7 @@ int main(void)
     const void * const source_data_black[] = { black_4x4 };
     uint32_t source_pitches_black[] = { 4 * 4 };
 
-    ASSERT_OK(vdpau_init_functions(&device));
+    ASSERT_OK(vdpau_init_functions(&device, NULL, 0));
     // create surfaces
     ASSERT_OK(vdp_bitmap_surface_create(device, VDP_RGBA_FORMAT_A8, 4, 4, 1, &bmp_surface));
     ASSERT_OK(vdp_output_surface_create(device, VDP_RGBA_FORMAT_B8G8R8A8, 4, 4, &out_surface));

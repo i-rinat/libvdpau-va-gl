@@ -7,8 +7,8 @@
 int main(void)
 {
     VdpDevice device;
-    ASSERT_OK(vdpau_init_functions(&device));
     vdp_device_destroy(device);
+    ASSERT_OK(vdpau_init_functions(&device, &window, 1));
 
     ASSERT_OK(vdpau_init_functions(&device));
     vdp_device_destroy(device);

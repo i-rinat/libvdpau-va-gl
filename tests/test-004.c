@@ -17,7 +17,7 @@ int main(void)
 {
     int err_code = 0;
     VdpDevice device;
-    ASSERT_OK(vdpau_init_functions(&device));
+    ASSERT_OK(vdpau_init_functions(&device, NULL, 0));
 
     VdpOutputSurface out_surface_in;
     VdpOutputSurface out_surface_out;

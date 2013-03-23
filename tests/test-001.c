@@ -13,7 +13,7 @@
 int main(void)
 {
     VdpDevice device;
-    VdpStatus st = vdpau_init_functions(&device);
+    VdpStatus st = vdpau_init_functions(&device, NULL, 0);
     assert (VDP_STATUS_OK == st);
 
     VdpOutputSurface out_surface_1;

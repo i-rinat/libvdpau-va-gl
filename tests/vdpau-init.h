@@ -85,6 +85,6 @@ extern VdpPreemptionCallbackRegister   *vdp_preemption_callback_register;
 extern VdpGetProcAddress   *vdp_get_proc_address;
 
 
-VdpStatus vdpau_init_functions(VdpDevice *device);
+VdpStatus vdpau_init_functions(VdpDevice *device, Window *window, int do_map_window);
 
 #endif /* __VDPAU_INIT_H */

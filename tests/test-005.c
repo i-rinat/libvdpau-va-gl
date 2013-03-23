@@ -18,7 +18,7 @@
 int main(void)
 {
     VdpDevice device;
-    ASSERT_OK(vdpau_init_functions(&device));
+    ASSERT_OK(vdpau_init_functions(&device, NULL, 0));
 
     VdpBitmapSurface bmp_surface;
     VdpOutputSurface out_surface;

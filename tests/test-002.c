@@ -30,7 +30,7 @@ int main(void)
     uint32_t source_pitches[] = { 5 };
     uint32_t destination_pitches[] = { 5 };
 
-    ASSERT_OK(vdpau_init_functions(&device));
+    ASSERT_OK(vdpau_init_functions(&device, NULL, 0));
     ASSERT_OK(vdp_output_surface_create(device, VDP_RGBA_FORMAT_A8, 5, 5, &out_surface));
 
     // upload image to surface, download image from surface
