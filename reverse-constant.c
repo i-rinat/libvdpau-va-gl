@@ -1,5 +1,6 @@
 #include "reverse-constant.h"
 #include <vdpau/vdpau.h>
+#include <vdpau/vdpau_x11.h>
 
 const char *
 reverse_func_id(VdpFuncId func_id)
@@ -127,8 +128,8 @@ reverse_func_id(VdpFuncId func_id)
         return "VDP_FUNC_ID_PRESENTATION_QUEUE_QUERY_SURFACE_STATUS";
     case VDP_FUNC_ID_PREEMPTION_CALLBACK_REGISTER:
         return "VDP_FUNC_ID_PREEMPTION_CALLBACK_REGISTER";
-    case VDP_FUNC_ID_BASE_WINSYS:
-        return "VDP_FUNC_ID_BASE_WINSYS";
+    case VDP_FUNC_ID_PRESENTATION_QUEUE_TARGET_CREATE_X11:
+        return "VDP_FUNC_ID_PRESENTATION_QUEUE_TARGET_CREATE_X11";
     default:
         return "Unknown";
     }
