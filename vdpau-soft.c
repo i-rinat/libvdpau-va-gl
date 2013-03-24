@@ -2259,15 +2259,15 @@ softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
 
     // initialize VAAPI
     data->va_dpy = vaGetDisplayGLX(display);
-    data->va_available = 1;
+    data->va_available = 0;
 
     VAStatus status = vaInitialize(data->va_dpy, &data->va_version_major, &data->va_version_minor);
     if (VA_STATUS_SUCCESS == status) {
-        data->va_available = TRUE;
+        data->va_available = 1;
         traceTrace("libva (version %d.%d) library initialized\n",
             data->va_version_major, data->va_version_minor);
     } else {
-        data->va_available = FALSE;
+        data->va_available = 0;
         traceTrace("warning: failed to initialize libva. "
             "No video decode acceleration available.\n");
     }
