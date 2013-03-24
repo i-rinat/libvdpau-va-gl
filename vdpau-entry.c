@@ -4,6 +4,9 @@
 #include "handle-storage.h"
 #include "vdpau-soft.h"
 #include "vdpau-trace.h"
+#include "globals.h"
+
+extern struct global_data global;
 
 __attribute__((constructor))
 static
@@ -11,6 +14,9 @@ void
 library_constructor(void)
 {
     handlestorage_initialize();
+
+    // global mutex
+    pthread_mutex_init(&global.mutex, NULL);
 
     // initialize tracer
     traceSetTarget(stdout);

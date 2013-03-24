@@ -19,6 +19,7 @@
 #include "reverse-constant.h"
 #include "handle-storage.h"
 #include "vdpau-trace.h"
+#include "globals.h"
 
 #define MAX_RENDER_TARGETS          21
 #define NUM_RENDER_TARGETS_H264     21
@@ -115,7 +116,24 @@ typedef struct {
     VAContextID         context_id;
 } VdpDecoderData;
 
+extern struct global_data global;
+
 // ====================
+
+static
+void
+acquire_lock()
+{
+    pthread_mutex_lock(&global.mutex);
+}
+
+static
+void
+release_lock()
+{
+    pthread_mutex_unlock(&global.mutex);
+}
+
 static
 uint32_t
 chroma_storage_size_divider(VdpChromaType chroma_type)

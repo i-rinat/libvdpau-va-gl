@@ -25,6 +25,7 @@ add_library (vdpau_va_gl SHARED
 	handle-storage.c
 	bitstream.c
 	h264-parse.c
+	globals.c
 )
 
 target_link_libraries (vdpau_va_gl
