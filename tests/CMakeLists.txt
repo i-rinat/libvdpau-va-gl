@@ -5,7 +5,7 @@ include_directories(..)
 find_package(X11 REQUIRED)
 pkg_check_modules(VDPAU vdpau REQUIRED)
 
-link_libraries(${X11_LIBRARIES} ${VDPAU_LIBRARIES})
+link_libraries(${X11_LIBRARIES} ${VDPAU_LIBRARIES} -lpthread)
 link_directories(${X11_LIBRARY_DIRS} ${VDPAU_LIBRARY_DIRS})
 
 add_executable(rbsp-test EXCLUDE_FROM_ALL rbsp-test.c ../bitstream.c)

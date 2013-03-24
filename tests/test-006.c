@@ -1,21 +1,29 @@
 // test-006
 //
-// initializing/finalizing two times a row
-// with some drawing between
+// initializing/finalizing number of times a row with some drawing between.
+// This test is to reveal thread-safety failure inside VDPAU library.
+//
+// Initialization function executed once, but then 30 threads try to do the same work
+// with rendering simultaneously.
 
 #include "vdpau-init.h"
 #include <stdlib.h>
+#include <pthread.h>
 
-int main(void)
+#define THREAD_COUNT    30
+
+
+VdpDevice device;
+Window window;
+
+void *thread_1_func(void *p)
 {
-    VdpDevice device;
-    Window window;
     VdpPresentationQueueTarget pq_target;
     VdpPresentationQueue pq;
     VdpOutputSurface out_surface;
     VdpOutputSurface out_surface_2;
     VdpBitmapSurface bmp_surface;
-    ASSERT_OK(vdpau_init_functions(&device, &window, 1));
+
     ASSERT_OK(vdp_presentation_queue_target_create_x11(device, window, &pq_target));
     ASSERT_OK(vdp_presentation_queue_create(device, pq_target, &pq));
     ASSERT_OK(vdp_output_surface_create(device, VDP_RGBA_FORMAT_B8G8R8A8, 300, 150, &out_surface));
@@ -46,17 +54,27 @@ int main(void)
                 &source_rect, NULL, &blend_state, VDP_OUTPUT_SURFACE_RENDER_ROTATE_0));
 
     ASSERT_OK(vdp_presentation_queue_display(pq, out_surface, 0, 0, 0));
+
     ASSERT_OK(vdp_output_surface_destroy(out_surface));
     ASSERT_OK(vdp_output_surface_destroy(out_surface_2));
     ASSERT_OK(vdp_presentation_queue_destroy(pq));
     ASSERT_OK(vdp_presentation_queue_target_destroy(pq_target));
     ASSERT_OK(vdp_bitmap_surface_destroy(bmp_surface));
     ASSERT_OK(vdp_device_destroy(device));
+    return NULL;
+}
 
-    ASSERT_OK(vdpau_init_functions(&device, &window, 1));
-    ASSERT_OK(vdp_presentation_queue_target_create_x11(device, window, &pq_target));
-    ASSERT_OK(vdp_presentation_queue_create(device, pq_target, &pq));
-    ASSERT_OK(vdp_device_destroy(device));
+int main(void)
+{
+    pthread_t pt[THREAD_COUNT];
+
+    ASSERT_OK(vdpau_init_functions(&device, &window, 0));
+
+    for (int k = 0; k < THREAD_COUNT; k ++)
+        pthread_create(&pt[k], NULL, thread_1_func, NULL);
+
+    for (int k = 0; k < THREAD_COUNT; k ++)
+        pthread_join(pt[k], NULL);
 
     return 0;
 }
