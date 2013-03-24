@@ -153,7 +153,6 @@ softVdpGetErrorString(VdpStatus status)
     return reverse_status(status);
 }
 
-static
 VdpStatus
 softVdpGetApiVersion(uint32_t *api_version)
 {
@@ -162,7 +161,6 @@ softVdpGetApiVersion(uint32_t *api_version)
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, VdpBool *is_supported,
                                 uint32_t *max_level, uint32_t *max_macroblocks,
@@ -173,7 +171,6 @@ softVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, Vdp
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width, uint32_t height,
                      uint32_t max_references, VdpDecoder *decoder)
@@ -243,7 +240,6 @@ error:
     return retval;
 }
 
-static
 VdpStatus
 softVdpDecoderDestroy(VdpDecoder decoder)
 {
@@ -263,7 +259,6 @@ softVdpDecoderDestroy(VdpDecoder decoder)
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpDecoderGetParameters(VdpDecoder decoder, VdpDecoderProfile *profile,
                             uint32_t *width, uint32_t *height)
@@ -408,7 +403,6 @@ h264_translate_iq_matrix(VAIQMatrixBufferH264 *iq_matrix, const VdpPictureInfoH2
             iq_matrix->ScalingList8x8[j][k] = vdppi->scaling_lists_8x8[j][k];
 }
 
-static
 VdpStatus
 softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                      VdpPictureInfo const *picture_info, uint32_t bitstream_buffer_count,
@@ -551,7 +545,6 @@ error_no_surfaces_left:
     return VDP_STATUS_ERROR;
 }
 
-static
 VdpStatus
 softVdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba_format,
                                       VdpBool *is_supported, uint32_t *max_width,
@@ -562,7 +555,6 @@ softVdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpOutputSurfaceQueryGetPutBitsNativeCapabilities(VdpDevice device,
                                                       VdpRGBAFormat surface_rgba_format,
@@ -573,7 +565,6 @@ softVdpOutputSurfaceQueryGetPutBitsNativeCapabilities(VdpDevice device,
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpOutputSurfaceQueryPutBitsIndexedCapabilities(VdpDevice device,
                                                     VdpRGBAFormat surface_rgba_format,
@@ -586,7 +577,6 @@ softVdpOutputSurfaceQueryPutBitsIndexedCapabilities(VdpDevice device,
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpOutputSurfaceQueryPutBitsYCbCrCapabilities(VdpDevice device,
                                                   VdpRGBAFormat surface_rgba_format,
@@ -598,7 +588,6 @@ softVdpOutputSurfaceQueryPutBitsYCbCrCapabilities(VdpDevice device,
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
                            uint32_t height, VdpOutputSurface *surface)
@@ -671,7 +660,6 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpOutputSurfaceDestroy(VdpOutputSurface surface)
 {
@@ -690,7 +678,6 @@ softVdpOutputSurfaceDestroy(VdpOutputSurface surface)
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpOutputSurfaceGetParameters(VdpOutputSurface surface, VdpRGBAFormat *rgba_format,
                                   uint32_t *width, uint32_t *height)
@@ -699,7 +686,6 @@ softVdpOutputSurfaceGetParameters(VdpOutputSurface surface, VdpRGBAFormat *rgba_
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *source_rect,
                                   void *const *destination_data,
@@ -731,7 +717,6 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *source_data,
                                   uint32_t const *source_pitches, VdpRect const *destination_rect)
@@ -761,7 +746,6 @@ softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *s
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat source_indexed_format,
                                    void const *const *source_data, uint32_t const *source_pitch,
@@ -821,7 +805,6 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
     }
 }
 
-static
 VdpStatus
 softVdpOutputSurfacePutBitsYCbCr(VdpOutputSurface surface, VdpYCbCrFormat source_ycbcr_format,
                                  void const *const *source_data, uint32_t const *source_pitches,
@@ -832,7 +815,6 @@ softVdpOutputSurfacePutBitsYCbCr(VdpOutputSurface surface, VdpYCbCrFormat source
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpVideoMixerQueryFeatureSupport(VdpDevice device, VdpVideoMixerFeature feature,
                                      VdpBool *is_supported)
@@ -841,7 +823,6 @@ softVdpVideoMixerQueryFeatureSupport(VdpDevice device, VdpVideoMixerFeature feat
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpVideoMixerQueryParameterSupport(VdpDevice device, VdpVideoMixerParameter parameter,
                                        VdpBool *is_supported)
@@ -850,7 +831,6 @@ softVdpVideoMixerQueryParameterSupport(VdpDevice device, VdpVideoMixerParameter 
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpVideoMixerQueryAttributeSupport(VdpDevice device, VdpVideoMixerAttribute attribute,
                                        VdpBool *is_supported)
@@ -859,7 +839,6 @@ softVdpVideoMixerQueryAttributeSupport(VdpDevice device, VdpVideoMixerAttribute 
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpVideoMixerQueryParameterValueRange(VdpDevice device, VdpVideoMixerParameter parameter,
                                           void *min_value, void *max_value)
@@ -868,7 +847,6 @@ softVdpVideoMixerQueryParameterValueRange(VdpDevice device, VdpVideoMixerParamet
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpVideoMixerQueryAttributeValueRange(VdpDevice device, VdpVideoMixerAttribute attribute,
                                           void *min_value, void *max_value)
@@ -877,7 +855,6 @@ softVdpVideoMixerQueryAttributeValueRange(VdpDevice device, VdpVideoMixerAttribu
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
                         VdpVideoMixerFeature const *features, uint32_t parameter_count,
@@ -903,7 +880,6 @@ softVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpVideoMixerSetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
                                    VdpVideoMixerFeature const *features,
@@ -913,7 +889,6 @@ softVdpVideoMixerSetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpVideoMixerSetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_count,
                                     VdpVideoMixerAttribute const *attributes,
@@ -924,7 +899,6 @@ softVdpVideoMixerSetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_coun
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpVideoMixerGetFeatureSupport(VdpVideoMixer mixer, uint32_t feature_count,
                                    VdpVideoMixerFeature const *features, VdpBool *feature_supports)
@@ -934,7 +908,6 @@ softVdpVideoMixerGetFeatureSupport(VdpVideoMixer mixer, uint32_t feature_count,
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpVideoMixerGetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
                                    VdpVideoMixerFeature const *features, VdpBool *feature_enables)
@@ -943,7 +916,6 @@ softVdpVideoMixerGetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpVideoMixerGetParameterValues(VdpVideoMixer mixer, uint32_t parameter_count,
                                     VdpVideoMixerParameter const *parameters,
@@ -954,7 +926,6 @@ softVdpVideoMixerGetParameterValues(VdpVideoMixer mixer, uint32_t parameter_coun
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpVideoMixerGetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_count,
                                     VdpVideoMixerAttribute const *attributes,
@@ -965,7 +936,6 @@ softVdpVideoMixerGetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_coun
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpVideoMixerDestroy(VdpVideoMixer mixer)
 {
@@ -981,7 +951,6 @@ softVdpVideoMixerDestroy(VdpVideoMixer mixer)
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface,
                         VdpRect const *background_source_rect,
@@ -1116,7 +1085,6 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_target)
 {
@@ -1131,7 +1099,6 @@ softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_qu
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpPresentationQueueCreate(VdpDevice device,
                                VdpPresentationQueueTarget presentation_queue_target,
@@ -1161,7 +1128,6 @@ softVdpPresentationQueueCreate(VdpDevice device,
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 {
@@ -1176,7 +1142,6 @@ softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_queue,
                                            VdpColor *const background_color)
@@ -1185,7 +1150,6 @@ softVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_que
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpPresentationQueueGetBackgroundColor(VdpPresentationQueue presentation_queue,
                                            VdpColor *background_color)
@@ -1194,7 +1158,6 @@ softVdpPresentationQueueGetBackgroundColor(VdpPresentationQueue presentation_que
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue,
                                 VdpTime *current_time)
@@ -1207,7 +1170,6 @@ softVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue,
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSurface surface,
                                 uint32_t clip_width, uint32_t clip_height,
@@ -1256,7 +1218,6 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_queue,
                                               VdpOutputSurface surface,
@@ -1278,7 +1239,6 @@ softVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_queue,
                                            VdpOutputSurface surface,
@@ -1292,7 +1252,6 @@ softVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_que
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpVideoSurfaceQueryCapabilities(VdpDevice device, VdpChromaType surface_chroma_type,
                                      VdpBool *is_supported, uint32_t *max_width,
@@ -1308,7 +1267,6 @@ softVdpVideoSurfaceQueryCapabilities(VdpDevice device, VdpChromaType surface_chr
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(VdpDevice device,
                                                     VdpChromaType surface_chroma_type,
@@ -1322,7 +1280,6 @@ softVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(VdpDevice device,
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t width,
                           uint32_t height, VdpVideoSurface *surface)
@@ -1366,7 +1323,6 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpVideoSurfaceDestroy(VdpVideoSurface surface)
 {
@@ -1389,7 +1345,6 @@ softVdpVideoSurfaceDestroy(VdpVideoSurface surface)
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpVideoSurfaceGetParameters(VdpVideoSurface surface, VdpChromaType *chroma_type,
                                  uint32_t *width, uint32_t *height)
@@ -1398,7 +1353,6 @@ softVdpVideoSurfaceGetParameters(VdpVideoSurface surface, VdpChromaType *chroma_
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destination_ycbcr_format,
                                 void *const *destination_data, uint32_t const *destination_pitches)
@@ -1459,7 +1413,6 @@ softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destinat
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_ycbcr_format,
                                 void const *const *source_data, uint32_t const *source_pitches)
@@ -1501,7 +1454,6 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba_format,
                                       VdpBool *is_supported, uint32_t *max_width,
@@ -1520,7 +1472,6 @@ softVdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
                            uint32_t height, VdpBool frequently_accessed, VdpBitmapSurface *surface)
@@ -1600,7 +1551,6 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
 {
@@ -1619,7 +1569,6 @@ softVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpBitmapSurfaceGetParameters(VdpBitmapSurface surface, VdpRGBAFormat *rgba_format,
                                   uint32_t *width, uint32_t *height, VdpBool *frequently_accessed)
@@ -1629,7 +1578,6 @@ softVdpBitmapSurfaceGetParameters(VdpBitmapSurface surface, VdpRGBAFormat *rgba_
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
-static
 VdpStatus
 softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *source_data,
                                   uint32_t const *source_pitches, VdpRect const *destination_rect)
@@ -1663,7 +1611,6 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpDeviceDestroy(VdpDevice device)
 {
@@ -1689,7 +1636,6 @@ softVdpDeviceDestroy(VdpDevice device)
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpGetInformationString(char const **information_string)
 {
@@ -1698,7 +1644,6 @@ softVdpGetInformationString(char const **information_string)
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpGenerateCSCMatrix(VdpProcamp *procamp, VdpColorStandard standard, VdpCSCMatrix *csc_matrix)
 {
@@ -1830,7 +1775,6 @@ vdpBlendStateToGLBlendState(VdpOutputSurfaceRenderBlendState const *blend_state)
     return bs;
 }
 
-static
 VdpStatus
 softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
                                         VdpRect const *destination_rect,
@@ -1917,7 +1861,6 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
                                         VdpRect const *destination_rect,
@@ -1997,7 +1940,6 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpPreemptionCallbackRegister(VdpDevice device, VdpPreemptionCallback callback, void *context)
 {
@@ -2005,7 +1947,6 @@ softVdpPreemptionCallbackRegister(VdpDevice device, VdpPreemptionCallback callba
     return VDP_STATUS_OK;
 }
 
-static
 VdpStatus
 softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
                                         VdpPresentationQueueTarget *target)
@@ -2031,7 +1972,6 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
 }
 
 // =========================
-static
 VdpStatus
 softVdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_pointer)
 {
