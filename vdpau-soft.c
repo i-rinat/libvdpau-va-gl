@@ -19,6 +19,7 @@
 #include "reverse-constant.h"
 #include "handle-storage.h"
 #include "vdpau-trace.h"
+#include "vdpau-locking.h"
 #include "globals.h"
 
 #define MAX_RENDER_TARGETS          21
@@ -120,19 +121,6 @@ extern struct global_data global;
 
 // ====================
 
-static
-void
-acquire_lock()
-{
-    pthread_mutex_lock(&global.mutex);
-}
-
-static
-void
-release_lock()
-{
-    pthread_mutex_unlock(&global.mutex);
-}
 
 static
 uint32_t
@@ -1985,185 +1973,185 @@ softVdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_p
         *function_pointer = &softVdpGetProcAddress;
         break;
     case VDP_FUNC_ID_GET_API_VERSION:
-        *function_pointer = &softVdpGetApiVersion;
+        *function_pointer = &lockedVdpGetApiVersion;
         break;
     case VDP_FUNC_ID_GET_INFORMATION_STRING:
-        *function_pointer = &softVdpGetInformationString;
+        *function_pointer = &lockedVdpGetInformationString;
         break;
     case VDP_FUNC_ID_DEVICE_DESTROY:
-        *function_pointer = &softVdpDeviceDestroy;
+        *function_pointer = &lockedVdpDeviceDestroy;
         break;
     case VDP_FUNC_ID_GENERATE_CSC_MATRIX:
-        *function_pointer = &softVdpGenerateCSCMatrix;
+        *function_pointer = &lockedVdpGenerateCSCMatrix;
         break;
     case VDP_FUNC_ID_VIDEO_SURFACE_QUERY_CAPABILITIES:
-        *function_pointer = &softVdpVideoSurfaceQueryCapabilities;
+        *function_pointer = &lockedVdpVideoSurfaceQueryCapabilities;
         break;
     case VDP_FUNC_ID_VIDEO_SURFACE_QUERY_GET_PUT_BITS_Y_CB_CR_CAPABILITIES:
-        *function_pointer = &softVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities;
+        *function_pointer = &lockedVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities;
         break;
     case VDP_FUNC_ID_VIDEO_SURFACE_CREATE:
-        *function_pointer = &softVdpVideoSurfaceCreate;
+        *function_pointer = &lockedVdpVideoSurfaceCreate;
         break;
     case VDP_FUNC_ID_VIDEO_SURFACE_DESTROY:
-        *function_pointer = &softVdpVideoSurfaceDestroy;
+        *function_pointer = &lockedVdpVideoSurfaceDestroy;
         break;
     case VDP_FUNC_ID_VIDEO_SURFACE_GET_PARAMETERS:
-        *function_pointer = &softVdpVideoSurfaceGetParameters;
+        *function_pointer = &lockedVdpVideoSurfaceGetParameters;
         break;
     case VDP_FUNC_ID_VIDEO_SURFACE_GET_BITS_Y_CB_CR:
-        *function_pointer = &softVdpVideoSurfaceGetBitsYCbCr;
+        *function_pointer = &lockedVdpVideoSurfaceGetBitsYCbCr;
         break;
     case VDP_FUNC_ID_VIDEO_SURFACE_PUT_BITS_Y_CB_CR:
-        *function_pointer = &softVdpVideoSurfacePutBitsYCbCr;
+        *function_pointer = &lockedVdpVideoSurfacePutBitsYCbCr;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_CAPABILITIES:
-        *function_pointer = &softVdpOutputSurfaceQueryCapabilities;
+        *function_pointer = &lockedVdpOutputSurfaceQueryCapabilities;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_GET_PUT_BITS_NATIVE_CAPABILITIES:
-        *function_pointer = &softVdpOutputSurfaceQueryGetPutBitsNativeCapabilities;
+        *function_pointer = &lockedVdpOutputSurfaceQueryGetPutBitsNativeCapabilities;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_PUT_BITS_INDEXED_CAPABILITIES:
-        *function_pointer = &softVdpOutputSurfaceQueryPutBitsIndexedCapabilities;
+        *function_pointer = &lockedVdpOutputSurfaceQueryPutBitsIndexedCapabilities;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_PUT_BITS_Y_CB_CR_CAPABILITIES:
-        *function_pointer = &softVdpOutputSurfaceQueryPutBitsYCbCrCapabilities;
+        *function_pointer = &lockedVdpOutputSurfaceQueryPutBitsYCbCrCapabilities;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_CREATE:
-        *function_pointer = &softVdpOutputSurfaceCreate;
+        *function_pointer = &lockedVdpOutputSurfaceCreate;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_DESTROY:
-        *function_pointer = &softVdpOutputSurfaceDestroy;
+        *function_pointer = &lockedVdpOutputSurfaceDestroy;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_GET_PARAMETERS:
-        *function_pointer = &softVdpOutputSurfaceGetParameters;
+        *function_pointer = &lockedVdpOutputSurfaceGetParameters;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_GET_BITS_NATIVE:
-        *function_pointer = &softVdpOutputSurfaceGetBitsNative;
+        *function_pointer = &lockedVdpOutputSurfaceGetBitsNative;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_NATIVE:
-        *function_pointer = &softVdpOutputSurfacePutBitsNative;
+        *function_pointer = &lockedVdpOutputSurfacePutBitsNative;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_INDEXED:
-        *function_pointer = &softVdpOutputSurfacePutBitsIndexed;
+        *function_pointer = &lockedVdpOutputSurfacePutBitsIndexed;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_Y_CB_CR:
-        *function_pointer = &softVdpOutputSurfacePutBitsYCbCr;
+        *function_pointer = &lockedVdpOutputSurfacePutBitsYCbCr;
         break;
     case VDP_FUNC_ID_BITMAP_SURFACE_QUERY_CAPABILITIES:
-        *function_pointer = &softVdpBitmapSurfaceQueryCapabilities;
+        *function_pointer = &lockedVdpBitmapSurfaceQueryCapabilities;
         break;
     case VDP_FUNC_ID_BITMAP_SURFACE_CREATE:
-        *function_pointer = &softVdpBitmapSurfaceCreate;
+        *function_pointer = &lockedVdpBitmapSurfaceCreate;
         break;
     case VDP_FUNC_ID_BITMAP_SURFACE_DESTROY:
-        *function_pointer = &softVdpBitmapSurfaceDestroy;
+        *function_pointer = &lockedVdpBitmapSurfaceDestroy;
         break;
     case VDP_FUNC_ID_BITMAP_SURFACE_GET_PARAMETERS:
-        *function_pointer = &softVdpBitmapSurfaceGetParameters;
+        *function_pointer = &lockedVdpBitmapSurfaceGetParameters;
         break;
     case VDP_FUNC_ID_BITMAP_SURFACE_PUT_BITS_NATIVE:
-        *function_pointer = &softVdpBitmapSurfacePutBitsNative;
+        *function_pointer = &lockedVdpBitmapSurfacePutBitsNative;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_RENDER_OUTPUT_SURFACE:
-        *function_pointer = &softVdpOutputSurfaceRenderOutputSurface;
+        *function_pointer = &lockedVdpOutputSurfaceRenderOutputSurface;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_RENDER_BITMAP_SURFACE:
-        *function_pointer = &softVdpOutputSurfaceRenderBitmapSurface;
+        *function_pointer = &lockedVdpOutputSurfaceRenderBitmapSurface;
         break;
     case VDP_FUNC_ID_OUTPUT_SURFACE_RENDER_VIDEO_SURFACE_LUMA:
-        // *function_pointer = &softVdpOutputSurfaceRenderVideoSurfaceLuma;
+        // *function_pointer = &lockedVdpOutputSurfaceRenderVideoSurfaceLuma;
         *function_pointer = NULL;
         break;
     case VDP_FUNC_ID_DECODER_QUERY_CAPABILITIES:
-        *function_pointer = &softVdpDecoderQueryCapabilities;
+        *function_pointer = &lockedVdpDecoderQueryCapabilities;
         break;
     case VDP_FUNC_ID_DECODER_CREATE:
-        *function_pointer = &softVdpDecoderCreate;
+        *function_pointer = &lockedVdpDecoderCreate;
         break;
     case VDP_FUNC_ID_DECODER_DESTROY:
-        *function_pointer = &softVdpDecoderDestroy;
+        *function_pointer = &lockedVdpDecoderDestroy;
         break;
     case VDP_FUNC_ID_DECODER_GET_PARAMETERS:
-        *function_pointer = &softVdpDecoderGetParameters;
+        *function_pointer = &lockedVdpDecoderGetParameters;
         break;
     case VDP_FUNC_ID_DECODER_RENDER:
-        *function_pointer = &softVdpDecoderRender;
+        *function_pointer = &lockedVdpDecoderRender;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_QUERY_FEATURE_SUPPORT:
-        *function_pointer = &softVdpVideoMixerQueryFeatureSupport;
+        *function_pointer = &lockedVdpVideoMixerQueryFeatureSupport;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_QUERY_PARAMETER_SUPPORT:
-        *function_pointer = &softVdpVideoMixerQueryParameterSupport;
+        *function_pointer = &lockedVdpVideoMixerQueryParameterSupport;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_QUERY_ATTRIBUTE_SUPPORT:
-        *function_pointer = &softVdpVideoMixerQueryAttributeSupport;
+        *function_pointer = &lockedVdpVideoMixerQueryAttributeSupport;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_QUERY_PARAMETER_VALUE_RANGE:
-        *function_pointer = &softVdpVideoMixerQueryParameterValueRange;
+        *function_pointer = &lockedVdpVideoMixerQueryParameterValueRange;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_QUERY_ATTRIBUTE_VALUE_RANGE:
-        *function_pointer = &softVdpVideoMixerQueryAttributeValueRange;
+        *function_pointer = &lockedVdpVideoMixerQueryAttributeValueRange;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_CREATE:
-        *function_pointer = &softVdpVideoMixerCreate;
+        *function_pointer = &lockedVdpVideoMixerCreate;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_SET_FEATURE_ENABLES:
-        *function_pointer = &softVdpVideoMixerSetFeatureEnables;
+        *function_pointer = &lockedVdpVideoMixerSetFeatureEnables;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_SET_ATTRIBUTE_VALUES:
-        *function_pointer = &softVdpVideoMixerSetAttributeValues;
+        *function_pointer = &lockedVdpVideoMixerSetAttributeValues;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_GET_FEATURE_SUPPORT:
-        *function_pointer = &softVdpVideoMixerGetFeatureSupport;
+        *function_pointer = &lockedVdpVideoMixerGetFeatureSupport;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_GET_FEATURE_ENABLES:
-        *function_pointer = &softVdpVideoMixerGetFeatureEnables;
+        *function_pointer = &lockedVdpVideoMixerGetFeatureEnables;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_GET_PARAMETER_VALUES:
-        *function_pointer = &softVdpVideoMixerGetParameterValues;
+        *function_pointer = &lockedVdpVideoMixerGetParameterValues;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_GET_ATTRIBUTE_VALUES:
-        *function_pointer = &softVdpVideoMixerGetAttributeValues;
+        *function_pointer = &lockedVdpVideoMixerGetAttributeValues;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_DESTROY:
-        *function_pointer = &softVdpVideoMixerDestroy;
+        *function_pointer = &lockedVdpVideoMixerDestroy;
         break;
     case VDP_FUNC_ID_VIDEO_MIXER_RENDER:
-        *function_pointer = &softVdpVideoMixerRender;
+        *function_pointer = &lockedVdpVideoMixerRender;
         break;
     case VDP_FUNC_ID_PRESENTATION_QUEUE_TARGET_DESTROY:
-        *function_pointer = &softVdpPresentationQueueTargetDestroy;
+        *function_pointer = &lockedVdpPresentationQueueTargetDestroy;
         break;
     case VDP_FUNC_ID_PRESENTATION_QUEUE_CREATE:
-        *function_pointer = &softVdpPresentationQueueCreate;
+        *function_pointer = &lockedVdpPresentationQueueCreate;
         break;
     case VDP_FUNC_ID_PRESENTATION_QUEUE_DESTROY:
-        *function_pointer = &softVdpPresentationQueueDestroy;
+        *function_pointer = &lockedVdpPresentationQueueDestroy;
         break;
     case VDP_FUNC_ID_PRESENTATION_QUEUE_SET_BACKGROUND_COLOR:
-        *function_pointer = &softVdpPresentationQueueSetBackgroundColor;
+        *function_pointer = &lockedVdpPresentationQueueSetBackgroundColor;
         break;
     case VDP_FUNC_ID_PRESENTATION_QUEUE_GET_BACKGROUND_COLOR:
-        *function_pointer = &softVdpPresentationQueueGetBackgroundColor;
+        *function_pointer = &lockedVdpPresentationQueueGetBackgroundColor;
         break;
     case VDP_FUNC_ID_PRESENTATION_QUEUE_GET_TIME:
-        *function_pointer = &softVdpPresentationQueueGetTime;
+        *function_pointer = &lockedVdpPresentationQueueGetTime;
         break;
     case VDP_FUNC_ID_PRESENTATION_QUEUE_DISPLAY:
-        *function_pointer = &softVdpPresentationQueueDisplay;
+        *function_pointer = &lockedVdpPresentationQueueDisplay;
         break;
     case VDP_FUNC_ID_PRESENTATION_QUEUE_BLOCK_UNTIL_SURFACE_IDLE:
-        *function_pointer = &softVdpPresentationQueueBlockUntilSurfaceIdle;
+        *function_pointer = &lockedVdpPresentationQueueBlockUntilSurfaceIdle;
         break;
     case VDP_FUNC_ID_PRESENTATION_QUEUE_QUERY_SURFACE_STATUS:
-        *function_pointer = &softVdpPresentationQueueQuerySurfaceStatus;
+        *function_pointer = &lockedVdpPresentationQueueQuerySurfaceStatus;
         break;
     case VDP_FUNC_ID_PREEMPTION_CALLBACK_REGISTER:
-        *function_pointer = &softVdpPreemptionCallbackRegister;
+        *function_pointer = &lockedVdpPreemptionCallbackRegister;
         break;
     case VDP_FUNC_ID_BASE_WINSYS:
-        *function_pointer = &softVdpPresentationQueueTargetCreateX11;
+        *function_pointer = &lockedVdpPresentationQueueTargetCreateX11;
         break;
     default:
         *function_pointer = NULL;
