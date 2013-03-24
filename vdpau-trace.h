@@ -19,6 +19,9 @@ void
 traceTrace(const char *buf, ...);
 
 void
+traceSetHook(void (*hook)(void *param, int origin), void *param);
+
+void
 traceVdpGetErrorString(const char *impl_state, VdpStatus status);
 
 void
