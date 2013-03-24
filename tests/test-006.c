@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#define THREAD_COUNT    30
+#define THREAD_COUNT    50
 
 
 VdpDevice device;
@@ -60,7 +60,7 @@ void *thread_1_func(void *p)
     ASSERT_OK(vdp_presentation_queue_destroy(pq));
     ASSERT_OK(vdp_presentation_queue_target_destroy(pq_target));
     ASSERT_OK(vdp_bitmap_surface_destroy(bmp_surface));
-    ASSERT_OK(vdp_device_destroy(device));
+
     return NULL;
 }
 
@@ -75,6 +75,8 @@ int main(void)
 
     for (int k = 0; k < THREAD_COUNT; k ++)
         pthread_join(pt[k], NULL);
+
+    ASSERT_OK(vdp_device_destroy(device));
 
     return 0;
 }
