@@ -705,3 +705,22 @@ lockedVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
     release_lock();
     return ret;
 }
+
+// wrappers for glX functions
+
+Bool
+locked_glXMakeCurrent(Display *dpy, GLXDrawable drawable, GLXContext ctx)
+{
+    XLockDisplay(dpy);
+    Bool ret = glXMakeCurrent(dpy, drawable, ctx);
+    XUnlockDisplay(dpy);
+    return ret;
+}
+
+void
+locked_glXSwapBuffers(Display *dpy, GLXDrawable drawable)
+{
+    XLockDisplay(dpy);
+    glXSwapBuffers(dpy, drawable);
+    XUnlockDisplay(dpy);
+}

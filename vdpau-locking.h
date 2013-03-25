@@ -3,6 +3,8 @@
 
 #include <vdpau/vdpau.h>
 #include <vdpau/vdpau_x11.h>
+#include <GL/gl.h>
+#include <GL/glx.h>
 #include "globals.h"
 
 extern struct global_data global;
@@ -71,5 +73,8 @@ VdpOutputSurfaceRenderBitmapSurface lockedVdpOutputSurfaceRenderBitmapSurface;
 VdpPreemptionCallbackRegister lockedVdpPreemptionCallbackRegister;
 VdpPresentationQueueTargetCreateX11 lockedVdpPresentationQueueTargetCreateX11;
 VdpGetProcAddress lockedVdpGetProcAddress;
+
+Bool locked_glXMakeCurrent(Display *dpy, GLXDrawable drawable, GLXContext ctx);
+void locked_glXSwapBuffers(Display *dpy, GLXDrawable drawable);
 
 #endif /* __VDPAU_LOCKING_H */
