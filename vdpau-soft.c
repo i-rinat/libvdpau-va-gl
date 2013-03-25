@@ -633,7 +633,7 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     data->device = deviceData;
     data->rgba_format = rgba_format;
 
-    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glGenTextures(1, &data->tex_id);
     glBindTexture(GL_TEXTURE_2D, data->tex_id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -658,7 +658,7 @@ softVdpOutputSurfaceDestroy(VdpOutputSurface surface)
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = data->device;
 
-    glXMakeCurrent(data->device->display, deviceData->root, deviceData->glc);
+    locked_glXMakeCurrent(data->device->display, deviceData->root, deviceData->glc);
     glDeleteTextures(1, &data->tex_id);
 
     free(data);
@@ -690,7 +690,7 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
     if (source_rect) srcRect = *source_rect;
     const unsigned int pixel_bytes = (VDP_RGBA_FORMAT_A8 == srcSurfData->rgba_format) ? 1 : 4;
 
-    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                             srcSurfData->tex_id, 0);
@@ -720,7 +720,7 @@ softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *s
     if (destination_rect) dstRect = *destination_rect;
     const unsigned int pixel_bytes = (VDP_RGBA_FORMAT_A8 == dstSurfData->rgba_format) ? 1 : 4;
 
-    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
 
     glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0]/pixel_bytes);
@@ -755,7 +755,7 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
         return VDP_STATUS_INVALID_COLOR_TABLE_FORMAT;
     const uint32_t *color_table32 = color_table;
 
-    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
 
     switch (source_indexed_format) {
     case VDP_INDEXED_FORMAT_I8A8:
@@ -975,7 +975,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     if (destination_video_rect)
         dstVideoRect = *destination_video_rect;
 
-    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
 
     if (srcSurfData->va_available) {
         VAStatus status;
@@ -1174,7 +1174,7 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     if (pqueueData->device != surfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     VdpDeviceData *deviceData = surfData->device;
 
-    glXMakeCurrent(deviceData->display, pqueueData->target->drawable, deviceData->glc);
+    locked_glXMakeCurrent(deviceData->display, pqueueData->target->drawable, deviceData->glc);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     const uint32_t target_width  = (clip_width > 0)  ? clip_width  : surfData->width;
@@ -1201,7 +1201,7 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
         glVertex2i(target_width - 1, target_height - 1);
         glTexCoord2i(0, target_height - 1); glVertex2i(0, target_height - 1);
     glEnd();
-    glXSwapBuffers(deviceData->display, pqueueData->target->drawable);
+    locked_glXSwapBuffers(deviceData->display, pqueueData->target->drawable);
 
     return VDP_STATUS_OK;
 }
@@ -1512,7 +1512,7 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     data->width = width;
     data->height = height;
 
-    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glGenTextures(1, &data->tex_id);
     glBindTexture(GL_TEXTURE_2D, data->tex_id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -1549,7 +1549,7 @@ softVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = data->device;
 
-    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glDeleteTextures(1, &data->tex_id);
 
     free(data);
@@ -1583,7 +1583,7 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
     VdpRect d_rect = {0, 0, dstSurfData->width, dstSurfData->height};
     if (destination_rect) d_rect = *destination_rect;
 
-    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
 
     glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0]/pixel_bytes);
@@ -1608,6 +1608,7 @@ softVdpDeviceDestroy(VdpDevice device)
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
 
+    XLockDisplay(data->display);
     // TODO: Is it right to reset context? App using its own will not be happy with reset.
     glXMakeCurrent(data->display, data->root, data->glc);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1621,6 +1622,7 @@ softVdpDeviceDestroy(VdpDevice device)
 
     free(data);
     handlestorage_expunge(device);
+    XUnlockDisplay(data->display);
     return VDP_STATUS_OK;
 }
 
@@ -1802,7 +1804,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     if (bs.invalid_func) return VDP_STATUS_INVALID_BLEND_FACTOR;
     if (bs.invalid_eq) return VDP_STATUS_INVALID_BLEND_EQUATION;
 
-    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
         dstSurfData->tex_id, 0);
@@ -1881,7 +1883,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     if (bs.invalid_func) return VDP_STATUS_INVALID_BLEND_FACTOR;
     if (bs.invalid_eq) return VDP_STATUS_INVALID_BLEND_EQUATION;
 
-    glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
         dstSurfData->tex_id, 0);
@@ -2171,9 +2173,12 @@ softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
 
     if (NULL == display)
         return VDP_STATUS_INVALID_POINTER;
+
     VdpDeviceData *data = (VdpDeviceData *)calloc(1, sizeof(VdpDeviceData));
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
+
+    XLockDisplay(display);
 
     data->type = HANDLETYPE_DEVICE;
     data->display = display;
@@ -2186,6 +2191,7 @@ softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
     if (NULL == vi) {
         traceTrace("error: glXChooseVisual\n");
         free(data);
+        XUnlockDisplay(display);
         return VDP_STATUS_ERROR;
     }
 
@@ -2221,5 +2227,6 @@ softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
     *device = handlestorage_add(data);
     *get_proc_address = &softVdpGetProcAddress;
 
+    XUnlockDisplay(display);
     return VDP_STATUS_OK;
 }
