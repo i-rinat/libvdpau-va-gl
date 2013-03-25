@@ -29,9 +29,13 @@ add_library (vdpau_va_gl SHARED
 	globals.c
 )
 
+add_library (xinitthreads SHARED xinitthreads.c)
+
 target_link_libraries (vdpau_va_gl
 	${SOMELIBS_LIBRARIES}
 )
+
+target_link_libraries (xinitthreads -lpthread -lX11)
 
 set_target_properties (vdpau_va_gl
 	PROPERTIES
