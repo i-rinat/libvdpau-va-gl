@@ -45,9 +45,9 @@ typedef struct {
 } VdpDeviceData;
 
 typedef struct {
-    HandleType type;
-    VdpDeviceData *device;
-    Drawable drawable;
+    HandleType      type;
+    VdpDeviceData  *device;
+    Drawable        drawable;
 } VdpPresentationQueueTargetData;
 
 typedef struct {
@@ -59,8 +59,8 @@ typedef struct {
 } VdpPresentationQueueData;
 
 typedef struct {
-    HandleType type;
-    VdpDeviceData *device;
+    HandleType      type;
+    VdpDeviceData  *device;
 } VdpVideoMixerData;
 
 typedef struct {
