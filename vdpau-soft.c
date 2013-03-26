@@ -1847,7 +1847,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     }
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, dstWidth-1, 0, dstHeight-1, -1.0f, 1.0f);
+    glOrtho(0, dstWidth, 0, dstHeight, -1.0f, 1.0f);
     glViewport(0, 0, dstWidth, dstHeight);
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
@@ -1872,10 +1872,10 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
         glColor4f(colors[0].red, colors[0].green, colors[0].blue, colors[0].alpha);
 
     glBegin(GL_QUADS);
-    glTexCoord2i(s_rect.x0, s_rect.y0); glVertex2f(d_rect.x0,   d_rect.y0);
-    glTexCoord2i(s_rect.x1, s_rect.y0); glVertex2f(d_rect.x1-1, d_rect.y0);
-    glTexCoord2i(s_rect.x1, s_rect.y1); glVertex2f(d_rect.x1-1, d_rect.y1-1);
-    glTexCoord2i(s_rect.x0, s_rect.y1); glVertex2f(d_rect.x0,   d_rect.y1-1);
+    glTexCoord2i(s_rect.x0, s_rect.y0); glVertex2f(d_rect.x0, d_rect.y0);
+    glTexCoord2i(s_rect.x1, s_rect.y0); glVertex2f(d_rect.x1, d_rect.y0);
+    glTexCoord2i(s_rect.x1, s_rect.y1); glVertex2f(d_rect.x1, d_rect.y1);
+    glTexCoord2i(s_rect.x0, s_rect.y1); glVertex2f(d_rect.x0, d_rect.y1);
     glEnd();
 
     glColor4f(1, 1, 1, 1);
