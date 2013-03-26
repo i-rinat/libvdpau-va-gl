@@ -33,6 +33,7 @@ implemetation_description_string = "OpenGL/VAAPI/libswscale backend for VDPAU";
 
 typedef struct {
     HandleType  type;
+    int         refcount;
     Display    *display;
     int         screen;
     GLXContext  glc;
@@ -46,6 +47,7 @@ typedef struct {
 
 typedef struct {
     HandleType      type;
+    int             refcount;
     VdpDeviceData  *device;
     Drawable        drawable;
 } VdpPresentationQueueTargetData;
@@ -220,6 +222,7 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
         data->render_targets, data->num_render_targets, &data->context_id);
     if (VA_STATUS_SUCCESS != status) goto error;
 
+    deviceData->refcount ++;
     *decoder = handlestorage_add(data);
 
     return VDP_STATUS_OK;
@@ -232,18 +235,20 @@ VdpStatus
 softVdpDecoderDestroy(VdpDecoder decoder)
 {
     traceVdpDecoderDestroy("{full}", decoder);
+    VdpDecoderData *decoderData = handlestorage_get(decoder, HANDLETYPE_DECODER);
+    if (NULL == decoderData) return VDP_STATUS_INVALID_HANDLE;
+    VdpDeviceData *deviceData = decoderData->device;
 
-    VdpDecoderData *data = handlestorage_get(decoder, HANDLETYPE_DECODER);
-
-    if (data->device->va_available) {
-        vaDestroySurfaces(data->device->va_dpy, data->render_targets, data->num_render_targets);
-        vaDestroyContext(data->device->va_dpy, data->context_id);
-        vaDestroyConfig(data->device->va_dpy, data->config_id);
+    if (deviceData->va_available) {
+        VADisplay va_dpy = deviceData->va_dpy;
+        vaDestroySurfaces(va_dpy, decoderData->render_targets, decoderData->num_render_targets);
+        vaDestroyContext(va_dpy, decoderData->context_id);
+        vaDestroyConfig(va_dpy, decoderData->config_id);
     }
 
     handlestorage_expunge(decoder);
-    free(data);
-
+    deviceData->refcount --;
+    free(decoderData);
     return VDP_STATUS_OK;
 }
 
@@ -644,6 +649,7 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     glTexImage2D(GL_TEXTURE_2D, 0, data->gl_internal_format, width, height, 0, data->gl_format,
                  data->gl_type, NULL);
 
+    deviceData->refcount ++;
     *surface = handlestorage_add(data);
     return VDP_STATUS_OK;
 }
@@ -662,6 +668,7 @@ softVdpOutputSurfaceDestroy(VdpOutputSurface surface)
     glDeleteTextures(1, &data->tex_id);
 
     free(data);
+    deviceData->refcount --;
     handlestorage_expunge(surface);
     return VDP_STATUS_OK;
 }
@@ -863,8 +870,8 @@ softVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
     data->type = HANDLETYPE_VIDEO_MIXER;
     data->device = deviceData;
 
+    deviceData->refcount ++;
     *mixer = handlestorage_add(data);
-
     return VDP_STATUS_OK;
 }
 
@@ -929,13 +936,14 @@ softVdpVideoMixerDestroy(VdpVideoMixer mixer)
 {
     traceVdpVideoMixerDestroy("{full}", mixer);
 
-    void *data = handlestorage_get(mixer, HANDLETYPE_VIDEO_MIXER);
-    if (NULL == data)
+    VdpVideoMixerData *videoMixerData = handlestorage_get(mixer, HANDLETYPE_VIDEO_MIXER);
+    if (NULL == videoMixerData)
         return VDP_STATUS_INVALID_HANDLE;
+    VdpDeviceData *deviceData = videoMixerData->device;
 
-    free(data);
+    free(videoMixerData);
+    deviceData->refcount --;
     handlestorage_expunge(mixer);
-
     return VDP_STATUS_OK;
 }
 
@@ -1078,11 +1086,20 @@ softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_qu
 {
     traceVdpPresentationQueueTargetDestroy("{full}", presentation_queue_target);
 
-    void *data = handlestorage_get(presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET);
-    if (NULL == data)
+    VdpPresentationQueueTargetData *pqTargetData =
+        handlestorage_get(presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET);
+    if (NULL == pqTargetData)
         return VDP_STATUS_INVALID_HANDLE;
+    VdpDeviceData *deviceData = pqTargetData->device;
 
-    free(data);
+    if (0 != pqTargetData->refcount) {
+        fprintf(stderr, "error in softVdpPresentationQueueTargetDestroy: non-zero reference"
+                        "count (%d)\n", pqTargetData->refcount);
+        return VDP_STATUS_ERROR;
+    }
+
+    free(pqTargetData);
+    deviceData->refcount --;
     handlestorage_expunge(presentation_queue_target);
     return VDP_STATUS_OK;
 }
@@ -1111,8 +1128,10 @@ softVdpPresentationQueueCreate(VdpDevice device,
     data->target = targetData;
     data->prev_width = 0;
     data->prev_height = 0;
-    *presentation_queue = handlestorage_add(data);
 
+    deviceData->refcount ++;
+    targetData->refcount ++;
+    *presentation_queue = handlestorage_add(data);
     return VDP_STATUS_OK;
 }
 
@@ -1126,6 +1145,8 @@ softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
     if (NULL == data) return VDP_STATUS_INVALID_HANDLE;
 
     free(data);
+    data->device->refcount --;
+    data->target->refcount --;
     handlestorage_expunge(presentation_queue);
     return VDP_STATUS_OK;
 }
@@ -1306,6 +1327,7 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
         return VDP_STATUS_RESOURCES;
     }
 
+    deviceData->refcount ++;
     *surface = handlestorage_add(data);
 
     return VDP_STATUS_OK;
@@ -1316,19 +1338,21 @@ softVdpVideoSurfaceDestroy(VdpVideoSurface surface)
 {
     traceVdpVideoSurfaceDestroy("{full}", surface);
 
-    VdpVideoSurfaceData *data = handlestorage_get(surface, HANDLETYPE_VIDEO_SURFACE);
-    if (NULL == data)
+    VdpVideoSurfaceData *videoSurfData = handlestorage_get(surface, HANDLETYPE_VIDEO_SURFACE);
+    if (NULL == videoSurfData)
         return VDP_STATUS_INVALID_HANDLE;
+    VdpDeviceData *deviceData = videoSurfData->device;
 
-    if (data->va_glx) {
-        glDeleteTextures(1, &data->tex_id);
-        vaDestroySurfaceGLX(data->device->va_dpy, data->va_glx);
+    if (videoSurfData->va_glx) {
+        glDeleteTextures(1, &videoSurfData->tex_id);
+        vaDestroySurfaceGLX(deviceData->va_dpy, videoSurfData->va_glx);
     }
 
-    free(data->y_plane);
-    free(data->v_plane);
-    free(data->u_plane);
-    free(data);
+    free(videoSurfData->y_plane);
+    free(videoSurfData->v_plane);
+    free(videoSurfData->u_plane);
+    free(videoSurfData);
+    deviceData->refcount --;
     handlestorage_expunge(surface);
     return VDP_STATUS_OK;
 }
@@ -1535,6 +1559,7 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
         glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle_mask);
     }
 
+    deviceData->refcount ++;
     *surface = handlestorage_add(data);
     return VDP_STATUS_OK;
 }
@@ -1553,6 +1578,7 @@ softVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
     glDeleteTextures(1, &data->tex_id);
 
     free(data);
+    deviceData->refcount --;
     handlestorage_expunge(surface);
     return VDP_STATUS_OK;
 }
@@ -1607,6 +1633,12 @@ softVdpDeviceDestroy(VdpDevice device)
     VdpDeviceData *data = handlestorage_get(device, HANDLETYPE_DEVICE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
+
+    if (0 != data->refcount) {
+        fprintf(stderr, "error in softVdpDeviceDestroy: non-zero reference count (%d)\n",
+                data->refcount);
+        return VDP_STATUS_ERROR;
+    }
 
     XLockDisplay(data->display);
     // TODO: Is it right to reset context? App using its own will not be happy with reset.
@@ -1955,7 +1987,9 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
     data->type = HANDLETYPE_PRESENTATION_QUEUE_TARGET;
     data->device = deviceData;
     data->drawable = drawable;
+    data->refcount = 0;
 
+    deviceData->refcount ++;
     *target = handlestorage_add(data);
 
     return VDP_STATUS_OK;
@@ -2183,6 +2217,7 @@ softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
     data->type = HANDLETYPE_DEVICE;
     data->display = display;
     data->screen = screen;
+    data->refcount = 0;
 
     // initialize OpenGL context
     GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
