@@ -19,6 +19,9 @@ void
 traceInfo(const char *buf, ...);
 
 void
+traceError(const char *buf, ...);
+
+void
 traceSetHook(void (*hook)(void *param, int origin), void *param);
 
 void

@@ -54,6 +54,17 @@ traceInfo(const char *fmt, ...)
     va_end(args);
 }
 
+void
+traceError(const char *fmt, ...)
+{
+    if (!enabled) return;
+    va_list args;
+    fprintf(stderr, "%s", trace_header);
+    va_start(args, fmt);
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+}
+
 static
 const char *
 rect2string(VdpRect const *rect)

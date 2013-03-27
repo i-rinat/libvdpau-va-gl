@@ -199,7 +199,8 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
         data->num_render_targets = NUM_RENDER_TARGETS_H264;
         break;
     default:
-        fprintf(stderr, "not implemented decoder\n");
+        traceError("error (softVdpDecoderCreate): decoder %s not implemented\n",
+                   reverse_decoder_profile(profile));
         retval = VDP_STATUS_INVALID_DECODER_PROFILE;
         goto error;
     }
@@ -302,7 +303,7 @@ h264_translate_reference_frames(VdpVideoSurfaceData *dstSurfData, VdpDecoderData
             handlestorage_get(vdp_ref->surface, HANDLETYPE_VIDEO_SURFACE);
         VAPictureH264 *va_ref = &(pic_param->ReferenceFrames[k]);
         if (NULL == vdpSurfData) {
-            fprintf(stderr, "NULL == vdpSurfData");
+            traceError("error (h264_translate_reference_frames): NULL == vdpSurfData");
             return VDP_STATUS_ERROR;
         }
 
@@ -520,21 +521,22 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         dstSurfData->va_available = 1;
 
     } else {
-        fprintf(stderr, "error: no implementation for profile\n");
+        traceError("error (softVdpDecoderRender): no implementation for profile %s\n",
+                   reverse_decoder_profile(decoderData->profile));
         return VDP_STATUS_NO_IMPLEMENTATION;
     }
 
     return VDP_STATUS_OK;
 error:
-    fprintf(stderr, "error: something gone wrong in softVdpDecoderRender\n");
+    traceError("error (softVdpDecoderRender): something gone wrong\n");
     return VDP_STATUS_ERROR;
 error_no_nal_header:
-    fprintf(stderr, "softVdpDecoderRender: no NAL header\n");
+    traceError("error (softVdpDecoderRender): no NAL header\n");
     return VDP_STATUS_ERROR;
 error_resources:
     return VDP_STATUS_RESOURCES;
 error_no_surfaces_left:
-    fprintf(stderr, "no surfaces left in buffer\n");
+    traceError("error (softVdpDecoderRender): no surfaces left in buffer\n");
     return VDP_STATUS_ERROR;
 }
 
@@ -626,8 +628,8 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
         data->gl_type = GL_UNSIGNED_BYTE;
         break;
     default:
-        fprintf(stderr, "VdpOutputSurfaceCreate: %s not implemented\n",
-                reverse_rgba_format(rgba_format));
+        traceError("error (VdpOutputSurfaceCreate): %s is not implemented\n",
+                   reverse_rgba_format(rgba_format));
         free(data);
         return VDP_STATUS_INVALID_RGBA_FORMAT;
     }
@@ -794,8 +796,8 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
         } while (0);
         break;
     default:
-        fprintf(stderr, "VdpOutputSurfacePutBitsIndexed: unsupported indexed format %s\n",
-            reverse_indexed_format(source_indexed_format));
+        traceError("error (VdpOutputSurfacePutBitsIndexed): unsupported indexed format %s\n",
+                   reverse_indexed_format(source_indexed_format));
         return VDP_STATUS_INVALID_INDEXED_FORMAT;
     }
 }
@@ -1009,7 +1011,8 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
                                dstSurfData->tex_id, 0);
         GLenum gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
         if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
-            fprintf(stderr, "framebuffer not ready, %d, %s\n", gl_status, gluErrorString(gl_status));
+            traceError("error (softVdpVideoMixerRender): framebuffer not ready, %d, %s\n",
+                       gl_status, gluErrorString(gl_status));
             return VDP_STATUS_ERROR;
         }
         glMatrixMode(GL_PROJECTION);
@@ -1063,7 +1066,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
                             dst_planes, dst_strides);
         sws_freeContext(sws_ctx);
         if (res != (int)dstVideoHeight) {
-            fprintf(stderr, "scaling failed\n");
+            traceError("error (softVdpVideoMixerRender): libswscale scaling failed\n");
             return VDP_STATUS_ERROR;
         }
 
@@ -1093,8 +1096,8 @@ softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_qu
     VdpDeviceData *deviceData = pqTargetData->device;
 
     if (0 != pqTargetData->refcount) {
-        fprintf(stderr, "error in softVdpPresentationQueueTargetDestroy: non-zero reference"
-                        "count (%d)\n", pqTargetData->refcount);
+        traceError("warning (softVdpPresentationQueueTargetDestroy): non-zero reference"
+                   "count (%d)\n", pqTargetData->refcount);
         return VDP_STATUS_ERROR;
     }
 
@@ -1377,8 +1380,8 @@ softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destinat
     VADisplay va_dpy = deviceData->va_dpy;
 
     if (VDP_YCBCR_FORMAT_NV12 != destination_ycbcr_format) {
-        fprintf(stderr, "softVdpVideoSurfaceGetBitsYCbCr: not implemented YCbCr format: %s\n",
-                reverse_ycbcr_format(destination_ycbcr_format));
+        traceError("error (softVdpVideoSurfaceGetBitsYCbCr): not implemented YCbCr format: %s\n",
+                   reverse_ycbcr_format(destination_ycbcr_format));
         return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
     }
 
@@ -1411,14 +1414,14 @@ softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destinat
             }
             vaUnmapBuffer(va_dpy, q.buf);
         } else {
-            fprintf(stderr, "softVdpVideoSurfaceGetBitsYCbCr: VA surface is not a NV12\n");
+            traceError("error (softVdpVideoSurfaceGetBitsYCbCr): VA surface is not a NV12\n");
             vaDestroyImage(va_dpy, q.image_id);
             return VDP_STATUS_ERROR;
         }
         vaDestroyImage(va_dpy, q.image_id);
     } else {
         // software fallback
-        fprintf(stderr, "softVdpVideoSurfaceGetBitsYCbCr: not implemented software fallback\n");
+        traceError("error (softVdpVideoSurfaceGetBitsYCbCr): not implemented software fallback\n");
         return VDP_STATUS_ERROR;
     }
 
@@ -1524,8 +1527,8 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
         data->gl_type = GL_UNSIGNED_BYTE;
         break;
     default:
-        fprintf(stderr, "VdpBitmapSurfaceCreate: %s not implemented\n",
-                reverse_rgba_format(rgba_format));
+        traceError("error (VdpBitmapSurfaceCreate): %s not implemented\n",
+                   reverse_rgba_format(rgba_format));
         free(data);
         return VDP_STATUS_INVALID_RGBA_FORMAT;
     }
@@ -1548,8 +1551,8 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     GLuint gl_error = glGetError();
     if (GL_NO_ERROR != gl_error) {
         // Requested RGBA format was wrong
-        fprintf(stderr, "VdpBitmapSurfaceCreate: gl error (%d, %s)\n", gl_error,
-                gluErrorString(gl_error));
+        traceError("error (VdpBitmapSurfaceCreate): texture failure, gl error (%d, %s)\n", gl_error,
+                   gluErrorString(gl_error));
         free(data);
         return VDP_STATUS_INVALID_RGBA_FORMAT;
     }
@@ -1635,8 +1638,8 @@ softVdpDeviceDestroy(VdpDevice device)
         return VDP_STATUS_INVALID_HANDLE;
 
     if (0 != data->refcount) {
-        fprintf(stderr, "error in softVdpDeviceDestroy: non-zero reference count (%d)\n",
-                data->refcount);
+        traceError("warning (softVdpDeviceDestroy): non-zero reference count (%d)\n",
+                   data->refcount);
         return VDP_STATUS_ERROR;
     }
 
@@ -1844,7 +1847,8 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
         dstSurfData->tex_id, 0);
     GLenum gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
-        fprintf(stderr, "framebuffer not ready, %d, %s\n", gl_status, gluErrorString(gl_status));
+        traceError("error (softVdpOutputSurfaceRenderOutputSurface): "
+                   "framebuffer not ready, %d, %s\n", gl_status, gluErrorString(gl_status));
         return VDP_STATUS_ERROR;
     }
     glMatrixMode(GL_PROJECTION);
@@ -1923,7 +1927,8 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
         dstSurfData->tex_id, 0);
     GLenum gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
-        fprintf(stderr, "framebuffer not ready, %d, %s\n", gl_status, gluErrorString(gl_status));
+        traceError("error (softVdpOutputSurfaceRenderBitmapSurface): "
+                   "framebuffer not ready, %d, %s\n", gl_status, gluErrorString(gl_status));
         return VDP_STATUS_ERROR;
     }
     glMatrixMode(GL_PROJECTION);
@@ -2228,7 +2233,7 @@ softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
     XVisualInfo *vi;
     vi = glXChooseVisual(display, screen, att);
     if (NULL == vi) {
-        traceTrace("error: glXChooseVisual\n");
+        traceError("error (softVdpDeviceCreateX11): glXChooseVisual failed\n");
         free(data);
         XUnlockDisplay(display);
         return VDP_STATUS_ERROR;
