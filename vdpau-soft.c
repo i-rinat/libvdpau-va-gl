@@ -1655,6 +1655,8 @@ softVdpDeviceDestroy(VdpDevice device)
     free(data);
     handlestorage_expunge(device);
     XUnlockDisplay(data->display);
+    // as we have own connection, close it
+    XCloseDisplay(data->display);
     return VDP_STATUS_OK;
 }
 
@@ -2203,6 +2205,8 @@ VdpStatus
 softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
                        VdpGetProcAddress **get_proc_address)
 {
+    // Let's get own connection to the X server
+    display = XOpenDisplay(DisplayString(display));
     traceVdpDeviceCreateX11("{full}", display, screen, device, get_proc_address);
 
     if (NULL == display)
