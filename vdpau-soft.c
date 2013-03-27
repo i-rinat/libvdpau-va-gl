@@ -2255,12 +2255,12 @@ softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
     VAStatus status = vaInitialize(data->va_dpy, &data->va_version_major, &data->va_version_minor);
     if (VA_STATUS_SUCCESS == status) {
         data->va_available = 1;
-        traceTrace("libva (version %d.%d) library initialized\n",
+        traceInfo("libva (version %d.%d) library initialized\n",
             data->va_version_major, data->va_version_minor);
     } else {
         data->va_available = 0;
-        traceTrace("warning: failed to initialize libva. "
-            "No video decode acceleration available.\n");
+        traceInfo("warning: failed to initialize libva. "
+                  "No video decode acceleration available.\n");
     }
 
     *device = handlestorage_add(data);

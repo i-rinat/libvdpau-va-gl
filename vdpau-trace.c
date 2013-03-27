@@ -44,7 +44,7 @@ traceSetHeader(const char *header, const char *header_blank)
 }
 
 void
-traceTrace(const char *fmt, ...)
+traceInfo(const char *fmt, ...)
 {
     if (!enabled) return;
     va_list args;

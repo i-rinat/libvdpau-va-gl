@@ -16,7 +16,7 @@ void
 traceSetHeader(const char *header, const char *header_blank);
 
 void
-traceTrace(const char *buf, ...);
+traceInfo(const char *buf, ...);
 
 void
 traceSetHook(void (*hook)(void *param, int origin), void *param);

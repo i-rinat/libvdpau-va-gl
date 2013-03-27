@@ -21,7 +21,7 @@ library_constructor(void)
 
     // initialize tracer
     traceSetTarget(stdout);
-    traceTrace("Software VDPAU backend library initialized\n");
+    traceInfo("Software VDPAU backend library initialized\n");
 #ifdef NDEBUG
     traceEnableTracing(0);
 #else
