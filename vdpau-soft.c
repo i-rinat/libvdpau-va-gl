@@ -1217,6 +1217,7 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     glScalef(1.0f/surfData->width, 1.0f/surfData->height, 1.0f);
 
     glEnable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
     glBindTexture(GL_TEXTURE_2D, surfData->tex_id);
     glBegin(GL_QUADS);
         glTexCoord2i(0, 0); glVertex2i(0, 0);
