@@ -94,7 +94,7 @@ do_fill_va_slice_parameter_buffer(struct slice_parameters const * const sp,
     }
 
     vasp->luma_log2_weight_denom = sp->luma_log2_weight_denom;
-    vasp->chroma_log2_weight_denom = sp->luma_log2_weight_denom;
+    vasp->chroma_log2_weight_denom = sp->chroma_log2_weight_denom;
 
     vasp->luma_weight_l0_flag = sp->luma_weight_l0_flag;
     for (int k = 0; k < 32; k ++) vasp->luma_weight_l0[k] = sp->luma_weight_l0[k];
