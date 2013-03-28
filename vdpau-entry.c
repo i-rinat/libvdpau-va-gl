@@ -1,6 +1,9 @@
+#define _XOPEN_SOURCE   500
+#include <ctype.h>
 #include <vdpau/vdpau.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "handle-storage.h"
 #include "vdpau-soft.h"
 #include "vdpau-locking.h"
@@ -27,8 +30,23 @@ library_constructor(void)
 #else
     traceEnableTracing(1);
 #endif
-    if (getenv("VDPAU_VA_GL_NOLOG"))
-        traceEnableTracing(0);
+    const char *value = getenv("VDPAU_LOG");
+    if (value) {
+        // enable tracing when variable present
+        traceEnableTracing(1);
+        char *value_lc = strdup(value); // convert to lowercase
+        for (int k = 0; value_lc[k] != 0; k ++) value_lc[k] = tolower(value_lc[k]);
+        // and disable tracing when variable value equals one of the following values
+        if (!strcmp(value_lc, "0") ||
+            !strcmp(value_lc, "false") ||
+            !strcmp(value_lc, "off") ||
+            !strcmp(value_lc, "disable") ||
+            !strcmp(value_lc, "disabled"))
+        {
+            traceEnableTracing(0);
+        }
+        free(value_lc);
+    }
 }
 
 __attribute__ ((visibility("default")))
