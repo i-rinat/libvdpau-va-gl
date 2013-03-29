@@ -57,7 +57,6 @@ traceInfo(const char *fmt, ...)
 void
 traceError(const char *fmt, ...)
 {
-    if (!enabled) return;
     va_list args;
     fprintf(stderr, "%s", trace_header);
     va_start(args, fmt);
