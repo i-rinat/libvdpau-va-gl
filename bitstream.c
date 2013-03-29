@@ -14,6 +14,12 @@ rbsp_attach_buffer(rbsp_state_t *state, const uint8_t *buf, size_t byte_count)
     state->bits_eaten   = 0;
 }
 
+rbsp_state_t
+rbsp_copy_state(rbsp_state_t *state)
+{
+    return *state;
+}
+
 inline
 int
 rbsp_navigate_to_nal_unit(rbsp_state_t *state)
