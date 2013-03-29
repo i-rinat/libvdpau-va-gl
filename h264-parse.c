@@ -191,7 +191,7 @@ fill_ref_pic_list(struct slice_parameters *sp, const VAPictureParameterBufferH26
 
     if (SLICE_TYPE_P == sp->slice_type || SLICE_TYPE_SP == sp->slice_type) {
         // TODO: implement interlaced P slices
-        ctx.what = 3;
+        ctx.what = 1;
         ctx.descending = 0;
         qsort_r(idcs_asc, frame_count, sizeof(idcs_asc[0]), &comparison_function_1, &ctx);
         ctx.descending = 1;
