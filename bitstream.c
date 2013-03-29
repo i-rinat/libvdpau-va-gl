@@ -28,11 +28,11 @@ rbsp_navigate_to_nal_unit(rbsp_state_t *state)
     int window[3] = {-1, -1, -1};
     const int pattern[3] = {0, 0, 1};
     do {
-        int c = rbsp_consume_byte(state);
-        if (c < 0) {    // no bytes left, no nal unit found
-            found = 0;
+        if (state->cur_ptr >= state->buf_ptr + state->byte_count) {
+            found = 0;      // no bytes left, no nal unit found
             break;
         }
+        int c = *state->cur_ptr++;
         window[0] = window[1];
         window[1] = window[2];
         window[2] = c;
