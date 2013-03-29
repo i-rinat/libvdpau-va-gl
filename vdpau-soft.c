@@ -458,8 +458,11 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
 
         // send data to decoding hardware
         status = vaBeginPicture(va_dpy, decoderData->context_id, dstSurfData->va_surf);
+        if (VA_STATUS_SUCCESS != status) goto error;
         status = vaRenderPicture(va_dpy, decoderData->context_id, &pic_param_buf, 1);
+        if (VA_STATUS_SUCCESS != status) goto error;
         status = vaRenderPicture(va_dpy, decoderData->context_id, &iq_matrix_buf, 1);
+        if (VA_STATUS_SUCCESS != status) goto error;
 
         // merge bitstream buffers
         int total_bitstream_bytes = 0;
@@ -479,41 +482,55 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         } while(0);
 
         // Slice parameters
-        VABufferID                  slice_parameters_buf;
-        VASliceParameterBufferH264  sp_h264;
-        rbsp_state_t                st;
-
-        rbsp_attach_buffer(&st, merged_bitstream, total_bitstream_bytes);
-        int nal_offset = rbsp_navigate_to_nal_unit(&st);
-        rbsp_reset_bit_counter(&st);
+        rbsp_state_t st_g;
+        rbsp_attach_buffer(&st_g, merged_bitstream, total_bitstream_bytes);
+        int nal_offset = rbsp_navigate_to_nal_unit(&st_g);
         if (nal_offset < 0)
             goto error_no_nal_header;
 
-        memset(&sp_h264, 0, sizeof(VASliceParameterBufferH264));
-        sp_h264.slice_data_size               = total_bitstream_bytes - nal_offset;
-        sp_h264.slice_data_offset             = 0;
-        sp_h264.slice_data_flag               = VA_SLICE_DATA_FLAG_ALL;
+        do {
+            VASliceParameterBufferH264 sp_h264;
+            memset(&sp_h264, 0, sizeof(VASliceParameterBufferH264));
 
-        // TODO: this may be not entirely true for YUV444
-        // but if we limiting to YUV420, that's ok
-        int ChromaArrayType = pic_param->seq_fields.bits.chroma_format_idc;
+            rbsp_state_t st = rbsp_copy_state(&st_g);
+            rbsp_reset_bit_counter(&st);
+            int nal_offset_next = rbsp_navigate_to_nal_unit(&st_g);
 
-        // parse slice header and use its data to fill slice parameter buffer
-        parse_slice_header(&st, pic_param, ChromaArrayType, vdppi->num_ref_idx_l0_active_minus1,
-            vdppi->num_ref_idx_l1_active_minus1, &sp_h264);
+            const unsigned int end_pos = (nal_offset_next > 0) ? (nal_offset_next - 3)
+                                                               : total_bitstream_bytes;
+            sp_h264.slice_data_size     = end_pos - nal_offset;
+            sp_h264.slice_data_offset   = 0;
+            sp_h264.slice_data_flag     = VA_SLICE_DATA_FLAG_ALL;
 
-        status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceParameterBufferType,
-            sizeof(VASliceParameterBufferH264), 1, &sp_h264, &slice_parameters_buf);
-        if (VA_STATUS_SUCCESS != status) goto error;
-        status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_parameters_buf, 1);
+            // TODO: this may be not entirely true for YUV444
+            // but if we limiting to YUV420, that's ok
+            int ChromaArrayType = pic_param->seq_fields.bits.chroma_format_idc;
 
-        VABufferID slice_buf;
-        status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceDataBufferType,
-            total_bitstream_bytes - nal_offset, 1, merged_bitstream + nal_offset, &slice_buf);
-        if (VA_STATUS_SUCCESS != status) goto error;
+            // parse slice header and use its data to fill slice parameter buffer
+            parse_slice_header(&st, pic_param, ChromaArrayType, vdppi->num_ref_idx_l0_active_minus1,
+                               vdppi->num_ref_idx_l1_active_minus1, &sp_h264);
 
-        status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_buf, 1);
+            VABufferID slice_parameters_buf;
+            status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceParameterBufferType,
+                sizeof(VASliceParameterBufferH264), 1, &sp_h264, &slice_parameters_buf);
+            if (VA_STATUS_SUCCESS != status) goto error;
+            status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_parameters_buf, 1);
+
+            VABufferID slice_buf;
+            status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceDataBufferType,
+                sp_h264.slice_data_size, 1, merged_bitstream + nal_offset, &slice_buf);
+            if (VA_STATUS_SUCCESS != status) goto error;
+
+            status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_buf, 1);
+            if (VA_STATUS_SUCCESS != status) goto error;
+
+            if (nal_offset_next < 0)
+                break;
+            nal_offset = nal_offset_next;
+        } while (1);
+
         status = vaEndPicture(va_dpy, decoderData->context_id);
+        if (VA_STATUS_SUCCESS != status) goto error;
 
         free(merged_bitstream);
 
