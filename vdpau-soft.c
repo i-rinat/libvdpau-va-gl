@@ -482,7 +482,13 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         } while(0);
 
         // Slice parameters
-        rbsp_state_t st_g;
+
+        // All slice data have been merged into one continuous buffer. But we must supply
+        // slices one by one to the hardware decoder, so we need to delimit them. VDPAU
+        // requires bitstream buffers to include slice start code (0x00 0x00 0x01). Those
+        // will be used to calculate offsets and sizes of slice data in code below.
+
+        rbsp_state_t st_g;      // reference, global state
         rbsp_attach_buffer(&st_g, merged_bitstream, total_bitstream_bytes);
         int nal_offset = rbsp_navigate_to_nal_unit(&st_g);
         if (nal_offset < 0)
@@ -492,10 +498,12 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
             VASliceParameterBufferH264 sp_h264;
             memset(&sp_h264, 0, sizeof(VASliceParameterBufferH264));
 
+            // make a copy of global rbsp state for using in slice header parser
             rbsp_state_t st = rbsp_copy_state(&st_g);
             rbsp_reset_bit_counter(&st);
             int nal_offset_next = rbsp_navigate_to_nal_unit(&st_g);
 
+            // calculate end of current slice. Note (-3). It's slice start code length.
             const unsigned int end_pos = (nal_offset_next > 0) ? (nal_offset_next - 3)
                                                                : total_bitstream_bytes;
             sp_h264.slice_data_size     = end_pos - nal_offset;
@@ -524,8 +532,8 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
             status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_buf, 1);
             if (VA_STATUS_SUCCESS != status) goto error;
 
-            if (nal_offset_next < 0)
-                break;
+            if (nal_offset_next < 0)        // nal_offset_next equals -1 when there is no slice
+                break;                      // start code found. Thus that was the final slice.
             nal_offset = nal_offset_next;
         } while (1);
 
