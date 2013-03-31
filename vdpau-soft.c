@@ -1038,7 +1038,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         }
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        glOrtho(0, dstSurfData->width - 1, 0, dstSurfData->height - 1, -1.0f, 1.0f);
+        glOrtho(0, dstSurfData->width, 0, dstSurfData->height, -1.0f, 1.0f);
         glViewport(0, 0, dstSurfData->width, dstSurfData->height);
         glEnable(GL_TEXTURE_2D);
 
@@ -1054,9 +1054,9 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
         glBegin(GL_QUADS);
             glTexCoord2f(0, 0); glVertex2f(dstVideoRect.x0, dstVideoRect.y0);
-            glTexCoord2f(1, 0); glVertex2f(dstVideoRect.x1-1, dstVideoRect.y0);
-            glTexCoord2f(1, 1); glVertex2f(dstVideoRect.x1-1, dstVideoRect.y1-1);
-            glTexCoord2f(0, 1); glVertex2f(dstVideoRect.x0, dstVideoRect.y1-1);
+            glTexCoord2f(1, 0); glVertex2f(dstVideoRect.x1, dstVideoRect.y0);
+            glTexCoord2f(1, 1); glVertex2f(dstVideoRect.x1, dstVideoRect.y1);
+            glTexCoord2f(0, 1); glVertex2f(dstVideoRect.x0, dstVideoRect.y1);
         glEnd();
 
     } else {
@@ -1227,7 +1227,7 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, target_width - 1, target_height - 1, 0, -1.0, 1.0);
+    glOrtho(0, target_width, target_height, 0, -1.0, 1.0);
     glViewport(0, 0, target_width, target_height);
 
     glMatrixMode(GL_MODELVIEW);
@@ -1241,11 +1241,10 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     glDisable(GL_BLEND);
     glBindTexture(GL_TEXTURE_2D, surfData->tex_id);
     glBegin(GL_QUADS);
-        glTexCoord2i(0, 0); glVertex2i(0, 0);
-        glTexCoord2i(target_width - 1, 0); glVertex2i(target_width - 1, 0);
-        glTexCoord2i(target_width - 1, target_height - 1);
-        glVertex2i(target_width - 1, target_height - 1);
-        glTexCoord2i(0, target_height - 1); glVertex2i(0, target_height - 1);
+        glTexCoord2i(0, 0);                        glVertex2i(0, 0);
+        glTexCoord2i(target_width, 0);             glVertex2i(target_width, 0);
+        glTexCoord2i(target_width, target_height); glVertex2i(target_width, target_height);
+        glTexCoord2i(0, target_height);            glVertex2i(0, target_height);
     glEnd();
     locked_glXSwapBuffers(deviceData->display, pqueueData->target->drawable);
 
