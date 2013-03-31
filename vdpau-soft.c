@@ -90,7 +90,6 @@ typedef struct {
     VASurfaceID     va_surf;
     void           *va_glx;
     GLuint          tex_id;
-    int             va_available;
 } VdpVideoSurfaceData;
 
 typedef struct {
@@ -541,10 +540,6 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         if (VA_STATUS_SUCCESS != status) goto error;
 
         free(merged_bitstream);
-
-        // mark this video surface as having VA available
-        dstSurfData->va_available = 1;
-
     } else {
         traceError("error (softVdpDecoderRender): no implementation for profile %s\n",
                    reverse_decoder_profile(decoderData->profile));
@@ -1012,7 +1007,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
 
     locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
 
-    if (srcSurfData->va_available) {
+    if (deviceData->va_available) {
         VAStatus status;
         if (NULL == srcSurfData->va_glx) {
             glGenTextures(1, &srcSurfData->tex_id);
@@ -1342,18 +1337,25 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
     data->va_surf = VA_INVALID_SURFACE;
     data->va_glx = NULL;
     data->tex_id = 0;
-    data->va_available = 0;
 
-    //TODO: find valid storage size for chroma_type
-    data->y_plane = malloc(stride * height);
-    data->v_plane = malloc(stride * height / chroma_storage_size_divider(chroma_type));
-    data->u_plane = malloc(stride * height / chroma_storage_size_divider(chroma_type));
-    if (NULL == data->y_plane || NULL == data->v_plane || NULL == data->u_plane) {
-        if (data->y_plane) free(data->y_plane);
-        if (data->v_plane) free(data->v_plane);
-        if (data->u_plane) free(data->u_plane);
-        free(data);
-        return VDP_STATUS_RESOURCES;
+    if (deviceData->va_available) {
+        // no VA surface creation here. Actual pool of VA surfaces should be allocated already
+        // by VdpDecoderCreate. VdpDecoderCreate will update ->va_surf field as needed.
+        data->y_plane = NULL;
+        data->v_plane = NULL;
+        data->u_plane = NULL;
+    } else {
+        //TODO: find valid storage size for chroma_type
+        data->y_plane = malloc(stride * height);
+        data->v_plane = malloc(stride * height / chroma_storage_size_divider(chroma_type));
+        data->u_plane = malloc(stride * height / chroma_storage_size_divider(chroma_type));
+        if (NULL == data->y_plane || NULL == data->v_plane || NULL == data->u_plane) {
+            if (data->y_plane) free(data->y_plane);
+            if (data->v_plane) free(data->v_plane);
+            if (data->u_plane) free(data->u_plane);
+            free(data);
+            return VDP_STATUS_RESOURCES;
+        }
     }
 
     deviceData->refcount ++;
@@ -1377,9 +1379,14 @@ softVdpVideoSurfaceDestroy(VdpVideoSurface surface)
         vaDestroySurfaceGLX(deviceData->va_dpy, videoSurfData->va_glx);
     }
 
-    free(videoSurfData->y_plane);
-    free(videoSurfData->v_plane);
-    free(videoSurfData->u_plane);
+    if (deviceData->va_available) {
+        // .va_surf will be freed in VdpDecoderDestroy
+    } else {
+        free(videoSurfData->y_plane);
+        free(videoSurfData->v_plane);
+        free(videoSurfData->u_plane);
+    }
+
     free(videoSurfData);
     deviceData->refcount --;
     handlestorage_expunge(surface);
@@ -1411,7 +1418,7 @@ softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destinat
         return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
     }
 
-    if (srcSurfData->va_available) {
+    if (deviceData->va_available) {
         VAImage q;
         vaDeriveImage(va_dpy, srcSurfData->va_surf, &q);
         if (VA_FOURCC('N', 'V', '1', '2') == q.format.fourcc) {
@@ -1465,31 +1472,37 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
     if (VDP_YCBCR_FORMAT_YV12 != source_ycbcr_format)
         return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
 
-    VdpVideoSurfaceData *surfaceData = handlestorage_get(surface, HANDLETYPE_VIDEO_SURFACE);
-    if (NULL == surfaceData)
+    VdpVideoSurfaceData *dstSurfData = handlestorage_get(surface, HANDLETYPE_VIDEO_SURFACE);
+    if (NULL == dstSurfData)
         return VDP_STATUS_INVALID_HANDLE;
+    VdpDeviceData *deviceData = dstSurfData->device;
 
-    uint8_t const *src;
-    uint8_t *dst;
-    dst = surfaceData->y_plane;     src = source_data[0];
-    for (uint32_t k = 0; k < surfaceData->height; k ++) {
-        memcpy(dst, src, surfaceData->width);
-        dst += surfaceData->stride;
-        src += source_pitches[0];
-    }
+    if (deviceData->va_available) {
+        traceError("error in softVdpVideoSurfacePutBitsYCbCr: "
+                   "PutBits to VASurface not implemented");
+    } else {
+        uint8_t const *src;
+        uint8_t *dst;
+        dst = dstSurfData->y_plane;     src = source_data[0];
+        for (uint32_t k = 0; k < dstSurfData->height; k ++) {
+            memcpy(dst, src, dstSurfData->width);
+            dst += dstSurfData->stride;
+            src += source_pitches[0];
+        }
 
-    dst = surfaceData->v_plane;     src = source_data[1];
-    for (uint32_t k = 0; k < surfaceData->height / 2; k ++) {
-        memcpy(dst, src, surfaceData->width / 2);
-        dst += surfaceData->stride / 2;
-        src += source_pitches[1];
-    }
+        dst = dstSurfData->v_plane;     src = source_data[1];
+        for (uint32_t k = 0; k < dstSurfData->height / 2; k ++) {
+            memcpy(dst, src, dstSurfData->width / 2);
+            dst += dstSurfData->stride / 2;
+            src += source_pitches[1];
+        }
 
-    dst = surfaceData->u_plane;     src = source_data[2];
-    for (uint32_t k = 0; k < surfaceData->height / 2; k ++) {
-        memcpy(dst, src, surfaceData->width/2);
-        dst += surfaceData->stride / 2;
-        src += source_pitches[2];
+        dst = dstSurfData->u_plane;     src = source_data[2];
+        for (uint32_t k = 0; k < dstSurfData->height / 2; k ++) {
+            memcpy(dst, src, dstSurfData->width/2);
+            dst += dstSurfData->stride / 2;
+            src += source_pitches[2];
+        }
     }
 
     return VDP_STATUS_OK;
