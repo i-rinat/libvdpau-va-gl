@@ -1478,7 +1478,7 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
 
     if (deviceData->va_available) {
         traceError("error in softVdpVideoSurfacePutBitsYCbCr: "
-                   "PutBits to VASurface not implemented");
+                   "PutBits to VASurface not implemented\n");
     } else {
         uint8_t const *src;
         uint8_t *dst;
