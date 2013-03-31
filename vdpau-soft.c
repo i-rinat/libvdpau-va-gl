@@ -100,6 +100,7 @@ typedef struct {
     GLuint          tex_id;
     uint32_t        width;
     uint32_t        height;
+    VdpBool         frequently_accessed;
     GLuint          gl_internal_format;
     GLuint          gl_format;
     GLuint          gl_type;
@@ -1575,6 +1576,7 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     data->rgba_format = rgba_format;
     data->width = width;
     data->height = height;
+    data->frequently_accessed = frequently_accessed;
 
     locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glGenTextures(1, &data->tex_id);
