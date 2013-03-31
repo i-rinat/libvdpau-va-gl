@@ -1629,9 +1629,20 @@ VdpStatus
 softVdpBitmapSurfaceGetParameters(VdpBitmapSurface surface, VdpRGBAFormat *rgba_format,
                                   uint32_t *width, uint32_t *height, VdpBool *frequently_accessed)
 {
-    traceVdpBitmapSurfaceGetParameters("{zilch}", surface, rgba_format, width, height,
+    traceVdpBitmapSurfaceGetParameters("{full}", surface, rgba_format, width, height,
         frequently_accessed);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    VdpBitmapSurfaceData *srcSurfData = handlestorage_get(surface, HANDLETYPE_BITMAP_SURFACE);
+    if (NULL == srcSurfData) return VDP_STATUS_INVALID_HANDLE;
+
+    if (NULL == rgba_format || NULL == width || NULL == height || NULL == frequently_accessed)
+        return VDP_STATUS_INVALID_POINTER;
+
+    *rgba_format = srcSurfData->rgba_format;
+    *width = srcSurfData->width;
+    *height = srcSurfData->height;
+    *frequently_accessed = srcSurfData->frequently_accessed;
+
+    return VDP_STATUS_OK;
 }
 
 VdpStatus
