@@ -33,6 +33,7 @@ implemetation_description_string = "OpenGL/VAAPI/libswscale backend for VDPAU";
 
 typedef struct {
     HandleType  type;
+    void       *self;
     int         refcount;
     Display    *display;
     int         screen;
@@ -47,8 +48,8 @@ typedef struct {
 
 typedef struct {
     HandleType      type;
-    int             refcount;
     VdpDeviceData  *device;
+    int             refcount;
     Drawable        drawable;
 } VdpPresentationQueueTargetData;
 

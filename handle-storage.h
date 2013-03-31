@@ -19,6 +19,7 @@ typedef uint32_t    HandleType;
 
 typedef struct {
     HandleType type;
+    void      *parent;
 } VdpGenericHandle;
 
 void handlestorage_initialize(void);
