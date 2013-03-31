@@ -1041,15 +1041,13 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         glOrtho(0, dstSurfData->width, 0, dstSurfData->height, -1.0f, 1.0f);
         glViewport(0, 0, dstSurfData->width, dstSurfData->height);
         glEnable(GL_TEXTURE_2D);
+        glDisable(GL_BLEND);
 
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
         glMatrixMode(GL_TEXTURE);
         glLoadIdentity();
-
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
 
         glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
         glBegin(GL_QUADS);
