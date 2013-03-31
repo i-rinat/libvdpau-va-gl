@@ -1411,16 +1411,12 @@ softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destinat
     VdpDeviceData *deviceData = srcSurfData->device;
     VADisplay va_dpy = deviceData->va_dpy;
 
-    if (VDP_YCBCR_FORMAT_NV12 != destination_ycbcr_format) {
-        traceError("error (softVdpVideoSurfaceGetBitsYCbCr): not implemented YCbCr format: %s\n",
-                   reverse_ycbcr_format(destination_ycbcr_format));
-        return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
-    }
-
     if (deviceData->va_available) {
         VAImage q;
         vaDeriveImage(va_dpy, srcSurfData->va_surf, &q);
-        if (VA_FOURCC('N', 'V', '1', '2') == q.format.fourcc) {
+        if (VA_FOURCC('N', 'V', '1', '2') == q.format.fourcc &&
+            VDP_YCBCR_FORMAT_NV12 == destination_ycbcr_format)
+        {
             uint8_t *img_data;
             vaMapBuffer(va_dpy, q.buf, (void **)&img_data);
             if (destination_pitches[0] == q.pitches[0] &&
@@ -1446,9 +1442,12 @@ softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destinat
             }
             vaUnmapBuffer(va_dpy, q.buf);
         } else {
-            traceError("error (softVdpVideoSurfaceGetBitsYCbCr): VA surface is not a NV12\n");
+            const char *c = (const char *)&q.format.fourcc;
+            traceError("error (softVdpVideoSurfaceGetBitsYCbCr): not implemented conversion "
+                       "VA FOURCC %c%c%c%c -> %s\n", *c, *(c+1), *(c+2), *(c+3),
+                       reverse_ycbcr_format(destination_ycbcr_format));
             vaDestroyImage(va_dpy, q.image_id);
-            return VDP_STATUS_ERROR;
+            return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
         }
         vaDestroyImage(va_dpy, q.image_id);
     } else {
