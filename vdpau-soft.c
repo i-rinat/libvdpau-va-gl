@@ -1668,6 +1668,66 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
     return VDP_STATUS_OK;
 }
 
+void
+print_handle_type(int handle, void *item, void *p)
+{
+    VdpGenericHandle *gh = item;
+    struct {
+        int cnt;
+        int total_cnt;
+        VdpDeviceData *deviceData;
+    } *pp = p;
+    pp->total_cnt ++;
+
+    if (gh) {
+        if (pp->deviceData == gh->parent) {
+            traceError("handle %d type = %d\n", handle, gh->type);
+            pp->cnt ++;
+        }
+    }
+}
+
+static
+void
+destroy_child_objects(int handle, void *item, void *p)
+{
+    const void *parent = p;
+    VdpGenericHandle *gh = item;
+    if (gh) {
+        if (parent == gh->parent) {
+            switch (gh->type) {
+            case HANDLETYPE_DEVICE:
+                // do nothing
+                break;
+            case HANDLETYPE_PRESENTATION_QUEUE_TARGET:
+                softVdpPresentationQueueDestroy(handle);
+                break;
+            case HANDLETYPE_PRESENTATION_QUEUE:
+                softVdpPresentationQueueDestroy(handle);
+                break;
+            case HANDLETYPE_VIDEO_MIXER:
+                softVdpVideoMixerDestroy(handle);
+                break;
+            case HANDLETYPE_OUTPUT_SURFACE:
+                softVdpOutputSurfaceDestroy(handle);
+                break;
+            case HANDLETYPE_VIDEO_SURFACE:
+                softVdpVideoSurfaceDestroy(handle);
+                break;
+            case HANDLETYPE_BITMAP_SURFACE:
+                softVdpBitmapSurfaceDestroy(handle);
+                break;
+            case HANDLETYPE_DECODER:
+                softVdpDecoderDestroy(handle);
+                break;
+            default:
+                traceError("warning (destroy_child_objects): unknown handle type %d\n", gh->type);
+                break;
+            }
+        }
+    }
+}
+
 VdpStatus
 softVdpDeviceDestroy(VdpDevice device)
 {
@@ -1678,8 +1738,27 @@ softVdpDeviceDestroy(VdpDevice device)
         return VDP_STATUS_INVALID_HANDLE;
 
     if (0 != data->refcount) {
-        traceError("warning (softVdpDeviceDestroy): non-zero reference count (%d)\n",
+        // Buggy client forgot to destroy dependend objects or decided that destroying
+        // VdpDevice destroys all child object. Let's try to mitigate and prevent leakage.
+        traceError("warning (softVdpDeviceDestroy): non-zero reference count (%d). "
+                   "Trying to free child objects.\n", data->refcount);
+        void *parent_object = data;
+        handlestorage_execute_for_all(destroy_child_objects, parent_object);
+    }
+
+    if (0 != data->refcount) {
+        traceError("error (softVdpDeviceDestroy): still non-zero reference count (%d)\n",
                    data->refcount);
+        traceError("Here is the list of objects:\n");
+        struct {
+            int cnt;
+            int total_cnt;
+            VdpDeviceData *deviceData;
+        } state = { .cnt = 0, .total_cnt = 0, .deviceData = data };
+
+        handlestorage_execute_for_all(print_handle_type, &state);
+        traceError("Objects leaked: %d\n", state.cnt);
+        traceError("Objects visited during scan: %d\n", state.total_cnt);
         return VDP_STATUS_ERROR;
     }
 
