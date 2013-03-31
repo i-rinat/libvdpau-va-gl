@@ -22,8 +22,7 @@ int main(void)
 
     VdpBitmapSurface bmp_surface;
     VdpOutputSurface out_surface;
-    //ASSERT_OK(vdp_bitmap_surface_create(device, VDP_RGBA_FORMAT_A8, 5, 5, 1, &bmp_surface));
-    ASSERT_OK(vdp_bitmap_surface_create(device, VDP_RGBA_FORMAT_B8G8R8A8, 5, 5, 1, &bmp_surface));
+    ASSERT_OK(vdp_bitmap_surface_create(device, VDP_RGBA_FORMAT_A8, 5, 5, 1, &bmp_surface));
     ASSERT_OK(vdp_output_surface_create(device, VDP_RGBA_FORMAT_B8G8R8A8, 7, 7, &out_surface));
 
     const uint8_t bmp_data[5 * 5] = {
@@ -37,14 +36,6 @@ int main(void)
     const void * const source_data_bmp[] = { bmp_data };
     uint32_t source_pitches_bmp[] = { 5 * 1 };
 
-    uint32_t bmp_data_4[4 * 5 * 5];
-    const void * const source_data_bmp_4[] = { bmp_data_4 };
-    uint32_t source_pitches_bmp_4[] = { 5 * 4 };
-
-    for (int k = 0; k < 5 * 5; k ++) {
-        bmp_data_4[k] = (bmp_data[k] << 24) + 0x00ffffff;
-    }
-
     uint32_t green_screen[7 * 7];
     const void * const source_data[] = { green_screen };
     uint32_t source_pitches[] = { 7 * 4 };
@@ -53,8 +44,7 @@ int main(void)
     }
 
     ASSERT_OK(vdp_output_surface_put_bits_native(out_surface, source_data, source_pitches, NULL));
-    //ASSERT_OK(vdp_bitmap_surface_put_bits_native(bmp_surface, source_data_bmp, source_pitches_bmp, NULL));
-    ASSERT_OK(vdp_bitmap_surface_put_bits_native(bmp_surface, source_data_bmp_4, source_pitches_bmp_4, NULL));
+    ASSERT_OK(vdp_bitmap_surface_put_bits_native(bmp_surface, source_data_bmp, source_pitches_bmp, NULL));
 
     VdpOutputSurfaceRenderBlendState blend_state = {
         .blend_factor_source_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_SRC_ALPHA,
