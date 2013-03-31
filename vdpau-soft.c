@@ -1613,7 +1613,7 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
         traceError("error (VdpBitmapSurfaceCreate): texture failure, gl error (%d, %s)\n", gl_error,
                    gluErrorString(gl_error));
         free(data);
-        return VDP_STATUS_INVALID_RGBA_FORMAT;
+        return VDP_STATUS_ERROR;
     }
     if (VDP_RGBA_FORMAT_A8 == rgba_format) {
         // map red channel to alpha
