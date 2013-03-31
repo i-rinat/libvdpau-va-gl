@@ -63,3 +63,12 @@ handlestorage_destory(void)
 {
     g_ptr_array_unref(vdpHandles);
 }
+
+void
+handlestorage_execute_for_all(void (*callback)(void *entry, void *p), void *param)
+{
+    for (int k = 0; k < vdpHandles->len; k ++) {
+        void *item = g_ptr_array_index(vdpHandles, k);
+        callback(item, param);
+    }
+}

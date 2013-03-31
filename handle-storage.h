@@ -27,6 +27,7 @@ int handlestorage_valid(int handle, HandleType type);
 void * handlestorage_get(int handle, HandleType type);
 void handlestorage_expunge(int handle);
 void handlestorage_destory(void);
+void handlestorage_execute_for_all(void (*callback)(void *entry, void *p), void *param);
 
 
 #endif /* HANDLE_STORAGE_H_ */
