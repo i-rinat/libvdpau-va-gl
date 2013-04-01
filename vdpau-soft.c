@@ -524,6 +524,7 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                 sizeof(VASliceParameterBufferH264), 1, &sp_h264, &slice_parameters_buf);
             if (VA_STATUS_SUCCESS != status) goto error;
             status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_parameters_buf, 1);
+            if (VA_STATUS_SUCCESS != status) goto error;
 
             VABufferID slice_buf;
             status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceDataBufferType,
