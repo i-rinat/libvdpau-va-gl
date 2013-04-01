@@ -465,6 +465,9 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         status = vaRenderPicture(va_dpy, decoderData->context_id, &iq_matrix_buf, 1);
         if (VA_STATUS_SUCCESS != status) goto error;
 
+        vaDestroyBuffer(va_dpy, pic_param_buf);
+        vaDestroyBuffer(va_dpy, iq_matrix_buf);
+
         // merge bitstream buffers
         int total_bitstream_bytes = 0;
         for (unsigned int k = 0; k < bitstream_buffer_count; k ++)
@@ -533,6 +536,9 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
 
             status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_buf, 1);
             if (VA_STATUS_SUCCESS != status) goto error;
+
+            vaDestroyBuffer(va_dpy, slice_parameters_buf);
+            vaDestroyBuffer(va_dpy, slice_buf);
 
             if (nal_offset_next < 0)        // nal_offset_next equals -1 when there is no slice
                 break;                      // start code found. Thus that was the final slice.
