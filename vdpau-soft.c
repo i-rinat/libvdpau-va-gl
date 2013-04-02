@@ -1448,6 +1448,38 @@ softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destinat
                 }
             }
             vaUnmapBuffer(va_dpy, q.buf);
+        } else if (VA_FOURCC('N', 'V', '1', '2') == q.format.fourcc &&
+                   VDP_YCBCR_FORMAT_YV12 == destination_ycbcr_format)
+        {
+            uint8_t *img_data;
+            vaMapBuffer(va_dpy, q.buf, (void **)&img_data);
+
+            // Y plane
+            if (destination_pitches[0] == q.pitches[0]) {
+                memcpy(destination_data[0], img_data + q.offsets[0], q.width * q.height);
+            } else {
+                uint8_t *src = img_data + q.offsets[0];
+                uint8_t *dst = destination_data[0];
+                for (unsigned int y = 0; y < q.height; y ++) {
+                    memcpy (dst, src, q.width);
+                    src += q.pitches[0];
+                    dst += destination_pitches[0];
+                }
+            }
+
+            // unpack mixed UV to separate planes
+            for (unsigned int y = 0; y < q.height/2; y ++) {
+                uint8_t *src = img_data + q.offsets[1] + y * q.pitches[1];
+                uint8_t *dst_u = destination_data[1] + y * destination_pitches[1];
+                uint8_t *dst_v = destination_data[2] + y * destination_pitches[2];
+
+                for (unsigned int x = 0; x < q.width/2; x++) {
+                    *dst_v++ = *src++;
+                    *dst_u++ = *src++;
+                }
+            }
+
+            vaUnmapBuffer(va_dpy, q.buf);
         } else {
             const char *c = (const char *)&q.format.fourcc;
             traceError("error (softVdpVideoSurfaceGetBitsYCbCr): not implemented conversion "
