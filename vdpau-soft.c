@@ -1185,8 +1185,9 @@ VdpStatus
 softVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_queue,
                                            VdpColor *const background_color)
 {
-    traceVdpPresentationQueueSetBackgroundColor("{zilch}", presentation_queue, background_color);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    traceVdpPresentationQueueSetBackgroundColor("{zilch/fake}", presentation_queue, background_color);
+    // TODO: implement
+    return VDP_STATUS_OK;
 }
 
 VdpStatus
