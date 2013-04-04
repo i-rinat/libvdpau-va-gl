@@ -1506,11 +1506,6 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
         source_pitches);
 
     //TODO: figure out what to do with other formats
-    if (VDP_YCBCR_FORMAT_YV12 != source_ycbcr_format) {
-        traceError("error (softVdpVideoSurfacePutBitsYCbCr): not supported source_ycbcr_format "
-                   "%s\n", reverse_ycbcr_format(source_ycbcr_format));
-        return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
-    }
 
     VdpVideoSurfaceData *dstSurfData = handlestorage_get(surface, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == dstSurfData)
@@ -1518,9 +1513,56 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
     VdpDeviceData *deviceData = dstSurfData->device;
 
     if (deviceData->va_available) {
-        traceError("error (softVdpVideoSurfacePutBitsYCbCr): "
-                   "PutBits to VASurface not implemented\n");
+        if (VDP_YCBCR_FORMAT_YV12 != source_ycbcr_format) {
+            traceError("error (softVdpVideoSurfacePutBitsYCbCr): not supported source_ycbcr_format "
+                       "%s\n", reverse_ycbcr_format(source_ycbcr_format));
+            return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
+        }
+
+        void *bgra_buf = malloc(dstSurfData->width * dstSurfData->height * 4);
+        if (NULL == bgra_buf) {
+            traceError("error (softVdpVideoSurfacePutBitsYCbCr): can not allocate memory\n");
+            return VDP_STATUS_RESOURCES;
+        }
+
+        // TODO: other source formats
+        struct SwsContext *sws_ctx =
+            sws_getContext(dstSurfData->width, dstSurfData->height, PIX_FMT_YUV420P,
+                           dstSurfData->width, dstSurfData->height, PIX_FMT_BGRA,
+                           SWS_FAST_BILINEAR, NULL, NULL, NULL);
+        if (NULL == sws_ctx) {
+            traceError("error (softVdpVideoSurfacePutBitsYCbCr): can not create SwsContext\n");
+            free(bgra_buf);
+            return VDP_STATUS_RESOURCES;
+        }
+
+        const uint8_t * const srcSlice[] = { source_data[0], source_data[2], source_data[1], NULL };
+        const int srcStride[] = { source_pitches[0], source_pitches[2], source_pitches[1], 0 };
+        uint8_t * const dst[] = { bgra_buf, NULL, NULL, NULL };
+        const int dstStride[] = { dstSurfData->width * 4, 0, 0, 0 };
+        int res = sws_scale(sws_ctx, srcSlice, srcStride, 0, dstSurfData->height, dst, dstStride);
+        if (res != dstSurfData->height) {
+            traceError("error (softVdpVideoSurfacePutBitsYCbCr): sws_scale returned %d while "
+                       "%d expected\n", res, dstSurfData->height);
+            free(bgra_buf);
+            sws_freeContext(sws_ctx);
+            return VDP_STATUS_ERROR;
+        }
+        sws_freeContext(sws_ctx);
+
+        locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+        glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dstSurfData->width, dstSurfData->height, 0,
+                     GL_BGRA, GL_UNSIGNED_BYTE, bgra_buf);
+
+        free(bgra_buf);
     } else {
+        if (VDP_YCBCR_FORMAT_YV12 != source_ycbcr_format) {
+            traceError("error (softVdpVideoSurfacePutBitsYCbCr): not supported source_ycbcr_format "
+                       "%s\n", reverse_ycbcr_format(source_ycbcr_format));
+            return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
+        }
+
         uint8_t const *src;
         uint8_t *dst;
         dst = dstSurfData->y_plane;     src = source_data[0];
