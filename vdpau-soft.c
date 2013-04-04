@@ -51,6 +51,8 @@ typedef struct {
     VdpDeviceData  *device;
     int             refcount;
     Drawable        drawable;
+    GLXContext      glc;
+    GLuint          gl_displaylist;
 } VdpPresentationQueueTargetData;
 
 typedef struct {
@@ -1128,6 +1130,10 @@ softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_qu
         return VDP_STATUS_ERROR;
     }
 
+    locked_glXMakeCurrent(deviceData->display, pqTargetData->drawable, pqTargetData->glc);
+    glDeleteLists(pqTargetData->gl_displaylist, 1);
+    glXDestroyContext(deviceData->display, pqTargetData->glc);
+
     free(pqTargetData);
     deviceData->refcount --;
     handlestorage_expunge(presentation_queue_target);
@@ -1226,12 +1232,14 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     if (pqueueData->device != surfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     VdpDeviceData *deviceData = surfData->device;
 
-    locked_glXMakeCurrent(deviceData->display, pqueueData->target->drawable, deviceData->glc);
+    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     const uint32_t target_width  = (clip_width > 0)  ? clip_width  : surfData->width;
     const uint32_t target_height = (clip_height > 0) ? clip_height : surfData->height;
 
+    // compose list on one context
+    glNewList(pqueueData->target->gl_displaylist, GL_COMPILE);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0, target_width, target_height, 0, -1.0, 1.0);
@@ -1253,6 +1261,12 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
         glTexCoord2i(target_width, target_height); glVertex2i(target_width, target_height);
         glTexCoord2i(0, target_height);            glVertex2i(0, target_height);
     glEnd();
+    glEndList();
+
+    // and play list on another
+    locked_glXMakeCurrent(deviceData->display, pqueueData->target->drawable,
+                          pqueueData->target->glc);
+    glCallList(pqueueData->target->gl_displaylist);
     locked_glXSwapBuffers(deviceData->display, pqueueData->target->drawable);
 
     return VDP_STATUS_OK;
@@ -2227,6 +2241,21 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
     data->device = deviceData;
     data->drawable = drawable;
     data->refcount = 0;
+
+    GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
+    XVisualInfo *vi;
+    vi = glXChooseVisual(deviceData->display, deviceData->screen, att);
+    if (NULL == vi) {
+        traceError("error (softVdpPresentationQueueTargetCreateX11): glXChooseVisual failed\n");
+        free(data);
+        return VDP_STATUS_ERROR;
+    }
+
+    // create context for dislaying result (can share display lists with deviceData->glc
+    data->glc = glXCreateContext(deviceData->display, vi, deviceData->glc, GL_TRUE);
+
+    locked_glXMakeCurrent(deviceData->display, drawable, data->glc);
+    data->gl_displaylist = glGenLists(1);
 
     deviceData->refcount ++;
     *target = handlestorage_add(data);
