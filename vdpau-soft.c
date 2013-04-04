@@ -1553,9 +1553,8 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
 
         locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
         glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dstSurfData->width, dstSurfData->height, 0,
-                     GL_BGRA, GL_UNSIGNED_BYTE, bgra_buf);
-
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, dstSurfData->width, dstSurfData->height,
+                        GL_BGRA, GL_UNSIGNED_BYTE, bgra_buf);
         free(bgra_buf);
     } else {
         if (VDP_YCBCR_FORMAT_YV12 != source_ycbcr_format) {
