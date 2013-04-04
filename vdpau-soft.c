@@ -1506,8 +1506,11 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
         source_pitches);
 
     //TODO: figure out what to do with other formats
-    if (VDP_YCBCR_FORMAT_YV12 != source_ycbcr_format)
+    if (VDP_YCBCR_FORMAT_YV12 != source_ycbcr_format) {
+        traceError("error (softVdpVideoSurfacePutBitsYCbCr): not supported source_ycbcr_format "
+                   "%s\n", reverse_ycbcr_format(source_ycbcr_format));
         return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
+    }
 
     VdpVideoSurfaceData *dstSurfData = handlestorage_get(surface, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == dstSurfData)
@@ -1515,7 +1518,7 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
     VdpDeviceData *deviceData = dstSurfData->device;
 
     if (deviceData->va_available) {
-        traceError("error in softVdpVideoSurfacePutBitsYCbCr: "
+        traceError("error (softVdpVideoSurfacePutBitsYCbCr): "
                    "PutBits to VASurface not implemented\n");
     } else {
         uint8_t const *src;
