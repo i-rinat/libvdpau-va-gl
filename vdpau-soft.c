@@ -2252,7 +2252,10 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
     }
 
     // create context for dislaying result (can share display lists with deviceData->glc
+    XLockDisplay(deviceData->display);
     data->glc = glXCreateContext(deviceData->display, vi, deviceData->glc, GL_TRUE);
+    XUnlockDisplay(deviceData->display);
+    // TODO: check for error
 
     locked_glXMakeCurrent(deviceData->display, drawable, data->glc);
     data->gl_displaylist = glGenLists(1);
