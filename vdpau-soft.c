@@ -1130,7 +1130,9 @@ softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_qu
         return VDP_STATUS_ERROR;
     }
 
-    locked_glXMakeCurrent(deviceData->display, pqTargetData->drawable, pqTargetData->glc);
+    // drawable may be destroyed already, so one should activate global context
+    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    // this display list shared between context, so it's fine to delete it here
     glDeleteLists(pqTargetData->gl_displaylist, 1);
     glXDestroyContext(deviceData->display, pqTargetData->glc);
 
