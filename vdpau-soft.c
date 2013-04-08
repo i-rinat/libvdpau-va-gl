@@ -69,6 +69,7 @@ typedef struct {
     VdpPresentationQueueTargetData *target;
     uint32_t                        prev_width;
     uint32_t                        prev_height;
+    VdpColor                        bg_color;
 } VdpPresentationQueueData;
 
 typedef struct {
@@ -1179,6 +1180,10 @@ softVdpPresentationQueueCreate(VdpDevice device,
     data->target = targetData;
     data->prev_width = 0;
     data->prev_height = 0;
+    data->bg_color.red = 0.0;
+    data->bg_color.green = 0.0;
+    data->bg_color.blue = 0.0;
+    data->bg_color.alpha = 0.0;
 
     deviceData->refcount ++;
     targetData->refcount ++;
@@ -1207,8 +1212,20 @@ VdpStatus
 softVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_queue,
                                            VdpColor *const background_color)
 {
-    traceVdpPresentationQueueSetBackgroundColor("{zilch/fake}", presentation_queue, background_color);
-    // TODO: implement
+    traceVdpPresentationQueueSetBackgroundColor("{full}", presentation_queue, background_color);
+    VdpPresentationQueueData *pqData =
+        handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
+    if (NULL == pqData) return VDP_STATUS_INVALID_HANDLE;
+
+    if (background_color) {
+        pqData->bg_color = *background_color;
+    } else {
+        pqData->bg_color.red = 0.0;
+        pqData->bg_color.green = 0.0;
+        pqData->bg_color.blue = 0.0;
+        pqData->bg_color.alpha = 0.0;
+    }
+
     return VDP_STATUS_OK;
 }
 
