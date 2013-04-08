@@ -1190,10 +1190,11 @@ softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
         handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
     if (NULL == data) return VDP_STATUS_INVALID_HANDLE;
 
-    free(data);
+    handlestorage_expunge(presentation_queue);
     data->device->refcount --;
     data->target->refcount --;
-    handlestorage_expunge(presentation_queue);
+
+    free(data);
     return VDP_STATUS_OK;
 }
 
@@ -1911,11 +1912,12 @@ softVdpDeviceDestroy(VdpDevice device)
     if (data->va_available)
         vaTerminate(data->va_dpy);
 
-    free(data);
     handlestorage_expunge(device);
     XUnlockDisplay(data->display);
     // as we have own connection, close it
     XCloseDisplay(data->display);
+
+    free(data);
     return VDP_STATUS_OK;
 }
 
