@@ -1327,6 +1327,7 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     glEnable(GL_TEXTURE_2D);
     glDisable(GL_BLEND);
     glBindTexture(GL_TEXTURE_2D, surfData->tex_id);
+    glColor4f(1, 1, 1, 1);
     glBegin(GL_QUADS);
         glTexCoord2i(0, 0);                        glVertex2i(0, 0);
         glTexCoord2i(target_width, 0);             glVertex2i(target_width, 0);
@@ -2196,6 +2197,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
 
     // TODO: handle colors for every corner
     // TODO: handle rotation (flags)
+    glColor4f(1, 1, 1, 1);
     if (colors)
         glColor4f(colors[0].red, colors[0].green, colors[0].blue, colors[0].alpha);
 
@@ -2276,6 +2278,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
 
     // TODO: handle colors for every corner
     // TODO: handle rotation (flags)
+    glColor4f(1, 1, 1, 1);
     if (colors)
         glColor4f(colors[0].red, colors[0].green, colors[0].blue, colors[0].alpha);
 
