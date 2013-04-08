@@ -1914,8 +1914,11 @@ softVdpDeviceDestroy(VdpDevice device)
 
     handlestorage_expunge(device);
     XUnlockDisplay(data->display);
-    // as we have own connection, close it
-    XCloseDisplay(data->display);
+
+    // as we have own connection, close it.
+    if (! global.quirks.buggy_XCloseDisplay) {    // XCloseDisplay can segfault
+        XCloseDisplay(data->display);
+    }
 
     free(data);
     return VDP_STATUS_OK;
