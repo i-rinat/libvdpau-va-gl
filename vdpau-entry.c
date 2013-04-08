@@ -20,6 +20,46 @@
 
 extern struct global_data global;
 
+static
+void
+initialize_quirks(void)
+{
+    global.quirks.buggy_XCloseDisplay = 0;
+
+    const char *value = getenv("VDPAU_QUIRKS");
+    if (!value)
+        return;
+
+    char *value_lc = strdup(value);
+    if (NULL == value_lc)
+        return;
+
+    for (int k = 0; value_lc[k] != 0; k ++)
+        value_lc[k] = tolower(value_lc[k]);
+
+    // tokenize string
+    const char delimiter = ',';
+    char *item_start = value_lc;
+    char *ptr = item_start;
+    while (1) {
+        int last = (0 == *ptr);
+        if (delimiter == *ptr || 0 == *ptr) {
+            *ptr = 0;
+
+            if (!strcmp("xclosedisplay", item_start)) {
+                global.quirks.buggy_XCloseDisplay = 1;
+            }
+
+            item_start = ptr + 1;
+        }
+        ptr ++;
+        if (last)
+            break;
+    }
+
+    free(value_lc);
+}
+
 __attribute__((constructor))
 static
 void
@@ -27,8 +67,9 @@ library_constructor(void)
 {
     handlestorage_initialize();
 
-    // global mutex
+    // Initialize global data
     pthread_mutex_init(&global.mutex, NULL);
+    initialize_quirks();
 
     // initialize tracer
     traceSetTarget(stdout);
