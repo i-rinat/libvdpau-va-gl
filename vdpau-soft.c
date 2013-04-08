@@ -1024,11 +1024,19 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     if (srcSurfData->device != dstSurfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     VdpDeviceData *deviceData = srcSurfData->device;
 
-    // TODO: handle video_source_rect
-    // TODO: handle destination_rect
-    VdpRect dstVideoRect = {0, 0, dstSurfData->width, dstSurfData->height};
+    VdpRect srcVideoRect = {0, 0, srcSurfData->width, srcSurfData->height};
+    if (video_source_rect)
+        srcVideoRect = *video_source_rect;
+
+    VdpRect dstRect = {0, 0, dstSurfData->width, dstSurfData->height};
+    if (destination_rect)
+        dstRect = *destination_rect;
+
+    VdpRect dstVideoRect = srcVideoRect;
     if (destination_video_rect)
         dstVideoRect = *destination_video_rect;
+
+    // TODO: dstRect should clip dstVideoRect
 
     locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
 
@@ -1064,7 +1072,6 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         glLoadIdentity();
         glOrtho(0, dstSurfData->width, 0, dstSurfData->height, -1.0f, 1.0f);
         glViewport(0, 0, dstSurfData->width, dstSurfData->height);
-        glEnable(GL_TEXTURE_2D);
         glDisable(GL_BLEND);
 
         glMatrixMode(GL_MODELVIEW);
@@ -1072,19 +1079,41 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
 
         glMatrixMode(GL_TEXTURE);
         glLoadIdentity();
+        glScalef(1.0f/srcSurfData->width, 1.0f/srcSurfData->height, 1.0f);
 
-        glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
+        // Clear dstRect area
+        glDisable(GL_TEXTURE_2D);
+        glColor4f(0, 0, 0, 1);
         glBegin(GL_QUADS);
-            glTexCoord2f(0, 0); glVertex2f(dstVideoRect.x0, dstVideoRect.y0);
-            glTexCoord2f(1, 0); glVertex2f(dstVideoRect.x1, dstVideoRect.y0);
-            glTexCoord2f(1, 1); glVertex2f(dstVideoRect.x1, dstVideoRect.y1);
-            glTexCoord2f(0, 1); glVertex2f(dstVideoRect.x0, dstVideoRect.y1);
+            glVertex2f(dstRect.x0, dstRect.y0);
+            glVertex2f(dstRect.x1, dstRect.y0);
+            glVertex2f(dstRect.x1, dstRect.y1);
+            glVertex2f(dstRect.x0, dstRect.y1);
+        glEnd();
+
+        // Render (maybe scaled) data from video surface
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
+        glColor4f(1, 1, 1, 1);
+        glBegin(GL_QUADS);
+            glTexCoord2i(srcVideoRect.x0, srcVideoRect.y0);
+            glVertex2f(dstVideoRect.x0, dstVideoRect.y0);
+
+            glTexCoord2i(srcVideoRect.x1, srcVideoRect.y0);
+            glVertex2f(dstVideoRect.x1, dstVideoRect.y0);
+
+            glTexCoord2i(srcVideoRect.x1, srcVideoRect.y1);
+            glVertex2f(dstVideoRect.x1, dstVideoRect.y1);
+
+            glTexCoord2i(srcVideoRect.x0, srcVideoRect.y1);
+            glVertex2f(dstVideoRect.x0, dstVideoRect.y1);
         glEnd();
 
     } else {
         // fall back to software convertion
         // TODO: make sure not to do scaling in software, only colorspace conversion
         // TODO: use GL shaders to do colorspace conversion job
+        // TODO: handle all three kind of rectangles and clipping
         const uint32_t dstVideoWidth  = dstVideoRect.x1 - dstVideoRect.x0;
         const uint32_t dstVideoHeight = dstVideoRect.y1 - dstVideoRect.y0;
 
