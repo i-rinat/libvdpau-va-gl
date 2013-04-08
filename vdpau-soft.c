@@ -690,6 +690,11 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     glTexImage2D(GL_TEXTURE_2D, 0, data->gl_internal_format, width, height, 0, data->gl_format,
                  data->gl_type, NULL);
 
+    glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, data->tex_id, 0);
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
     deviceData->refcount ++;
     *surface = handlestorage_add(data);
     return VDP_STATUS_OK;
