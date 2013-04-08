@@ -708,9 +708,9 @@ softVdpOutputSurfaceDestroy(VdpOutputSurface surface)
     locked_glXMakeCurrent(data->device->display, deviceData->root, deviceData->glc);
     glDeleteTextures(1, &data->tex_id);
 
-    free(data);
-    deviceData->refcount --;
     handlestorage_expunge(surface);
+    deviceData->refcount --;
+    free(data);
     return VDP_STATUS_OK;
 }
 
@@ -1747,9 +1747,9 @@ softVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
     locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glDeleteTextures(1, &data->tex_id);
 
-    free(data);
-    deviceData->refcount --;
     handlestorage_expunge(surface);
+    deviceData->refcount --;
+    free(data);
     return VDP_STATUS_OK;
 }
 
