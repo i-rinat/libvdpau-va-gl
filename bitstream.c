@@ -26,7 +26,6 @@ rbsp_navigate_to_nal_unit(rbsp_state_t *state)
 {
     int found = 1;
     int window[3] = {-1, -1, -1};
-    const int pattern[3] = {0, 0, 1};
     do {
         if (state->cur_ptr >= state->buf_ptr + state->byte_count) {
             found = 0;      // no bytes left, no nal unit found
@@ -36,7 +35,7 @@ rbsp_navigate_to_nal_unit(rbsp_state_t *state)
         window[0] = window[1];
         window[1] = window[2];
         window[2] = c;
-    } while (memcmp(window, pattern, sizeof(window)));
+    } while (0 != window[0] || 0 != window[1] || 1 != window[2]);
 
     if (found)
         return (int)(state->cur_ptr - state->buf_ptr);
