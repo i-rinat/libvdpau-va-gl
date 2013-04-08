@@ -1233,8 +1233,17 @@ VdpStatus
 softVdpPresentationQueueGetBackgroundColor(VdpPresentationQueue presentation_queue,
                                            VdpColor *background_color)
 {
-    traceVdpPresentationQueueGetBackgroundColor("{zilch}", presentation_queue, background_color);
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    traceVdpPresentationQueueGetBackgroundColor("{full}", presentation_queue, background_color);
+    VdpPresentationQueueData *pqData =
+        handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
+    if (NULL == pqData)
+        return VDP_STATUS_INVALID_HANDLE;
+
+    if (NULL == background_color)
+        return VDP_STATUS_INVALID_POINTER;
+    *background_color = pqData->bg_color;
+
+    return VDP_STATUS_OK;
 }
 
 VdpStatus
