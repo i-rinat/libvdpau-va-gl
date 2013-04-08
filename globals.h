@@ -1,3 +1,11 @@
+/*
+ * Copyright 2013  Rinat Ibragimov
+ *
+ * This file is part of libvdpau-va-gl
+ *
+ * libvdpau-va-gl distributed under the terms of LGPLv3. See COPYING for details.
+ */
+
 #ifndef __GLOBALS_H
 #define __GLOBALS_H
 

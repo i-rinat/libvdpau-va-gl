@@ -1,3 +1,11 @@
+/*
+ * Copyright 2013  Rinat Ibragimov
+ *
+ * This file is part of libvdpau-va-gl
+ *
+ * libvdpau-va-gl distributed under the terms of LGPLv3. See COPYING for details.
+ */
+
 #define _XOPEN_SOURCE
 #define GL_GLEXT_PROTOTYPES
 #include <assert.h>
