@@ -1215,7 +1215,8 @@ softVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_que
     traceVdpPresentationQueueSetBackgroundColor("{full}", presentation_queue, background_color);
     VdpPresentationQueueData *pqData =
         handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
-    if (NULL == pqData) return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == pqData)
+        return VDP_STATUS_INVALID_HANDLE;
 
     if (background_color) {
         pqData->bg_color = *background_color;
