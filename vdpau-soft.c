@@ -1962,6 +1962,10 @@ softVdpDeviceDestroy(VdpDevice device)
         return VDP_STATUS_ERROR;
     }
 
+    // cleaup libva
+    if (data->va_available)
+        vaTerminate(data->va_dpy);
+
     XLockDisplay(data->display);
     // TODO: Is it right to reset context? App using its own will not be happy with reset.
     glXMakeCurrent(data->display, data->root, data->glc);
@@ -1969,10 +1973,6 @@ softVdpDeviceDestroy(VdpDevice device)
     glDeleteFramebuffers(1, &data->fbo_id);
     glXMakeCurrent(data->display, None, NULL);
     glXDestroyContext(data->display, data->glc);
-
-    // cleaup libva
-    if (data->va_available)
-        vaTerminate(data->va_dpy);
 
     handlestorage_expunge(device);
     XUnlockDisplay(data->display);
