@@ -15,6 +15,7 @@ struct global_data {
     pthread_mutex_t     mutex;
     struct {
         int buggy_XCloseDisplay;
+        int show_watermark;
     } quirks;
 };
 

@@ -27,6 +27,7 @@ add_library (vdpau_va_gl SHARED
 	bitstream.c
 	h264-parse.c
 	globals.c
+	watermark.c
 )
 
 add_library (xinitthreads SHARED xinitthreads.c)

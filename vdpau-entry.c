@@ -25,6 +25,7 @@ void
 initialize_quirks(void)
 {
     global.quirks.buggy_XCloseDisplay = 0;
+    global.quirks.show_watermark = 0;
 
     const char *value = getenv("VDPAU_QUIRKS");
     if (!value)
@@ -48,6 +49,9 @@ initialize_quirks(void)
 
             if (!strcmp("xclosedisplay", item_start)) {
                 global.quirks.buggy_XCloseDisplay = 1;
+            } else
+            if (!strcmp("showwatermark", item_start)) {
+                global.quirks.show_watermark = 1;
             }
 
             item_start = ptr + 1;

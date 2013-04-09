@@ -28,6 +28,7 @@
 #include "handle-storage.h"
 #include "vdpau-trace.h"
 #include "vdpau-locking.h"
+#include "watermark.h"
 #include "globals.h"
 
 #define MAX_RENDER_TARGETS          21
@@ -52,6 +53,7 @@ typedef struct {
     int         va_available;
     int         va_version_major;
     int         va_version_minor;
+    GLuint      watermark_tex_id;
 } VdpDeviceData;
 
 typedef struct {
@@ -1334,6 +1336,32 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
         glTexCoord2i(target_width, target_height); glVertex2i(target_width, target_height);
         glTexCoord2i(0, target_height);            glVertex2i(0, target_height);
     glEnd();
+
+    if (global.quirks.show_watermark) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBlendEquation(GL_FUNC_ADD);
+        glBindTexture(GL_TEXTURE_2D, deviceData->watermark_tex_id);
+
+        glMatrixMode(GL_TEXTURE);
+        glLoadIdentity();
+
+        glColor3f(0.8, 0.08, 0.35);
+        glBegin(GL_QUADS);
+            glTexCoord2i(0, 0);
+            glVertex2i(target_width - watermark_width, target_height - watermark_height);
+
+            glTexCoord2i(1, 0);
+            glVertex2i(target_width, target_height - watermark_height);
+
+            glTexCoord2i(1, 1);
+            glVertex2i(target_width, target_height);
+
+            glTexCoord2i(0, 1);
+            glVertex2i(target_width - watermark_width, target_height);
+        glEnd();
+    }
+
     glEndList();
 
     // and play list on another
@@ -1961,6 +1989,8 @@ softVdpDeviceDestroy(VdpDevice device)
         traceError("Objects visited during scan: %d\n", state.total_cnt);
         return VDP_STATUS_ERROR;
     }
+
+    glDeleteTextures(1, &data->watermark_tex_id);
 
     // cleaup libva
     if (data->va_available)
@@ -2610,6 +2640,23 @@ softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
         traceInfo("warning: failed to initialize libva. "
                   "No video decode acceleration available.\n");
     }
+
+    glGenTextures(1, &data->watermark_tex_id);
+    glBindTexture(GL_TEXTURE_2D, data->watermark_tex_id);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_RED);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_RED);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, watermark_width, watermark_height, 0, GL_RED,
+                 GL_UNSIGNED_BYTE, watermark_data);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
     *device = handlestorage_add(data);
     *get_proc_address = &softVdpGetProcAddress;
