@@ -2623,6 +2623,7 @@ softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
 
     data->glc = glXCreateContext(display, vi, NULL, GL_TRUE);
     data->root = DefaultRootWindow(display);
+    XFree(vi);
 
     glXMakeCurrent(display, data->root, data->glc);
     glGenFramebuffers(1, &data->fbo_id);
