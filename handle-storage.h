@@ -37,6 +37,8 @@ void * handlestorage_get(int handle, HandleType type);
 void handlestorage_expunge(int handle);
 void handlestorage_destory(void);
 void handlestorage_execute_for_all(void (*callback)(int idx, void *entry, void *p), void *param);
-
+void *handlestorage_get_cached_xdpy_copy(void *original);
+void handlestorage_push_xdpy_copy(void *original, void *copy);
+void handlestorage_expunge_xdpy_copy(void *original);
 
 #endif /* HANDLE_STORAGE_H_ */

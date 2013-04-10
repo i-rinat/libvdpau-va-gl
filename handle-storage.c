@@ -10,6 +10,7 @@
 #include <glib.h>
 
 GPtrArray *vdpHandles;
+GHashTable *xdpy_copies;     //< Copies of X Display connections
 
 void
 handlestorage_initialize(void)
@@ -17,6 +18,8 @@ handlestorage_initialize(void)
     vdpHandles = g_ptr_array_new();
     // adding dummy element to ensure all handles start from 1
     g_ptr_array_add(vdpHandles, NULL);
+
+    xdpy_copies = g_hash_table_new(g_direct_hash, g_direct_equal);
 }
 
 int
@@ -70,6 +73,7 @@ void
 handlestorage_destory(void)
 {
     g_ptr_array_unref(vdpHandles);
+    g_hash_table_unref(xdpy_copies);
 }
 
 void
@@ -80,4 +84,22 @@ handlestorage_execute_for_all(void (*callback)(int idx, void *entry, void *p), v
         if (item)
             callback(k, item, param);
     }
+}
+
+void *
+handlestorage_get_cached_xdpy_copy(void *original)
+{
+    return g_hash_table_lookup(xdpy_copies, original);
+}
+
+void
+handlestorage_push_xdpy_copy(void *original, void *copy)
+{
+    g_hash_table_insert(xdpy_copies, original, copy);
+}
+
+void
+handlestorage_expunge_xdpy_copy(void *original)
+{
+    g_hash_table_remove(xdpy_copies, original);
 }
