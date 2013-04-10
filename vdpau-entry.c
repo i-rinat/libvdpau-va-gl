@@ -102,6 +102,15 @@ library_constructor(void)
     }
 }
 
+__attribute__((destructor))
+static
+void
+library_destructor(void)
+{
+    handlestorage_destory();
+}
+
+
 __attribute__ ((visibility("default")))
 VdpStatus
 vdp_imp_device_create_x11(Display *display, int screen, VdpDevice *device,
