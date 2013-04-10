@@ -45,6 +45,7 @@ typedef struct {
     void       *self;
     int         refcount;
     Display    *display;
+    Display    *display_orig;
     int         screen;
     GLXContext  glc;
     Window      root;
@@ -2008,6 +2009,7 @@ softVdpDeviceDestroy(VdpDevice device)
 
     // as we have own connection, close it.
     if (! global.quirks.buggy_XCloseDisplay) {    // XCloseDisplay can segfault
+        handlestorage_expunge_xdpy_copy(data->display_orig);
         XCloseDisplay(data->display);
     }
 
@@ -2579,15 +2581,22 @@ softVdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_p
 }
 
 VdpStatus
-softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
+softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
                        VdpGetProcAddress **get_proc_address)
 {
-    // Let's get own connection to the X server
-    display = XOpenDisplay(DisplayString(display));
-    traceVdpDeviceCreateX11("{full}", display, screen, device, get_proc_address);
-
-    if (NULL == display)
+    traceVdpDeviceCreateX11("{full}", display_orig, screen, device, get_proc_address);
+    if (NULL == display_orig)
         return VDP_STATUS_INVALID_POINTER;
+
+    // Let's get own connection to the X server
+    Display *display = handlestorage_get_cached_xdpy_copy(display_orig);
+    if (NULL == display) {
+        // don't have own connection yet, acquire new, and cache it
+        display = XOpenDisplay(XDisplayString(display_orig));
+        if (NULL == display)
+            return VDP_STATUS_ERROR;
+        handlestorage_push_xdpy_copy(display_orig, display);
+    }
 
     VdpDeviceData *data = (VdpDeviceData *)calloc(1, sizeof(VdpDeviceData));
     if (NULL == data)
@@ -2597,6 +2606,7 @@ softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
 
     data->type = HANDLETYPE_DEVICE;
     data->display = display;
+    data->display_orig = display_orig;   // save supplied pointer too
     data->screen = screen;
     data->refcount = 0;
 
