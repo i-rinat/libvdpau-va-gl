@@ -713,6 +713,13 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpOutputSurfaceCreate): gl error %d\n", gl_error);
+        free(data);
+        return VDP_STATUS_ERROR;
+    }
+
     deviceData->refcount ++;
     *surface = handlestorage_add(data);
     return VDP_STATUS_OK;
@@ -730,6 +737,12 @@ softVdpOutputSurfaceDestroy(VdpOutputSurface surface)
 
     locked_glXMakeCurrent(data->device->display, deviceData->root, deviceData->glc);
     glDeleteTextures(1, &data->tex_id);
+
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpOutputSurfaceDestroy): gl error %d\n", gl_error);
+        return VDP_STATUS_ERROR;
+    }
 
     handlestorage_expunge(surface);
     deviceData->refcount --;
@@ -773,6 +786,12 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     if (4 != pixel_bytes) glPixelStorei(GL_PACK_ALIGNMENT, 4);
 
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpOutputSurfaceGetBitsNative): gl error %d\n", gl_error);
+        return VDP_STATUS_ERROR;
+    }
+
     return VDP_STATUS_OK;
 }
 
@@ -801,6 +820,12 @@ softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *s
                     dstSurfData->gl_format, dstSurfData->gl_type, source_data[0]);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     if (4 != pixel_bytes) glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpOutputSurfacePutBitsNative): gl error %d\n", gl_error);
+        return VDP_STATUS_ERROR;
+    }
 
     return VDP_STATUS_OK;
 }
@@ -854,6 +879,13 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
                             dstRect.x1 - dstRect.x0, dstRect.y1 - dstRect.y0,
                             GL_BGRA, GL_UNSIGNED_BYTE, unpacked_buf);
             free(unpacked_buf);
+
+            GLenum gl_error = glGetError();
+            if (GL_NO_ERROR != gl_error) {
+                traceError("error (VdpOutputSurfacePutBitsIndexed): gl error %d\n", gl_error);
+                return VDP_STATUS_ERROR;
+            }
+
             return VDP_STATUS_OK;
         } while (0);
         break;
@@ -1162,6 +1194,12 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         free(img_buf);
     }
 
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpVideoMixerRender): gl error %d\n", gl_error);
+        return VDP_STATUS_ERROR;
+    }
+
     return VDP_STATUS_OK;
 }
 
@@ -1187,6 +1225,12 @@ softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_qu
     // this display list shared between context, so it's fine to delete it here
     glDeleteLists(pqTargetData->gl_displaylist, 1);
     glXDestroyContext(deviceData->display, pqTargetData->glc);
+
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpPresentationQueueTargetDestroy): gl error %d\n", gl_error);
+        return VDP_STATUS_ERROR;
+    }
 
     free(pqTargetData);
     deviceData->refcount --;
@@ -1377,6 +1421,12 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     glCallList(pqueueData->target->gl_displaylist);
     locked_glXSwapBuffers(deviceData->display, pqueueData->target->drawable);
 
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpPresentationQueueDisplay): gl error %d\n", gl_error);
+        return VDP_STATUS_ERROR;
+    }
+
     return VDP_STATUS_OK;
 }
 
@@ -1483,6 +1533,13 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data->width, data->height, 0,
                      GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+
+        GLenum gl_error = glGetError();
+        if (GL_NO_ERROR != gl_error) {
+            traceError("error (VdpVideoSurfaceCreate): gl error %d\n", gl_error);
+            free(data);
+            return VDP_STATUS_ERROR;
+        }
     } else {
         //TODO: find valid storage size for chroma_type
         data->y_plane = malloc(stride * height);
@@ -1515,6 +1572,12 @@ softVdpVideoSurfaceDestroy(VdpVideoSurface surface)
 
     locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glDeleteTextures(1, &videoSurfData->tex_id);
+
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpVideoSurfaceDestroy): gl error %d\n", gl_error);
+        return VDP_STATUS_ERROR;
+    }
 
     if (videoSurfData->va_glx) {
         vaDestroySurfaceGLX(deviceData->va_dpy, videoSurfData->va_glx);
@@ -1630,6 +1693,12 @@ softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destinat
         return VDP_STATUS_ERROR;
     }
 
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpVideoSurfaceGetBitsYCbCr): gl error %d\n", gl_error);
+        return VDP_STATUS_ERROR;
+    }
+
     return VDP_STATUS_OK;
 }
 
@@ -1721,6 +1790,12 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
         }
     }
 
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpVideoSurfacePutBitsYCbCr): gl error %d\n", gl_error);
+        return VDP_STATUS_ERROR;
+    }
+
     return VDP_STATUS_OK;
 }
 
@@ -1753,8 +1828,12 @@ softVdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
 
     GLint max_texture_size;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
-    if (GL_NO_ERROR != glGetError())
+
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpBitmapSurfaceQueryCapabilities): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
+    }
 
     *max_width = max_texture_size;
     *max_height = max_texture_size;
@@ -1838,6 +1917,13 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
         glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle_mask);
     }
 
+    gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        free(data);
+        traceError("error (VdpBitmapSurfaceCreate): gl error %d\n", gl_error);
+        return VDP_STATUS_ERROR;
+    }
+
     deviceData->refcount ++;
     *surface = handlestorage_add(data);
     return VDP_STATUS_OK;
@@ -1855,6 +1941,12 @@ softVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
 
     locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
     glDeleteTextures(1, &data->tex_id);
+
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpBitmapSurfaceDestroy): gl error %d\n", gl_error);
+        return VDP_STATUS_ERROR;
+    }
 
     handlestorage_expunge(surface);
     deviceData->refcount --;
@@ -1911,6 +2003,12 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     if (4 != pixel_bytes)
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpBitmapSurfacePutBitsNative): gl error %d\n", gl_error);
+        return VDP_STATUS_ERROR;
+    }
 
     return VDP_STATUS_OK;
 }
@@ -2029,6 +2127,12 @@ softVdpDeviceDestroy(VdpDevice device)
     if (! global.quirks.buggy_XCloseDisplay) {    // XCloseDisplay can segfault
         handlestorage_expunge_xdpy_copy(data->display_orig);
         XCloseDisplay(data->display);
+    }
+
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpDeviceDestroy): gl error %d\n", gl_error);
+        return VDP_STATUS_ERROR;
     }
 
     free(data);
@@ -2259,6 +2363,13 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
 
     glColor4f(1, 1, 1, 1);
 
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpOutputSurfaceRenderOutputSurface): gl error %d\n", gl_error);
+        return VDP_STATUS_ERROR;
+    }
+
+
     return VDP_STATUS_OK;
 }
 
@@ -2340,6 +2451,12 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
 
     glColor4f(1, 1, 1, 1);
 
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpOutputSurfaceRenderBitmapSurface): gl error %d\n", gl_error);
+        return VDP_STATUS_ERROR;
+    }
+
     return VDP_STATUS_OK;
 }
 
@@ -2387,6 +2504,12 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
 
     locked_glXMakeCurrent(deviceData->display, drawable, data->glc);
     data->gl_displaylist = glGenLists(1);
+
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpPresentationQueueTargetCreateX11): gl error %d\n", gl_error);
+        return VDP_STATUS_ERROR;
+    }
 
     deviceData->refcount ++;
     *target = handlestorage_add(data);
@@ -2690,5 +2813,12 @@ softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
     *get_proc_address = &softVdpGetProcAddress;
 
     XUnlockDisplay(display);
+
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpDeviceCreateX11): gl error %d\n", gl_error);
+        return VDP_STATUS_ERROR;
+    }
+
     return VDP_STATUS_OK;
 }
