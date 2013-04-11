@@ -2580,13 +2580,6 @@ softVdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_p
     return VDP_STATUS_OK;
 }
 
-void
-gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
-                  const GLchar* message, void* userParam)
-{
-    traceError("GLDEBUG: %s\n", message);
-}
-
 VdpStatus
 softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
                        VdpGetProcAddress **get_proc_address)
@@ -2642,14 +2635,6 @@ softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-
-    PFNGLDEBUGMESSAGECALLBACKARBPROC glDebugMessageCallbackARB;
-    glDebugMessageCallbackARB = (void *)glXGetProcAddress((void *)"glDebugMessageCallbackARB");
-    if (glDebugMessageCallbackARB) {
-        glDebugMessageCallbackARB(&gl_debug_callback, NULL);
-    } else {
-        traceInfo("warning: failed to call glDebugMessageCallbackARB\n");
-    }
 
     // initialize VAAPI
     data->va_dpy = vaGetDisplayGLX(display);
