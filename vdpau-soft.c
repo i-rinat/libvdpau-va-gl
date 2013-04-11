@@ -1046,14 +1046,6 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     if (deviceData->va_available) {
         VAStatus status;
         if (NULL == srcSurfData->va_glx) {
-            glGenTextures(1, &srcSurfData->tex_id);
-            glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, srcSurfData->width, srcSurfData->height, 0,
-                GL_BGRA, GL_UNSIGNED_BYTE, NULL);
             status = vaCreateSurfaceGLX(deviceData->va_dpy, GL_TEXTURE_2D, srcSurfData->tex_id,
                                         &srcSurfData->va_glx);
             if (VA_STATUS_SUCCESS != status)
@@ -1467,6 +1459,16 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
         data->y_plane = NULL;
         data->v_plane = NULL;
         data->u_plane = NULL;
+
+        locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+        glGenTextures(1, &data->tex_id);
+        glBindTexture(GL_TEXTURE_2D, data->tex_id);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data->width, data->height, 0,
+                     GL_BGRA, GL_UNSIGNED_BYTE, NULL);
     } else {
         //TODO: find valid storage size for chroma_type
         data->y_plane = malloc(stride * height);
@@ -1497,8 +1499,10 @@ softVdpVideoSurfaceDestroy(VdpVideoSurface surface)
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = videoSurfData->device;
 
+    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glDeleteTextures(1, &videoSurfData->tex_id);
+
     if (videoSurfData->va_glx) {
-        glDeleteTextures(1, &videoSurfData->tex_id);
         vaDestroySurfaceGLX(deviceData->va_dpy, videoSurfData->va_glx);
     }
 
