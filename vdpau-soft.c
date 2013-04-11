@@ -200,28 +200,42 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
     data->next_surface_idx = 0;
 
     VAProfile va_profile;
-    switch (profile) {
-    case VDP_DECODER_PROFILE_H264_BASELINE:
-        va_profile = VAProfileH264Baseline;
-        data->num_render_targets = NUM_RENDER_TARGETS_H264;
-        break;
-    case VDP_DECODER_PROFILE_H264_MAIN:
-        va_profile = VAProfileH264Main;
-        data->num_render_targets = NUM_RENDER_TARGETS_H264;
-        break;
-    case VDP_DECODER_PROFILE_H264_HIGH:
-        va_profile = VAProfileH264High;
-        data->num_render_targets = NUM_RENDER_TARGETS_H264;
-        break;
-    default:
-        traceError("error (softVdpDecoderCreate): decoder %s not implemented\n",
-                   reverse_decoder_profile(profile));
-        retval = VDP_STATUS_INVALID_DECODER_PROFILE;
-        goto error;
+    VAStatus status;
+    int final_try = 0;
+    VdpDecoderProfile next_profile = profile;
+
+    // Try to create decoder for asked profile. On failure try to create more advanced one
+    while (! final_try) {
+        profile = next_profile;
+        switch (profile) {
+        case VDP_DECODER_PROFILE_H264_BASELINE:
+            va_profile = VAProfileH264Baseline;
+            data->num_render_targets = NUM_RENDER_TARGETS_H264;
+            next_profile = VDP_DECODER_PROFILE_H264_MAIN;
+            break;
+        case VDP_DECODER_PROFILE_H264_MAIN:
+            va_profile = VAProfileH264Main;
+            data->num_render_targets = NUM_RENDER_TARGETS_H264;
+            next_profile = VDP_DECODER_PROFILE_H264_HIGH;
+            break;
+        case VDP_DECODER_PROFILE_H264_HIGH:
+            va_profile = VAProfileH264High;
+            data->num_render_targets = NUM_RENDER_TARGETS_H264;
+            // there is no more advanced profile, so it's final try
+            final_try = 1;
+            break;
+        default:
+            traceError("error (softVdpDecoderCreate): decoder %s not implemented\n",
+                       reverse_decoder_profile(profile));
+            retval = VDP_STATUS_INVALID_DECODER_PROFILE;
+            goto error;
+        }
+
+        status = vaCreateConfig(va_dpy, va_profile, VAEntrypointVLD, NULL, 0, &data->config_id);
+        if (VA_STATUS_SUCCESS == status)        // break loop if decoder created
+            break;
     }
 
-    VAStatus status;
-    status = vaCreateConfig(va_dpy, va_profile, VAEntrypointVLD, NULL, 0, &data->config_id);
     if (VA_STATUS_SUCCESS != status) goto error;
 
     // Create surfaces. All video surfaces created here, rather than in VdpVideoSurfaceCreate.
