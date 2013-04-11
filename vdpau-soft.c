@@ -1517,29 +1517,29 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
     data->va_glx = NULL;
     data->tex_id = 0;
 
+    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glGenTextures(1, &data->tex_id);
+    glBindTexture(GL_TEXTURE_2D, data->tex_id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data->width, data->height, 0,
+                 GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpVideoSurfaceCreate): gl error %d\n", gl_error);
+        free(data);
+        return VDP_STATUS_ERROR;
+    }
+
     if (deviceData->va_available) {
         // no VA surface creation here. Actual pool of VA surfaces should be allocated already
         // by VdpDecoderCreate. VdpDecoderCreate will update ->va_surf field as needed.
         data->y_plane = NULL;
         data->v_plane = NULL;
         data->u_plane = NULL;
-
-        locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
-        glGenTextures(1, &data->tex_id);
-        glBindTexture(GL_TEXTURE_2D, data->tex_id);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data->width, data->height, 0,
-                     GL_BGRA, GL_UNSIGNED_BYTE, NULL);
-
-        GLenum gl_error = glGetError();
-        if (GL_NO_ERROR != gl_error) {
-            traceError("error (VdpVideoSurfaceCreate): gl error %d\n", gl_error);
-            free(data);
-            return VDP_STATUS_ERROR;
-        }
     } else {
         //TODO: find valid storage size for chroma_type
         data->y_plane = malloc(stride * height);
