@@ -1357,14 +1357,13 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     if (pqueueData->device != surfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     VdpDeviceData *deviceData = surfData->device;
 
-    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    locked_glXMakeCurrent(deviceData->display, pqueueData->target->drawable,
+                          pqueueData->target->glc);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     const uint32_t target_width  = (clip_width > 0)  ? clip_width  : surfData->width;
     const uint32_t target_height = (clip_height > 0) ? clip_height : surfData->height;
 
-    // compose list on one context
-    glNewList(pqueueData->target->gl_displaylist, GL_COMPILE);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0, target_width, target_height, 0, -1.0, 1.0);
@@ -1413,12 +1412,6 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
         glEnd();
     }
 
-    glEndList();
-
-    // and play list on another
-    locked_glXMakeCurrent(deviceData->display, pqueueData->target->drawable,
-                          pqueueData->target->glc);
-    glCallList(pqueueData->target->gl_displaylist);
     locked_glXSwapBuffers(deviceData->display, pqueueData->target->drawable);
 
     GLenum gl_error = glGetError();
