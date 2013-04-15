@@ -763,7 +763,8 @@ glx_context_pop()
     pthread_mutex_lock(&global.glx_ctx_stack_mutex);
     assert(1 == glx_ctx_stack_element_count);
 
-    locked_glXMakeCurrent(glx_ctx_stack_display, glx_ctx_stack_wnd, glx_ctx_stack_glc);
+    if (glx_ctx_stack_display)
+        locked_glXMakeCurrent(glx_ctx_stack_display, glx_ctx_stack_wnd, glx_ctx_stack_glc);
     glx_ctx_stack_element_count --;
 
     pthread_mutex_unlock(&global.glx_ctx_stack_mutex);

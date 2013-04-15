@@ -697,7 +697,7 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     data->device = deviceData;
     data->rgba_format = rgba_format;
 
-    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glx_context_push(deviceData->display, deviceData->root, deviceData->glc);
     glGenTextures(1, &data->tex_id);
     glBindTexture(GL_TEXTURE_2D, data->tex_id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -714,6 +714,7 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     glClear(GL_COLOR_BUFFER_BIT);
 
     GLenum gl_error = glGetError();
+    glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpOutputSurfaceCreate): gl error %d\n", gl_error);
         free(data);
@@ -735,10 +736,11 @@ softVdpOutputSurfaceDestroy(VdpOutputSurface surface)
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = data->device;
 
-    locked_glXMakeCurrent(data->device->display, deviceData->root, deviceData->glc);
+    glx_context_push(data->device->display, deviceData->root, deviceData->glc);
     glDeleteTextures(1, &data->tex_id);
 
     GLenum gl_error = glGetError();
+    glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpOutputSurfaceDestroy): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
@@ -774,7 +776,7 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
     if (source_rect) srcRect = *source_rect;
     const unsigned int pixel_bytes = (VDP_RGBA_FORMAT_A8 == srcSurfData->rgba_format) ? 1 : 4;
 
-    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glx_context_push(deviceData->display, deviceData->root, deviceData->glc);
     glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                             srcSurfData->tex_id, 0);
@@ -787,6 +789,7 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
     if (4 != pixel_bytes) glPixelStorei(GL_PACK_ALIGNMENT, 4);
 
     GLenum gl_error = glGetError();
+    glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpOutputSurfaceGetBitsNative): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
@@ -810,7 +813,7 @@ softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *s
     if (destination_rect) dstRect = *destination_rect;
     const unsigned int pixel_bytes = (VDP_RGBA_FORMAT_A8 == dstSurfData->rgba_format) ? 1 : 4;
 
-    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glx_context_push(deviceData->display, deviceData->root, deviceData->glc);
     glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
 
     glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0]/pixel_bytes);
@@ -822,6 +825,7 @@ softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *s
     if (4 != pixel_bytes) glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
     GLenum gl_error = glGetError();
+    glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpOutputSurfacePutBitsNative): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
@@ -851,7 +855,7 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
         return VDP_STATUS_INVALID_COLOR_TABLE_FORMAT;
     const uint32_t *color_table32 = color_table;
 
-    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glx_context_push(deviceData->display, deviceData->root, deviceData->glc);
 
     switch (source_indexed_format) {
     case VDP_INDEXED_FORMAT_I8A8:
@@ -881,6 +885,7 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
             free(unpacked_buf);
 
             GLenum gl_error = glGetError();
+            glx_context_pop();
             if (GL_NO_ERROR != gl_error) {
                 traceError("error (VdpOutputSurfacePutBitsIndexed): gl error %d\n", gl_error);
                 return VDP_STATUS_ERROR;
@@ -1087,15 +1092,17 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
 
     // TODO: dstRect should clip dstVideoRect
 
-    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glx_context_push(deviceData->display, deviceData->root, deviceData->glc);
 
     if (deviceData->va_available) {
         VAStatus status;
         if (NULL == srcSurfData->va_glx) {
             status = vaCreateSurfaceGLX(deviceData->va_dpy, GL_TEXTURE_2D, srcSurfData->tex_id,
                                         &srcSurfData->va_glx);
-            if (VA_STATUS_SUCCESS != status)
+            if (VA_STATUS_SUCCESS != status) {
+                glx_context_pop();
                 return VDP_STATUS_ERROR;
+            }
         }
 
         status = vaCopySurfaceGLX(deviceData->va_dpy, srcSurfData->va_glx, srcSurfData->va_surf, 0);
@@ -1107,6 +1114,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
             traceError("error (softVdpVideoMixerRender): framebuffer not ready, %d, %s\n",
                        gl_status, gluErrorString(gl_status));
+            glx_context_pop();
             return VDP_STATUS_ERROR;
         }
         glMatrixMode(GL_PROJECTION);
@@ -1180,6 +1188,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         sws_freeContext(sws_ctx);
         if (res != (int)dstVideoHeight) {
             traceError("error (softVdpVideoMixerRender): libswscale scaling failed\n");
+            glx_context_pop();
             return VDP_STATUS_ERROR;
         }
 
@@ -1195,6 +1204,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     }
 
     GLenum gl_error = glGetError();
+    glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpVideoMixerRender): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
@@ -1221,12 +1231,13 @@ softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_qu
     }
 
     // drawable may be destroyed already, so one should activate global context
-    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glx_context_push(deviceData->display, deviceData->root, deviceData->glc);
     // this display list shared between context, so it's fine to delete it here
     glDeleteLists(pqTargetData->gl_displaylist, 1);
     glXDestroyContext(deviceData->display, pqTargetData->glc);
 
     GLenum gl_error = glGetError();
+    glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpPresentationQueueTargetDestroy): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
@@ -1357,8 +1368,7 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     if (pqueueData->device != surfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     VdpDeviceData *deviceData = surfData->device;
 
-    locked_glXMakeCurrent(deviceData->display, pqueueData->target->drawable,
-                          pqueueData->target->glc);
+    glx_context_push(deviceData->display, pqueueData->target->drawable, pqueueData->target->glc);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     const uint32_t target_width  = (clip_width > 0)  ? clip_width  : surfData->width;
@@ -1415,6 +1425,7 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     locked_glXSwapBuffers(deviceData->display, pqueueData->target->drawable);
 
     GLenum gl_error = glGetError();
+    glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpPresentationQueueDisplay): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
@@ -1510,7 +1521,7 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
     data->va_glx = NULL;
     data->tex_id = 0;
 
-    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glx_context_push(deviceData->display, deviceData->root, deviceData->glc);
     glGenTextures(1, &data->tex_id);
     glBindTexture(GL_TEXTURE_2D, data->tex_id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -1521,6 +1532,7 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
                  GL_BGRA, GL_UNSIGNED_BYTE, NULL);
 
     GLenum gl_error = glGetError();
+    glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpVideoSurfaceCreate): gl error %d\n", gl_error);
         free(data);
@@ -1563,10 +1575,11 @@ softVdpVideoSurfaceDestroy(VdpVideoSurface surface)
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = videoSurfData->device;
 
-    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glx_context_push(deviceData->display, deviceData->root, deviceData->glc);
     glDeleteTextures(1, &videoSurfData->tex_id);
 
     GLenum gl_error = glGetError();
+    glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpVideoSurfaceDestroy): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
@@ -1709,6 +1722,8 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = dstSurfData->device;
 
+    glx_context_push(deviceData->display, deviceData->root, deviceData->glc);
+
     if (deviceData->va_available) {
         if (VDP_YCBCR_FORMAT_YV12 != source_ycbcr_format) {
             traceError("error (softVdpVideoSurfacePutBitsYCbCr): not supported source_ycbcr_format "
@@ -1747,7 +1762,6 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
         }
         sws_freeContext(sws_ctx);
 
-        locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
         glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, dstSurfData->width, dstSurfData->height,
                         GL_BGRA, GL_UNSIGNED_BYTE, bgra_buf);
@@ -1784,6 +1798,7 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
     }
 
     GLenum gl_error = glGetError();
+    glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpVideoSurfacePutBitsYCbCr): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
@@ -1887,7 +1902,7 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     data->height = height;
     data->frequently_accessed = frequently_accessed;
 
-    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glx_context_push(deviceData->display, deviceData->root, deviceData->glc);
     glGenTextures(1, &data->tex_id);
     glBindTexture(GL_TEXTURE_2D, data->tex_id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -1902,6 +1917,7 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
         traceError("error (VdpBitmapSurfaceCreate): texture failure, gl error (%d, %s)\n", gl_error,
                    gluErrorString(gl_error));
         free(data);
+        glx_context_pop();
         return VDP_STATUS_ERROR;
     }
     if (VDP_RGBA_FORMAT_A8 == rgba_format) {
@@ -1911,6 +1927,7 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     }
 
     gl_error = glGetError();
+    glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         free(data);
         traceError("error (VdpBitmapSurfaceCreate): gl error %d\n", gl_error);
@@ -1932,10 +1949,11 @@ softVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = data->device;
 
-    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glx_context_push(deviceData->display, deviceData->root, deviceData->glc);
     glDeleteTextures(1, &data->tex_id);
 
     GLenum gl_error = glGetError();
+    glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpBitmapSurfaceDestroy): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
@@ -1984,7 +2002,7 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
     VdpRect d_rect = {0, 0, dstSurfData->width, dstSurfData->height};
     if (destination_rect) d_rect = *destination_rect;
 
-    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glx_context_push(deviceData->display, deviceData->root, deviceData->glc);
 
     glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0]/pixel_bytes);
@@ -1998,6 +2016,7 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
     GLenum gl_error = glGetError();
+    glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpBitmapSurfacePutBitsNative): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
@@ -2105,12 +2124,12 @@ softVdpDeviceDestroy(VdpDevice device)
         vaTerminate(data->va_dpy);
 
     XLockDisplay(data->display);
-    // TODO: Is it right to reset context? App using its own will not be happy with reset.
-    glXMakeCurrent(data->display, data->root, data->glc);
+
+    glx_context_push(data->display, data->root, data->glc);
     glDeleteTextures(1, &data->watermark_tex_id);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDeleteFramebuffers(1, &data->fbo_id);
-    glXMakeCurrent(data->display, None, NULL);
+    glx_context_pop();
     glXDestroyContext(data->display, data->glc);
 
     handlestorage_expunge(device);
@@ -2310,7 +2329,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     if (bs.invalid_func) return VDP_STATUS_INVALID_BLEND_FACTOR;
     if (bs.invalid_eq) return VDP_STATUS_INVALID_BLEND_EQUATION;
 
-    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glx_context_push(deviceData->display, deviceData->root, deviceData->glc);
     glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
         dstSurfData->tex_id, 0);
@@ -2318,6 +2337,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
         traceError("error (softVdpOutputSurfaceRenderOutputSurface): "
                    "framebuffer not ready, %d, %s\n", gl_status, gluErrorString(gl_status));
+        glx_context_pop();
         return VDP_STATUS_ERROR;
     }
     glMatrixMode(GL_PROJECTION);
@@ -2357,11 +2377,11 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     glColor4f(1, 1, 1, 1);
 
     GLenum gl_error = glGetError();
+    glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpOutputSurfaceRenderOutputSurface): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
     }
-
 
     return VDP_STATUS_OK;
 }
@@ -2398,7 +2418,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     if (bs.invalid_func) return VDP_STATUS_INVALID_BLEND_FACTOR;
     if (bs.invalid_eq) return VDP_STATUS_INVALID_BLEND_EQUATION;
 
-    locked_glXMakeCurrent(deviceData->display, deviceData->root, deviceData->glc);
+    glx_context_push(deviceData->display, deviceData->root, deviceData->glc);
     glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
         dstSurfData->tex_id, 0);
@@ -2406,6 +2426,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
         traceError("error (softVdpOutputSurfaceRenderBitmapSurface): "
                    "framebuffer not ready, %d, %s\n", gl_status, gluErrorString(gl_status));
+        glx_context_pop();
         return VDP_STATUS_ERROR;
     }
     glMatrixMode(GL_PROJECTION);
@@ -2445,6 +2466,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     glColor4f(1, 1, 1, 1);
 
     GLenum gl_error = glGetError();
+    glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpOutputSurfaceRenderBitmapSurface): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
@@ -2495,10 +2517,11 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
     XUnlockDisplay(deviceData->display);
     // TODO: check for error
 
-    locked_glXMakeCurrent(deviceData->display, drawable, data->glc);
+    glx_context_push(deviceData->display, drawable, data->glc);
     data->gl_displaylist = glGenLists(1);
 
     GLenum gl_error = glGetError();
+    glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpPresentationQueueTargetCreateX11): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
@@ -2759,7 +2782,7 @@ softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
     data->root = DefaultRootWindow(display);
     XFree(vi);
 
-    glXMakeCurrent(display, data->root, data->glc);
+    glx_context_push(display, data->root, data->glc);
     glGenFramebuffers(1, &data->fbo_id);
     glBindFramebuffer(GL_FRAMEBUFFER, data->fbo_id);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -2805,9 +2828,9 @@ softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
     *device = handlestorage_add(data);
     *get_proc_address = &softVdpGetProcAddress;
 
-    XUnlockDisplay(display);
-
     GLenum gl_error = glGetError();
+    glx_context_pop();
+    XUnlockDisplay(display);
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpDeviceCreateX11): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
