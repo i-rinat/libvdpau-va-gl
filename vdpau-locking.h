@@ -85,4 +85,7 @@ VdpGetProcAddress lockedVdpGetProcAddress;
 Bool locked_glXMakeCurrent(Display *dpy, GLXDrawable drawable, GLXContext ctx);
 void locked_glXSwapBuffers(Display *dpy, GLXDrawable drawable);
 
+void glx_context_push(Display *dpy, Drawable wnd, GLXContext glc);
+void glx_context_pop();
+
 #endif /* __VDPAU_LOCKING_H */

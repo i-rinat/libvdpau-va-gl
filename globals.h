@@ -13,6 +13,7 @@
 
 struct global_data {
     pthread_mutex_t     mutex;
+    pthread_mutex_t     glx_ctx_stack_mutex;
     struct {
         int buggy_XCloseDisplay;
         int show_watermark;

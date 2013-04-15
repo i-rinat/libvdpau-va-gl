@@ -8,6 +8,7 @@
 
 #include "vdpau-locking.h"
 #include "vdpau-soft.h"
+#include <assert.h>
 
 extern struct global_data global;
 
@@ -731,4 +732,39 @@ locked_glXSwapBuffers(Display *dpy, GLXDrawable drawable)
     XLockDisplay(dpy);
     glXSwapBuffers(dpy, drawable);
     XUnlockDisplay(dpy);
+}
+
+// glx context stack.
+
+static __thread Display *glx_ctx_stack_display;
+static __thread Drawable glx_ctx_stack_wnd;
+static __thread GLXContext glx_ctx_stack_glc;
+static __thread int glx_ctx_stack_element_count = 0;
+
+void
+glx_context_push(Display *dpy, Drawable wnd, GLXContext glc)
+{
+    pthread_mutex_lock(&global.glx_ctx_stack_mutex);
+    assert(0 == glx_ctx_stack_element_count);
+
+    glx_ctx_stack_display = glXGetCurrentDisplay();
+    glx_ctx_stack_wnd =     glXGetCurrentDrawable();
+    glx_ctx_stack_glc =     glXGetCurrentContext();
+    glx_ctx_stack_element_count ++;
+
+    locked_glXMakeCurrent(dpy, wnd, glc);
+
+    pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
+}
+
+void
+glx_context_pop()
+{
+    pthread_mutex_lock(&global.glx_ctx_stack_mutex);
+    assert(1 == glx_ctx_stack_element_count);
+
+    locked_glXMakeCurrent(glx_ctx_stack_display, glx_ctx_stack_wnd, glx_ctx_stack_glc);
+    glx_ctx_stack_element_count --;
+
+    pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
 }
