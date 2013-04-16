@@ -56,6 +56,7 @@ traceInfo(const char *fmt, ...)
 {
     if (!enabled) return;
     va_list args;
+    if (trace_hook) trace_hook(trace_hook_param, -2);
     fprintf(tlog, "%s", trace_header);
     va_start(args, fmt);
     vfprintf(tlog, fmt, args);
