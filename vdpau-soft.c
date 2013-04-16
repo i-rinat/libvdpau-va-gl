@@ -1752,7 +1752,7 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
         uint8_t * const dst[] = { bgra_buf, NULL, NULL, NULL };
         const int dstStride[] = { dstSurfData->width * 4, 0, 0, 0 };
         int res = sws_scale(sws_ctx, srcSlice, srcStride, 0, dstSurfData->height, dst, dstStride);
-        if (res != dstSurfData->height) {
+        if (res != (int)dstSurfData->height) {
             traceError("error (softVdpVideoSurfacePutBitsYCbCr): sws_scale returned %d while "
                        "%d expected\n", res, dstSurfData->height);
             free(bgra_buf);

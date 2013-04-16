@@ -79,7 +79,7 @@ handlestorage_destory(void)
 void
 handlestorage_execute_for_all(void (*callback)(int idx, void *entry, void *p), void *param)
 {
-    for (int k = 0; k < vdpHandles->len; k ++) {
+    for (unsigned int k = 0; k < vdpHandles->len; k ++) {
         void *item = g_ptr_array_index(vdpHandles, k);
         if (item)
             callback(k, item, param);
