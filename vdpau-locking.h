@@ -15,8 +15,6 @@
 #include <GL/glx.h>
 #include "globals.h"
 
-extern struct global_data global;
-
 VdpStatus
 lockedVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
                          VdpGetProcAddress **get_proc_address);
@@ -84,8 +82,5 @@ VdpGetProcAddress lockedVdpGetProcAddress;
 
 Bool locked_glXMakeCurrent(Display *dpy, GLXDrawable drawable, GLXContext ctx);
 void locked_glXSwapBuffers(Display *dpy, GLXDrawable drawable);
-
-void glx_context_push(Display *dpy, Drawable wnd, GLXContext glc);
-void glx_context_pop();
 
 #endif /* __VDPAU_LOCKING_H */

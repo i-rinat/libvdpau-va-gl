@@ -20,4 +20,6 @@ struct global_data {
     } quirks;
 };
 
+extern struct global_data global;
+
 #endif /* __GLOBALS_H */

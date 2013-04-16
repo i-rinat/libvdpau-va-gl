@@ -23,6 +23,7 @@
 #include <GL/glu.h>
 #include <GL/glx.h>
 #include "bitstream.h"
+#include "ctx-stack.h"
 #include "h264-parse.h"
 #include "reverse-constant.h"
 #include "handle-storage.h"
@@ -133,8 +134,6 @@ typedef struct {
     uint32_t            next_surface_idx;
     VAContextID         context_id;
 } VdpDecoderData;
-
-extern struct global_data global;
 
 // ====================
 

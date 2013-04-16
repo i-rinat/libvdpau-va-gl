@@ -18,7 +18,6 @@
 #include "vdpau-trace.h"
 #include "globals.h"
 
-extern struct global_data global;
 
 static
 void
