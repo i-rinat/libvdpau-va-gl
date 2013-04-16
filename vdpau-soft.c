@@ -27,6 +27,7 @@
 #include "h264-parse.h"
 #include "reverse-constant.h"
 #include "handle-storage.h"
+#include "vdpau-device.h"
 #include "vdpau-trace.h"
 #include "vdpau-locking.h"
 #include "watermark.h"
@@ -40,23 +41,6 @@
 
 static char const *
 implemetation_description_string = "OpenGL/VAAPI/libswscale backend for VDPAU";
-
-typedef struct {
-    HandleType  type;
-    void       *self;
-    int         refcount;
-    Display    *display;
-    Display    *display_orig;
-    int         screen;
-    GLXContext  glc;
-    Window      root;
-    GLuint      fbo_id;
-    VADisplay   va_dpy;
-    int         va_available;
-    int         va_version_major;
-    int         va_version_minor;
-    GLuint      watermark_tex_id;
-} VdpDeviceData;
 
 typedef struct {
     HandleType      type;
