@@ -7,6 +7,7 @@
  */
 
 #define _XOPEN_SOURCE   500
+#define _GNU_SOURCE
 #include <ctype.h>
 #include <vdpau/vdpau.h>
 #include <stdio.h>
@@ -18,6 +19,16 @@
 #include "vdpau-trace.h"
 #include "globals.h"
 
+#include <sys/syscall.h>
+#include <unistd.h>
+
+void
+trc_hk(void *param, int origin)
+{
+    (void)param;
+    (void)origin;
+    printf("[%5d] ", (pid_t)syscall(__NR_gettid));
+}
 
 static
 void
