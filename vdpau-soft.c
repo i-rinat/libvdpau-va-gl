@@ -2114,6 +2114,7 @@ softVdpDeviceDestroy(VdpDevice device)
     glDeleteFramebuffers(1, &data->fbo_id);
     glx_context_pop();
     glXDestroyContext(data->display, data->glc);
+    XFree(data->vi);
 
     handlestorage_expunge(device);
     XUnlockDisplay(data->display);
@@ -2752,18 +2753,16 @@ softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
 
     // initialize OpenGL context
     GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
-    XVisualInfo *vi;
-    vi = glXChooseVisual(display, screen, att);
-    if (NULL == vi) {
+    data->vi = glXChooseVisual(display, screen, att);
+    if (NULL == data->vi) {
         traceError("error (softVdpDeviceCreateX11): glXChooseVisual failed\n");
         free(data);
         XUnlockDisplay(display);
         return VDP_STATUS_ERROR;
     }
 
-    data->glc = glXCreateContext(display, vi, NULL, GL_TRUE);
+    data->glc = glXCreateContext(display, data->vi, NULL, GL_TRUE);
     data->root = DefaultRootWindow(display);
-    XFree(vi);
 
     glx_context_push(display, data->root, data->glc);
     glGenFramebuffers(1, &data->fbo_id);

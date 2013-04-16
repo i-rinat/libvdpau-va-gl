@@ -22,6 +22,7 @@ typedef struct {
     GLXContext  glc;
     Window      root;
     GLuint      fbo_id;
+    XVisualInfo *vi;
     VADisplay   va_dpy;
     int         va_available;
     int         va_version_major;
