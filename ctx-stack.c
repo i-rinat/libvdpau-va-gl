@@ -71,12 +71,10 @@ glx_context_pop()
     pthread_mutex_lock(&global.glx_ctx_stack_mutex);
     assert(1 == glx_ctx_stack_element_count);
 
-    traceInfo("glc pop stage 1: 0x%p, %d, 0x%p\n", glx_ctx_stack_display, glx_ctx_stack_wnd, glx_ctx_stack_glc);
     if (glx_ctx_stack_display)
         locked_glXMakeCurrent(glx_ctx_stack_display, glx_ctx_stack_wnd, glx_ctx_stack_glc);
 
     glx_ctx_stack_element_count --;
-    traceInfo("glc pop stage 2\n");
 
     pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
 }
@@ -95,7 +93,6 @@ glc_hash_destroy_func(gpointer key, gpointer value, gpointer user_data)
     GLXContext glc = value;
     Display *dpy = user_data;
     glXDestroyContext(dpy, glc);
-    fprintf(stderr, "destroyed context\n");
 }
 
 void
