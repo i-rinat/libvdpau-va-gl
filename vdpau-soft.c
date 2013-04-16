@@ -27,7 +27,6 @@
 #include "h264-parse.h"
 #include "reverse-constant.h"
 #include "handle-storage.h"
-#include "vdpau-device.h"
 #include "vdpau-trace.h"
 #include "vdpau-locking.h"
 #include "watermark.h"
@@ -118,8 +117,6 @@ typedef struct {
     uint32_t            next_surface_idx;
     VAContextID         context_id;
 } VdpDecoderData;
-
-// ====================
 
 
 static

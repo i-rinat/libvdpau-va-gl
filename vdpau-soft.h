@@ -9,7 +9,31 @@
 #ifndef VDPAU_SOFT_H_
 #define VDPAU_SOFT_H_
 
+#include <GL/glx.h>
 #include <vdpau/vdpau.h>
+#include <va/va.h>
+#include "handle-storage.h"
+
+
+typedef struct {
+    HandleType  type;
+    void       *self;
+    int         refcount;
+    Display    *display;
+    Display    *display_orig;
+    int         screen;
+    GLXContext  glc;
+    GHashTable *glc_hash_table;
+    Window      root;
+    GLuint      fbo_id;
+    XVisualInfo *vi;
+    VADisplay   va_dpy;
+    int         va_available;
+    int         va_version_major;
+    int         va_version_minor;
+    GLuint      watermark_tex_id;
+} VdpDeviceData;
+
 
 VdpStatus
 softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,

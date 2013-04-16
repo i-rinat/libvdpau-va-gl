@@ -9,8 +9,7 @@
 #ifndef __CTX_STACK_H
 #define __CTX_STACK_H
 
-#include <GL/glx.h>
-#include "vdpau-device.h"
+#include "vdpau-soft.h"
 
 void glx_context_push_global(Display *dpy, Drawable wnd, GLXContext glc);
 void glx_context_push_thread_local(VdpDeviceData *deviceData);
