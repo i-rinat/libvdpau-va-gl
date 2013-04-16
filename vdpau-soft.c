@@ -2115,6 +2115,7 @@ softVdpDeviceDestroy(VdpDevice device)
     glx_context_pop();
     glXDestroyContext(data->display, data->glc);
     XFree(data->vi);
+    glx_context_destroy_glc_hash_table(data->display, data->glc_hash_table);
 
     handlestorage_expunge(device);
     XUnlockDisplay(data->display);

@@ -86,3 +86,22 @@ glx_context_new_glc_hash_table(void)
 {
     return g_hash_table_new(g_direct_hash, g_direct_equal);
 }
+
+static
+void
+glc_hash_destroy_func(gpointer key, gpointer value, gpointer user_data)
+{
+    (void)key;
+    GLXContext glc = value;
+    Display *dpy = user_data;
+    glXDestroyContext(dpy, glc);
+    fprintf(stderr, "destroyed context\n");
+}
+
+void
+glx_context_destroy_glc_hash_table(Display *dpy, GHashTable *ht)
+{
+    XLockDisplay(dpy);
+    g_hash_table_foreach(ht, glc_hash_destroy_func, dpy);
+    XUnlockDisplay(dpy);
+}
