@@ -10,11 +10,14 @@
  *  glx context stack
  */
 
+#define _GNU_SOURCE
 #include "ctx-stack.h"
 #include "globals.h"
 #include <assert.h>
 #include "vdpau-trace.h"
 #include "vdpau-locking.h"
+#include <sys/syscall.h>
+#include <unistd.h>
 
 static __thread Display *glx_ctx_stack_display;
 static __thread Drawable glx_ctx_stack_wnd;
@@ -22,7 +25,7 @@ static __thread GLXContext glx_ctx_stack_glc;
 static __thread int glx_ctx_stack_element_count = 0;
 
 void
-glx_context_push(Display *dpy, Drawable wnd, GLXContext glc)
+glx_context_push_global(Display *dpy, Drawable wnd, GLXContext glc)
 {
     pthread_mutex_lock(&global.glx_ctx_stack_mutex);
     assert(0 == glx_ctx_stack_element_count);
@@ -32,8 +35,30 @@ glx_context_push(Display *dpy, Drawable wnd, GLXContext glc)
     glx_ctx_stack_glc =     glXGetCurrentContext();
     glx_ctx_stack_element_count ++;
 
-    traceInfo("glc push: 0x%p, %d, 0x%p\n", glx_ctx_stack_display, glx_ctx_stack_wnd, glx_ctx_stack_glc);
-    traceInfo("glc set: 0x%p, %d, 0x%p\n", dpy, wnd, glc);
+    locked_glXMakeCurrent(dpy, wnd, glc);
+
+    pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
+}
+
+void
+glx_context_push_thread_local(VdpDeviceData *deviceData)
+{
+    pthread_mutex_lock(&global.glx_ctx_stack_mutex);
+    Display *dpy = deviceData->display;
+    const Window wnd = deviceData->root;
+    const gint thread_id = (gint) syscall(__NR_gettid);
+
+    GLXContext glc = g_hash_table_lookup(deviceData->glc_hash_table, GINT_TO_POINTER(thread_id));
+    if (!glc) {
+        glc = glXCreateContext(dpy, deviceData->vi, deviceData->glc, GL_TRUE);
+        assert(glc);
+        g_hash_table_insert(deviceData->glc_hash_table, GINT_TO_POINTER(thread_id), glc);
+    }
+
+    glx_ctx_stack_display = glXGetCurrentDisplay();
+    glx_ctx_stack_wnd =     glXGetCurrentDrawable();
+    glx_ctx_stack_glc =     glXGetCurrentContext();
+    glx_ctx_stack_element_count ++;
 
     locked_glXMakeCurrent(dpy, wnd, glc);
 
@@ -54,4 +79,10 @@ glx_context_pop()
     traceInfo("glc pop stage 2\n");
 
     pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
+}
+
+GHashTable *
+glx_context_new_glc_hash_table(void)
+{
+    return g_hash_table_new(g_direct_hash, g_direct_equal);
 }

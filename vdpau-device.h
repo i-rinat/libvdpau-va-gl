@@ -20,6 +20,7 @@ typedef struct {
     Display    *display_orig;
     int         screen;
     GLXContext  glc;
+    GHashTable *glc_hash_table;
     Window      root;
     GLuint      fbo_id;
     XVisualInfo *vi;
