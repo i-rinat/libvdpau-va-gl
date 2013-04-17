@@ -2112,6 +2112,8 @@ softVdpDeviceDestroy(VdpDevice device)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDeleteFramebuffers(1, &data->fbo_id);
     glx_context_pop();
+
+    locked_glXMakeCurrent(data->display, None, NULL);
     glXDestroyContext(data->display, data->glc);
     XFree(data->vi);
     glx_context_destroy_glc_hash_table(data->display, data->glc_hash_table);
