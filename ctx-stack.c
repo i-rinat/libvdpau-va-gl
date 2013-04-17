@@ -98,7 +98,9 @@ glc_hash_destroy_func(gpointer key, gpointer value, gpointer user_data)
 void
 glx_context_destroy_glc_hash_table(Display *dpy, GHashTable *ht)
 {
+    pthread_mutex_lock(&global.glx_ctx_stack_mutex);
     XLockDisplay(dpy);
     g_hash_table_foreach(ht, glc_hash_destroy_func, dpy);
     XUnlockDisplay(dpy);
+    pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
 }
