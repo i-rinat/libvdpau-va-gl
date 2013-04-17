@@ -1559,9 +1559,10 @@ softVdpVideoSurfaceDestroy(VdpVideoSurface surface)
     glDeleteTextures(1, &videoSurfData->tex_id);
 
     GLenum gl_error = glGetError();
-    glx_context_pop();
+
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpVideoSurfaceDestroy): gl error %d\n", gl_error);
+        glx_context_pop();
         return VDP_STATUS_ERROR;
     }
 
@@ -1577,6 +1578,7 @@ softVdpVideoSurfaceDestroy(VdpVideoSurface surface)
         free(videoSurfData->u_plane);
     }
 
+    glx_context_pop();
     free(videoSurfData);
     deviceData->refcount --;
     handlestorage_expunge(surface);
