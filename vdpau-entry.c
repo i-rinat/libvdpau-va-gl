@@ -79,6 +79,7 @@ static
 void
 library_constructor(void)
 {
+    XInitThreads();
     handlestorage_initialize();
 
     // Initialize global data
