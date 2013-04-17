@@ -2119,11 +2119,7 @@ softVdpDeviceDestroy(VdpDevice device)
     handlestorage_expunge(device);
     XUnlockDisplay(data->display);
 
-    // as we have own connection, close it.
-    if (! global.quirks.buggy_XCloseDisplay) {    // XCloseDisplay can segfault
-        handlestorage_expunge_xdpy_copy(data->display_orig);
-        XCloseDisplay(data->display);
-    }
+    handlestorage_xdpy_copy_unref(data->display_orig);
 
     GLenum gl_error = glGetError();
     if (GL_NO_ERROR != gl_error) {
@@ -2730,13 +2726,14 @@ softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
         return VDP_STATUS_INVALID_POINTER;
 
     // Let's get own connection to the X server
-    Display *display = handlestorage_get_cached_xdpy_copy(display_orig);
-    if (NULL == display) {
-        // don't have own connection yet, acquire new, and cache it
-        display = XOpenDisplay(XDisplayString(display_orig));
-        if (NULL == display)
-            return VDP_STATUS_ERROR;
-        handlestorage_push_xdpy_copy(display_orig, display);
+    Display *display = handlestorage_xdpy_copy_ref(display_orig);
+    if (NULL == display)
+        return VDP_STATUS_ERROR;
+
+    if (global.quirks.buggy_XCloseDisplay) {
+        // XCloseDisplay could segfault on fglrx. To avoid calling XCloseDisplay,
+        // make one more reference to xdpy copy.
+        (void)handlestorage_xdpy_copy_ref(display_orig);
     }
 
     VdpDeviceData *data = (VdpDeviceData *)calloc(1, sizeof(VdpDeviceData));
