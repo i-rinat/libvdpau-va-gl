@@ -13,6 +13,7 @@ VdpDevice device2;
 void *
 thread_1(void *param)
 {
+    (void)param;
     ASSERT_OK(vdp_device_destroy(device1));
     return NULL;
 }
