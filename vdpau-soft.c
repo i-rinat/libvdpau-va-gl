@@ -2012,24 +2012,44 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
     VdpRect d_rect = {0, 0, dstSurfData->width, dstSurfData->height};
     if (destination_rect) d_rect = *destination_rect;
 
-    glx_context_push_thread_local(deviceData);
+    if (dstSurfData->frequently_accessed) {
+        const unsigned int bytes_per_pixel = pixel_bytes;
+        if (0 == d_rect.x0 && dstSurfData->width == d_rect.x1 && source_pitches[0] == d_rect.x1) {
+            // full width
+            const int bytes_to_copy =
+                (d_rect.x1 - d_rect.x0) * (d_rect.y1 - d_rect.y0) * bytes_per_pixel;
+            memcpy(dstSurfData->bitmap_data + d_rect.y0 * dstSurfData->width * bytes_per_pixel,
+                   source_data[0], bytes_to_copy);
+        } else {
+            const unsigned int bytes_in_line = (d_rect.x1 - d_rect.x0) * bytes_per_pixel;
+            for (unsigned int y = d_rect.y0; y < d_rect.y1; y ++) {
+                const int dst_offset = (y * dstSurfData->width + d_rect.x0) * bytes_per_pixel;
+                memcpy(dstSurfData->bitmap_data + dst_offset,
+                       source_data[0] + (y - d_rect.y0) * source_pitches[0],
+                       bytes_in_line);
+            }
+        }
+        dstSurfData->dirty = 1;
+    } else {
+        glx_context_push_thread_local(deviceData);
 
-    glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0]/pixel_bytes);
-    if (4 != pixel_bytes)
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, d_rect.x0, d_rect.y0,
-        d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0,
-        dstSurfData->gl_format, dstSurfData->gl_type, source_data[0]);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    if (4 != pixel_bytes)
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0]/pixel_bytes);
+        if (4 != pixel_bytes)
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, d_rect.x0, d_rect.y0,
+            d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0,
+            dstSurfData->gl_format, dstSurfData->gl_type, source_data[0]);
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+        if (4 != pixel_bytes)
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
-    GLenum gl_error = glGetError();
-    glx_context_pop();
-    if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpBitmapSurfacePutBitsNative): gl error %d\n", gl_error);
-        return VDP_STATUS_ERROR;
+        GLenum gl_error = glGetError();
+        glx_context_pop();
+        if (GL_NO_ERROR != gl_error) {
+            traceError("error (VdpBitmapSurfacePutBitsNative): gl error %d\n", gl_error);
+            return VDP_STATUS_ERROR;
+        }
     }
 
     return VDP_STATUS_OK;
