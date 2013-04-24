@@ -69,6 +69,7 @@ typedef struct {
     VdpDeviceData  *device;
     VdpRGBAFormat   rgba_format;
     GLuint          tex_id;
+    GLuint          fbo_id;
     uint32_t        width;
     uint32_t        height;
     GLuint          gl_internal_format;
@@ -692,8 +693,18 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     glTexImage2D(GL_TEXTURE_2D, 0, data->gl_internal_format, width, height, 0, data->gl_format,
                  data->gl_type, NULL);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
+    glGenFramebuffers(1, &data->fbo_id);
+    glBindFramebuffer(GL_FRAMEBUFFER, data->fbo_id);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, data->tex_id, 0);
+    GLenum gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
+        traceError("error (VdpOutputSurfaceCreate): "
+                   "framebuffer not ready, %d, %s\n", gl_status, gluErrorString(gl_status));
+        glx_context_pop();
+        free(data);
+        return VDP_STATUS_ERROR;
+    }
+
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -722,6 +733,7 @@ softVdpOutputSurfaceDestroy(VdpOutputSurface surface)
 
     glx_context_push_thread_local(deviceData);
     glDeleteTextures(1, &data->tex_id);
+    glDeleteFramebuffers(1, &data->fbo_id);
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -761,9 +773,7 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
     const unsigned int pixel_bytes = (VDP_RGBA_FORMAT_A8 == srcSurfData->rgba_format) ? 1 : 4;
 
     glx_context_push_thread_local(deviceData);
-    glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                            srcSurfData->tex_id, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, srcSurfData->fbo_id);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, destination_pitches[0]/pixel_bytes);
     if (4 != pixel_bytes) glPixelStorei(GL_PACK_ALIGNMENT, 1);
@@ -1091,16 +1101,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
 
         status = vaCopySurfaceGLX(deviceData->va_dpy, srcSurfData->va_glx, srcSurfData->va_surf, 0);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                               dstSurfData->tex_id, 0);
-        GLenum gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
-            traceError("error (softVdpVideoMixerRender): framebuffer not ready, %d, %s\n",
-                       gl_status, gluErrorString(gl_status));
-            glx_context_pop();
-            return VDP_STATUS_ERROR;
-        }
+        glBindFramebuffer(GL_FRAMEBUFFER, dstSurfData->fbo_id);
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
         glOrtho(0, dstSurfData->width, 0, dstSurfData->height, -1.0f, 1.0f);
@@ -2155,7 +2156,6 @@ softVdpDeviceDestroy(VdpDevice device)
     glx_context_push_thread_local(data);
     glDeleteTextures(1, &data->watermark_tex_id);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glDeleteFramebuffers(1, &data->fbo_id);
     glx_context_pop();
 
     locked_glXMakeCurrent(data->display, None, NULL);
@@ -2357,16 +2357,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     if (bs.invalid_eq) return VDP_STATUS_INVALID_BLEND_EQUATION;
 
     glx_context_push_thread_local(deviceData);
-    glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-        dstSurfData->tex_id, 0);
-    GLenum gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
-        traceError("error (softVdpOutputSurfaceRenderOutputSurface): "
-                   "framebuffer not ready, %d, %s\n", gl_status, gluErrorString(gl_status));
-        glx_context_pop();
-        return VDP_STATUS_ERROR;
-    }
+    glBindFramebuffer(GL_FRAMEBUFFER, dstSurfData->fbo_id);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0, dstWidth, 0, dstHeight, -1.0f, 1.0f);
@@ -2446,16 +2437,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     if (bs.invalid_eq) return VDP_STATUS_INVALID_BLEND_EQUATION;
 
     glx_context_push_thread_local(deviceData);
-    glBindFramebuffer(GL_FRAMEBUFFER, deviceData->fbo_id);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-        dstSurfData->tex_id, 0);
-    GLenum gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
-        traceError("error (softVdpOutputSurfaceRenderBitmapSurface): "
-                   "framebuffer not ready, %d, %s\n", gl_status, gluErrorString(gl_status));
-        glx_context_pop();
-        return VDP_STATUS_ERROR;
-    }
+    glBindFramebuffer(GL_FRAMEBUFFER, dstSurfData->fbo_id);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0, dstSurfData->width, 0, dstSurfData->height, -1.0f, 1.0f);
@@ -2820,8 +2802,7 @@ softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
     data->glc_hash_table = glx_context_new_glc_hash_table();
 
     glx_context_push_thread_local(data);
-    glGenFramebuffers(1, &data->fbo_id);
-    glBindFramebuffer(GL_FRAMEBUFFER, data->fbo_id);
+
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
     glMatrixMode(GL_PROJECTION);

@@ -25,7 +25,6 @@ typedef struct {
     GLXContext  glc;
     GHashTable *glc_hash_table;
     Window      root;
-    GLuint      fbo_id;
     XVisualInfo *vi;
     VADisplay   va_dpy;
     int         va_available;
