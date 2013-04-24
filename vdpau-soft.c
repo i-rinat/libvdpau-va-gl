@@ -146,7 +146,6 @@ softVdpGetErrorString(VdpStatus status)
 VdpStatus
 softVdpGetApiVersion(uint32_t *api_version)
 {
-    traceVdpGetApiVersion("{full}", api_version);
     *api_version = VDPAU_VERSION;
     return VDP_STATUS_OK;
 }
@@ -156,8 +155,8 @@ softVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, Vdp
                                 uint32_t *max_level, uint32_t *max_macroblocks,
                                 uint32_t *max_width, uint32_t *max_height)
 {
-    traceVdpDecoderQueryCapabilities("{zilch}", device, profile, is_supported, max_level,
-        max_macroblocks, max_width, max_height);
+    (void)device; (void)profile; (void)is_supported; (void)max_level; (void)max_macroblocks;
+    (void)max_width; (void)max_height;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -165,8 +164,6 @@ VdpStatus
 softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width, uint32_t height,
                      uint32_t max_references, VdpDecoder *decoder)
 {
-    traceVdpDecoderCreate("{full}", device, profile, width, height, max_references, decoder);
-
     VdpStatus retval = VDP_STATUS_ERROR;
     VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
@@ -249,7 +246,6 @@ error:
 VdpStatus
 softVdpDecoderDestroy(VdpDecoder decoder)
 {
-    traceVdpDecoderDestroy("{full}", decoder);
     VdpDecoderData *decoderData = handlestorage_get(decoder, HANDLETYPE_DECODER);
     if (NULL == decoderData) return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = decoderData->device;
@@ -271,7 +267,7 @@ VdpStatus
 softVdpDecoderGetParameters(VdpDecoder decoder, VdpDecoderProfile *profile,
                             uint32_t *width, uint32_t *height)
 {
-    traceVdpDecoderGetParameters("{zilch}", decoder, profile, width, height);
+    (void)decoder; (void)profile; (void)width; (void)height;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -416,9 +412,6 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                      VdpPictureInfo const *picture_info, uint32_t bitstream_buffer_count,
                      VdpBitstreamBuffer const *bitstream_buffers)
 {
-    traceVdpDecoderRender("{WIP}", decoder, target, picture_info, bitstream_buffer_count,
-        bitstream_buffers);
-
     VdpDecoderData *decoderData = handlestorage_get(decoder, HANDLETYPE_DECODER);
     VdpVideoSurfaceData *dstSurfData = handlestorage_get(target, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == decoderData || NULL == dstSurfData) return VDP_STATUS_INVALID_HANDLE;
@@ -587,8 +580,7 @@ softVdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
                                       VdpBool *is_supported, uint32_t *max_width,
                                       uint32_t *max_height)
 {
-    traceVdpOutputSurfaceQueryCapabilities("{zilch}", device, surface_rgba_format, is_supported,
-        max_width, max_height);
+    (void)device; (void)surface_rgba_format; (void)is_supported; (void)max_width; (void)max_height;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -597,8 +589,7 @@ softVdpOutputSurfaceQueryGetPutBitsNativeCapabilities(VdpDevice device,
                                                       VdpRGBAFormat surface_rgba_format,
                                                       VdpBool *is_supported)
 {
-    traceVdpOutputSurfaceQueryGetPutBitsNativeCapabilities("{zilch}", device, surface_rgba_format,
-        is_supported);
+    (void)device; (void)surface_rgba_format; (void)is_supported;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -609,8 +600,8 @@ softVdpOutputSurfaceQueryPutBitsIndexedCapabilities(VdpDevice device,
                                                     VdpColorTableFormat color_table_format,
                                                     VdpBool *is_supported)
 {
-    traceVdpOutputSurfaceQueryPutBitsIndexedCapabilities("{zilch}", device, surface_rgba_format,
-        bits_indexed_format, color_table_format, is_supported);
+    (void)device; (void)surface_rgba_format; (void)bits_indexed_format; (void)color_table_format;
+    (void)is_supported;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -620,8 +611,7 @@ softVdpOutputSurfaceQueryPutBitsYCbCrCapabilities(VdpDevice device,
                                                   VdpYCbCrFormat bits_ycbcr_format,
                                                   VdpBool *is_supported)
 {
-    traceVdpOutputSurfaceQueryPutBitsYCbCrCapabilities("{zilch}", device, surface_rgba_format,
-        bits_ycbcr_format, is_supported);
+    (void)device; (void)surface_rgba_format; (void)bits_ycbcr_format; (void)is_supported;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -629,8 +619,6 @@ VdpStatus
 softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
                            uint32_t height, VdpOutputSurface *surface)
 {
-    traceVdpOutputSurfaceCreate("{part}", device, rgba_format, width, height, surface);
-
     VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -724,8 +712,6 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
 VdpStatus
 softVdpOutputSurfaceDestroy(VdpOutputSurface surface)
 {
-    traceVdpOutputSurfaceDestroy("{full}", surface);
-
     VdpOutputSurfaceData *data = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
@@ -752,7 +738,7 @@ VdpStatus
 softVdpOutputSurfaceGetParameters(VdpOutputSurface surface, VdpRGBAFormat *rgba_format,
                                   uint32_t *width, uint32_t *height)
 {
-    traceVdpOutputSurfaceGetParameters("{zilch}", surface, rgba_format, width, height);
+    (void)surface; (void)rgba_format; (void)width; (void)height;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -761,9 +747,6 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
                                   void *const *destination_data,
                                   uint32_t const *destination_pitches)
 {
-    traceVdpOutputSurfaceGetBitsNative("{WIP}", surface, source_rect, destination_data,
-        destination_pitches);
-
     VdpOutputSurfaceData *srcSurfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == srcSurfData) return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = srcSurfData->device;
@@ -796,9 +779,6 @@ VdpStatus
 softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *source_data,
                                   uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
-    traceVdpOutputSurfacePutBitsNative("{full}", surface, source_data, source_pitches,
-        destination_rect);
-
     VdpOutputSurfaceData *dstSurfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == dstSurfData) return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = dstSurfData->device;
@@ -834,9 +814,6 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
                                    VdpRect const *destination_rect,
                                    VdpColorTableFormat color_table_format, void const *color_table)
 {
-    traceVdpOutputSurfacePutBitsIndexed("{part}", surface, source_indexed_format, source_data,
-        source_pitch, destination_rect, color_table_format, color_table);
-
     VdpOutputSurfaceData *surfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == surfData) return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = surfData->device;
@@ -900,8 +877,8 @@ softVdpOutputSurfacePutBitsYCbCr(VdpOutputSurface surface, VdpYCbCrFormat source
                                  void const *const *source_data, uint32_t const *source_pitches,
                                  VdpRect const *destination_rect, VdpCSCMatrix const *csc_matrix)
 {
-    traceVdpOutputSurfacePutBitsYCbCr("{zilch}", surface, source_ycbcr_format, source_data,
-        source_pitches, destination_rect, csc_matrix);
+    (void)surface; (void)source_ycbcr_format; (void)source_data; (void)source_pitches;
+    (void)destination_rect; (void)csc_matrix;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -909,7 +886,7 @@ VdpStatus
 softVdpVideoMixerQueryFeatureSupport(VdpDevice device, VdpVideoMixerFeature feature,
                                      VdpBool *is_supported)
 {
-    traceVdpVideoMixerQueryFeatureSupport("{zilch}", device, feature, is_supported);
+    (void)device; (void)feature; (void)is_supported;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -917,7 +894,7 @@ VdpStatus
 softVdpVideoMixerQueryParameterSupport(VdpDevice device, VdpVideoMixerParameter parameter,
                                        VdpBool *is_supported)
 {
-    traceVdpVideoMixerQueryParameterSupport("{zilch}", device, parameter, is_supported);
+    (void)device; (void)parameter; (void)is_supported;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -925,7 +902,7 @@ VdpStatus
 softVdpVideoMixerQueryAttributeSupport(VdpDevice device, VdpVideoMixerAttribute attribute,
                                        VdpBool *is_supported)
 {
-    traceVdpVideoMixerQueryAttributeSupport("{zilch}", device, attribute, is_supported);
+    (void)device; (void)attribute; (void)is_supported;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -933,7 +910,7 @@ VdpStatus
 softVdpVideoMixerQueryParameterValueRange(VdpDevice device, VdpVideoMixerParameter parameter,
                                           void *min_value, void *max_value)
 {
-    traceVdpVideoMixerQueryParameterValueRange("{zilch}", device, parameter, min_value, max_value);
+    (void)device; (void)parameter; (void)min_value; (void)max_value;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -941,7 +918,7 @@ VdpStatus
 softVdpVideoMixerQueryAttributeValueRange(VdpDevice device, VdpVideoMixerAttribute attribute,
                                           void *min_value, void *max_value)
 {
-    traceVdpVideoMixerQueryAttributeValueRange("{zilch}", device, attribute, min_value, max_value);
+    (void)device; (void)attribute; (void)min_value; (void)max_value;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -951,9 +928,8 @@ softVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
                         VdpVideoMixerParameter const *parameters,
                         void const *const *parameter_values, VdpVideoMixer *mixer)
 {
-    traceVdpVideoMixerCreate("{part}", device, feature_count, features, parameter_count, parameters,
-        parameter_values, mixer);
-
+    (void)feature_count; (void)features;    // TODO: mixer features
+    (void)parameter_count; (void)parameters; (void)parameter_values;    // TODO: mixer parameters
     VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -975,7 +951,7 @@ softVdpVideoMixerSetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
                                    VdpVideoMixerFeature const *features,
                                    VdpBool const *feature_enables)
 {
-    traceVdpVideoMixerSetFeatureEnables("{part}", mixer, feature_count, features, feature_enables);
+    (void)mixer; (void)feature_count; (void)features; (void)feature_enables;
     return VDP_STATUS_OK;
 }
 
@@ -984,8 +960,7 @@ softVdpVideoMixerSetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_coun
                                     VdpVideoMixerAttribute const *attributes,
                                     void const *const *attribute_values)
 {
-    traceVdpVideoMixerSetAttributeValues("{part}", mixer, attribute_count, attributes,
-        attribute_values);
+    (void)mixer; (void)attribute_count; (void)attributes; (void)attribute_values;
     return VDP_STATUS_OK;
 }
 
@@ -993,8 +968,7 @@ VdpStatus
 softVdpVideoMixerGetFeatureSupport(VdpVideoMixer mixer, uint32_t feature_count,
                                    VdpVideoMixerFeature const *features, VdpBool *feature_supports)
 {
-    traceVdpVideoMixerGetFeatureSupport("{zilch}", mixer, feature_count, features,
-        feature_supports);
+    (void)mixer; (void)feature_count; (void)features; (void)feature_supports;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -1002,7 +976,7 @@ VdpStatus
 softVdpVideoMixerGetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
                                    VdpVideoMixerFeature const *features, VdpBool *feature_enables)
 {
-    traceVdpVideoMixerGetFeatureEnables("{zilch}", mixer, feature_count, features, feature_enables);
+    (void)mixer; (void)feature_count; (void)features; (void)feature_enables;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -1011,8 +985,7 @@ softVdpVideoMixerGetParameterValues(VdpVideoMixer mixer, uint32_t parameter_coun
                                     VdpVideoMixerParameter const *parameters,
                                     void *const *parameter_values)
 {
-    traceVdpVideoMixerGetParameterValues("{zilch}", mixer, parameter_count, parameters,
-        parameter_values);
+    (void)mixer; (void)parameter_count; (void)parameters; (void)parameter_values;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -1021,16 +994,13 @@ softVdpVideoMixerGetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_coun
                                     VdpVideoMixerAttribute const *attributes,
                                     void *const *attribute_values)
 {
-    traceVdpVideoMixerGetAttributeValues("{zilch}", mixer, attribute_count, attributes,
-        attribute_values);
+    (void)mixer; (void)attribute_count; (void)attributes; (void)attribute_values;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
 VdpStatus
 softVdpVideoMixerDestroy(VdpVideoMixer mixer)
 {
-    traceVdpVideoMixerDestroy("{full}", mixer);
-
     VdpVideoMixerData *videoMixerData = handlestorage_get(mixer, HANDLETYPE_VIDEO_MIXER);
     if (NULL == videoMixerData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -1054,15 +1024,16 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
                         VdpRect const *destination_rect, VdpRect const *destination_video_rect,
                         uint32_t layer_count, VdpLayer const *layers)
 {
-    traceVdpVideoMixerRender("{part}", mixer, background_surface, background_source_rect,
-        current_picture_structure, video_surface_past_count, video_surface_past,
-        video_surface_current, video_surface_future_count, video_surface_future, video_source_rect,
-        destination_surface, destination_rect, destination_video_rect, layer_count, layers);
-
+    (void)mixer;    // TODO: mixer should be used to get mixing parameters
     // TODO: current implementation ignores previous and future surfaces, using only current.
     // Is that acceptable for interlaced video? Will VAAPI handle deinterlacing?
 
-    // TODO: background_surface. Is it safe to just ignore it?
+    (void)background_surface;   // TODO: background_surface. Is it safe to just ignore it?
+    (void)background_source_rect;
+    (void)current_picture_structure;
+    (void)video_surface_past_count; (void)video_surface_past;
+    (void)video_surface_future_count; (void)video_surface_future;
+    (void)layer_count; (void)layers;
 
     VdpVideoSurfaceData *srcSurfData =
         handlestorage_get(video_surface_current, HANDLETYPE_VIDEO_SURFACE);
@@ -1201,8 +1172,6 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
 VdpStatus
 softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_target)
 {
-    traceVdpPresentationQueueTargetDestroy("{full}", presentation_queue_target);
-
     VdpPresentationQueueTargetData *pqTargetData =
         handlestorage_get(presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET);
     if (NULL == pqTargetData)
@@ -1239,9 +1208,6 @@ softVdpPresentationQueueCreate(VdpDevice device,
                                VdpPresentationQueueTarget presentation_queue_target,
                                VdpPresentationQueue *presentation_queue)
 {
-    traceVdpPresentationQueueCreate("{part}", device, presentation_queue_target,
-        presentation_queue);
-
     VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
 
@@ -1272,8 +1238,6 @@ softVdpPresentationQueueCreate(VdpDevice device,
 VdpStatus
 softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 {
-    traceVdpPresentationQueueDestroy("{full}", presentation_queue);
-
     VdpPresentationQueueData *data =
         handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
     if (NULL == data) return VDP_STATUS_INVALID_HANDLE;
@@ -1290,7 +1254,6 @@ VdpStatus
 softVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_queue,
                                            VdpColor *const background_color)
 {
-    traceVdpPresentationQueueSetBackgroundColor("{full}", presentation_queue, background_color);
     VdpPresentationQueueData *pqData =
         handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
     if (NULL == pqData)
@@ -1312,7 +1275,6 @@ VdpStatus
 softVdpPresentationQueueGetBackgroundColor(VdpPresentationQueue presentation_queue,
                                            VdpColor *background_color)
 {
-    traceVdpPresentationQueueGetBackgroundColor("{full}", presentation_queue, background_color);
     VdpPresentationQueueData *pqData =
         handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
     if (NULL == pqData)
@@ -1329,8 +1291,7 @@ VdpStatus
 softVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue,
                                 VdpTime *current_time)
 {
-    traceVdpPresentationQueueGetTime("{full}", presentation_queue, current_time);
-
+    (void)presentation_queue;
     struct timeval tv;
     gettimeofday(&tv, NULL);
     *current_time = (uint64_t)tv.tv_sec * 1000000000LL + (uint64_t)tv.tv_usec * 1000LL;
@@ -1342,10 +1303,7 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
                                 uint32_t clip_width, uint32_t clip_height,
                                 VdpTime earliest_presentation_time)
 {
-    traceVdpPresentationQueueDisplay("{full}", presentation_queue, surface, clip_width, clip_height,
-        earliest_presentation_time);
-
-    // TODO: take into accound earliest_presentation_time
+    (void)earliest_presentation_time;   // TODO: take into accound earliest_presentation_time
     VdpOutputSurfaceData *surfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
     VdpPresentationQueueData *pqueueData =
         handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
@@ -1425,9 +1383,6 @@ softVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_
                                               VdpTime *first_presentation_time)
 
 {
-    traceVdpPresentationQueueBlockUntilSurfaceIdle("{full}", presentation_queue, surface,
-        first_presentation_time);
-
     if (! handlestorage_valid(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE))
         return VDP_STATUS_INVALID_HANDLE;
 
@@ -1446,9 +1401,7 @@ softVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_que
                                            VdpPresentationQueueStatus *status,
                                            VdpTime *first_presentation_time)
 {
-    traceVdpPresentationQueueQuerySurfaceStatus("{part}", presentation_queue, surface,
-        status, first_presentation_time);
-
+    (void)presentation_queue; (void)surface; (void)first_presentation_time;
     *status = VDP_PRESENTATION_QUEUE_STATUS_VISIBLE;
     return VDP_STATUS_OK;
 }
@@ -1458,9 +1411,8 @@ softVdpVideoSurfaceQueryCapabilities(VdpDevice device, VdpChromaType surface_chr
                                      VdpBool *is_supported, uint32_t *max_width,
                                      uint32_t *max_height)
 {
-    traceVdpVideoSurfaceQueryCapabilities("{part}", device, surface_chroma_type, is_supported,
-        max_width, max_height);
-
+    (void)device; (void)surface_chroma_type;
+    // TODO: implement
     *is_supported = 1;
     *max_width = 1920;
     *max_height = 1080;
@@ -1474,9 +1426,7 @@ softVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(VdpDevice device,
                                                     VdpYCbCrFormat bits_ycbcr_format,
                                                     VdpBool *is_supported)
 {
-    traceVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities("{part}", device, surface_chroma_type,
-        bits_ycbcr_format, is_supported);
-
+    (void)device; (void)surface_chroma_type; (void)bits_ycbcr_format;
     *is_supported = 1;
     return VDP_STATUS_OK;
 }
@@ -1485,8 +1435,6 @@ VdpStatus
 softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t width,
                           uint32_t height, VdpVideoSurface *surface)
 {
-    traceVdpVideoSurfaceCreate("{part}", device, chroma_type, width, height, surface);
-
     VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -1553,8 +1501,6 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
 VdpStatus
 softVdpVideoSurfaceDestroy(VdpVideoSurface surface)
 {
-    traceVdpVideoSurfaceDestroy("{full}", surface);
-
     VdpVideoSurfaceData *videoSurfData = handlestorage_get(surface, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == videoSurfData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -1594,7 +1540,7 @@ VdpStatus
 softVdpVideoSurfaceGetParameters(VdpVideoSurface surface, VdpChromaType *chroma_type,
                                  uint32_t *width, uint32_t *height)
 {
-    traceVdpVideoSurfaceGetParameters("{zilch}", surface, chroma_type, width, height);
+    (void)surface; (void)chroma_type; (void)width; (void)height;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -1602,8 +1548,6 @@ VdpStatus
 softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destination_ycbcr_format,
                                 void *const *destination_data, uint32_t const *destination_pitches)
 {
-    traceVdpVideoSurfaceGetBitsYCbCr("{part}", surface, destination_ycbcr_format,
-        destination_data, destination_pitches);
     VdpVideoSurfaceData *srcSurfData = handlestorage_get(surface, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == srcSurfData) return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = srcSurfData->device;
@@ -1699,9 +1643,6 @@ VdpStatus
 softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_ycbcr_format,
                                 void const *const *source_data, uint32_t const *source_pitches)
 {
-    traceVdpVideoSurfacePutBitsYCbCr("{part}", surface, source_ycbcr_format, source_data,
-        source_pitches);
-
     //TODO: figure out what to do with other formats
 
     VdpVideoSurfaceData *dstSurfData = handlestorage_get(surface, HANDLETYPE_VIDEO_SURFACE);
@@ -1799,9 +1740,6 @@ softVdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
                                       VdpBool *is_supported, uint32_t *max_width,
                                       uint32_t *max_height)
 {
-    traceVdpBitmapSurfaceQueryCapabilities("{full}", device, surface_rgba_format, is_supported,
-        max_width, max_height);
-
     VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
 
@@ -1840,9 +1778,6 @@ VdpStatus
 softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
                            uint32_t height, VdpBool frequently_accessed, VdpBitmapSurface *surface)
 {
-    traceVdpBitmapSurfaceCreate("{full}", device, rgba_format, width, height, frequently_accessed,
-        surface);
-
     VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
 
@@ -1947,8 +1882,6 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
 VdpStatus
 softVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
 {
-    traceVdpBitmapSurfaceDestroy("{full}", surface);
-
     VdpBitmapSurfaceData *data = handlestorage_get(surface, HANDLETYPE_BITMAP_SURFACE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
@@ -1979,8 +1912,6 @@ VdpStatus
 softVdpBitmapSurfaceGetParameters(VdpBitmapSurface surface, VdpRGBAFormat *rgba_format,
                                   uint32_t *width, uint32_t *height, VdpBool *frequently_accessed)
 {
-    traceVdpBitmapSurfaceGetParameters("{full}", surface, rgba_format, width, height,
-        frequently_accessed);
     VdpBitmapSurfaceData *srcSurfData = handlestorage_get(surface, HANDLETYPE_BITMAP_SURFACE);
     if (NULL == srcSurfData) return VDP_STATUS_INVALID_HANDLE;
 
@@ -1999,9 +1930,6 @@ VdpStatus
 softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *source_data,
                                   uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
-    traceVdpBitmapSurfacePutBitsNative("{full}", surface, source_data, source_pitches,
-        destination_rect);
-
     VdpBitmapSurfaceData *dstSurfData = handlestorage_get(surface, HANDLETYPE_BITMAP_SURFACE);
     if (NULL == dstSurfData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -2116,8 +2044,6 @@ destroy_child_objects(int handle, void *item, void *p)
 VdpStatus
 softVdpDeviceDestroy(VdpDevice device)
 {
-    traceVdpDeviceDestroy("{full}", device);
-
     VdpDeviceData *data = handlestorage_get(device, HANDLETYPE_DEVICE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
@@ -2181,7 +2107,6 @@ softVdpDeviceDestroy(VdpDevice device)
 VdpStatus
 softVdpGetInformationString(char const **information_string)
 {
-    traceVdpGetInformationString("{full}", information_string);
     *information_string = implemetation_description_string;
     return VDP_STATUS_OK;
 }
@@ -2189,8 +2114,6 @@ softVdpGetInformationString(char const **information_string)
 VdpStatus
 softVdpGenerateCSCMatrix(VdpProcamp *procamp, VdpColorStandard standard, VdpCSCMatrix *csc_matrix)
 {
-    traceVdpGenerateCSCMatrix("{part}", procamp, standard, csc_matrix);
-
     if (NULL == procamp || NULL == csc_matrix)
         return VDP_STATUS_INVALID_POINTER;
     if (VDP_PROCAMP_VERSION != procamp->struct_version)
@@ -2325,9 +2248,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
                                         VdpOutputSurfaceRenderBlendState const *blend_state,
                                         uint32_t flags)
 {
-    traceVdpOutputSurfaceRenderOutputSurface("{full}", destination_surface, destination_rect,
-        source_surface, source_rect, colors, blend_state, flags);
-
+    (void)flags;    // TODO: handle flags
     if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version)
         return VDP_STATUS_INVALID_VALUE;
 
@@ -2412,9 +2333,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
                                         VdpOutputSurfaceRenderBlendState const *blend_state,
                                         uint32_t flags)
 {
-    traceVdpOutputSurfaceRenderBitmapSurface("{part}", destination_surface, destination_rect,
-        source_surface, source_rect, colors, blend_state, flags);
-
+    (void)flags;    // TODO: handle flags
     if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version)
         return VDP_STATUS_INVALID_VALUE;
 
@@ -2496,7 +2415,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
 VdpStatus
 softVdpPreemptionCallbackRegister(VdpDevice device, VdpPreemptionCallback callback, void *context)
 {
-    traceVdpPreemptionCallbackRegister("{zilch/fake success}", device, callback, context);
+    (void)device; (void)callback; (void)context;
     return VDP_STATUS_OK;
 }
 
@@ -2504,8 +2423,6 @@ VdpStatus
 softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
                                         VdpPresentationQueueTarget *target)
 {
-    traceVdpPresentationQueueTargetCreateX11("{part}", device, drawable, target);
-
     VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -2555,8 +2472,7 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
 VdpStatus
 softVdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_pointer)
 {
-    traceVdpGetProcAddress("{full}", device, function_id, function_pointer);
-
+    (void)device;   // there is no difference between various devices. All have same procedures
     switch (function_id) {
     case VDP_FUNC_ID_GET_ERROR_STRING:
         *function_pointer = &softVdpGetErrorString;
@@ -2759,7 +2675,6 @@ VdpStatus
 softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
                        VdpGetProcAddress **get_proc_address)
 {
-    traceVdpDeviceCreateX11("{full}", display_orig, screen, device, get_proc_address);
     if (NULL == display_orig)
         return VDP_STATUS_INVALID_POINTER;
 
