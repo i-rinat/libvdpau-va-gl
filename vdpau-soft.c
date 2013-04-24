@@ -102,6 +102,9 @@ typedef struct {
     GLuint          gl_internal_format;
     GLuint          gl_format;
     GLuint          gl_type;
+    char           *bitmap_data;        ///< system-memory buffer for frequently accessed bitmaps
+    int             dirty;              ///< dirty flag. True if system-memory buffer contains data
+                                        ///< newer than GPU texture contents
 } VdpBitmapSurfaceData;
 
 typedef struct {
@@ -1844,31 +1847,38 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     VdpBitmapSurfaceData *data = (VdpBitmapSurfaceData *)calloc(1, sizeof(VdpBitmapSurfaceData));
     if (NULL == data) return VDP_STATUS_RESOURCES;
 
+    int bytes_per_pixel;
+
     switch (rgba_format) {
     case VDP_RGBA_FORMAT_B8G8R8A8:
         data->gl_internal_format = GL_RGBA;
         data->gl_format = GL_BGRA;
         data->gl_type = GL_UNSIGNED_BYTE;
+        bytes_per_pixel = 4;
         break;
     case VDP_RGBA_FORMAT_R8G8B8A8:
         data->gl_internal_format = GL_RGBA;
         data->gl_format = GL_RGBA;
         data->gl_type = GL_UNSIGNED_BYTE;
+        bytes_per_pixel = 4;
         break;
     case VDP_RGBA_FORMAT_R10G10B10A2:
         data->gl_internal_format = GL_RGB10_A2;
         data->gl_format = GL_RGBA;
         data->gl_type = GL_UNSIGNED_INT_10_10_10_2;
+        bytes_per_pixel = 4;
         break;
     case VDP_RGBA_FORMAT_B10G10R10A2:
         data->gl_internal_format = GL_RGB10_A2;
         data->gl_format = GL_BGRA;
         data->gl_type = GL_UNSIGNED_INT_10_10_10_2;
+        bytes_per_pixel = 4;
         break;
     case VDP_RGBA_FORMAT_A8:
         data->gl_internal_format = GL_RGBA;
         data->gl_format = GL_RED;
         data->gl_type = GL_UNSIGNED_BYTE;
+        bytes_per_pixel = 1;
         break;
     default:
         traceError("error (VdpBitmapSurfaceCreate): %s not implemented\n",
@@ -1883,6 +1893,19 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     data->width = width;
     data->height = height;
     data->frequently_accessed = frequently_accessed;
+
+    // Frequently accessed bitmaps reside in system memory rather that in GPU texture.
+    data->dirty = 0;
+    if (frequently_accessed) {
+        data->bitmap_data = (char *)calloc(width * height, bytes_per_pixel);
+        if (NULL == data->bitmap_data) {
+            traceError("error (VdpBitmapSurfaceCreate): calloc returned NULL\n");
+            free(data);
+            return VDP_STATUS_RESOURCES;
+        }
+    } else {
+        data->bitmap_data = NULL;
+    }
 
     glx_context_push_thread_local(deviceData);
     glGenTextures(1, &data->tex_id);
@@ -1930,6 +1953,11 @@ softVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = data->device;
+
+    if (data->frequently_accessed) {
+        free(data->bitmap_data);
+        data->bitmap_data = NULL;
+    }
 
     glx_context_push_thread_local(deviceData);
     glDeleteTextures(1, &data->tex_id);
