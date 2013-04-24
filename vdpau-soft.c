@@ -2468,6 +2468,15 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
 
     // paint source surface over
     glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
+    if (srcSurfData->dirty) {
+        if (4 != srcSurfData->bytes_per_pixel)
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, srcSurfData->width, srcSurfData->height,
+                        srcSurfData->gl_format, srcSurfData->gl_type, srcSurfData->bitmap_data);
+        if (4 != srcSurfData->bytes_per_pixel)
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        srcSurfData->dirty = 0;
+    }
 
     glMatrixMode(GL_TEXTURE);
     glLoadIdentity();
