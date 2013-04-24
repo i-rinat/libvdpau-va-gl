@@ -27,7 +27,20 @@ trc_hk(void *param, int origin)
 {
     (void)param;
     (void)origin;
-    printf("[%5d] ", (pid_t)syscall(__NR_gettid));
+
+    if (global.quirks.log_call_duration) {
+        struct timespec ts;
+        static struct timespec prev_ts = {0, 0};
+
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        double diff = (ts.tv_sec - prev_ts.tv_sec) + (ts.tv_nsec - prev_ts.tv_nsec) / 1.0e9;
+        printf("Previous call took %7.5f secs\n", diff);
+        prev_ts = ts;
+    }
+
+    if (global.quirks.log_thread_id) {
+        printf("[%5d] ", (pid_t)syscall(__NR_gettid));
+    }
 }
 
 static
@@ -36,6 +49,8 @@ initialize_quirks(void)
 {
     global.quirks.buggy_XCloseDisplay = 0;
     global.quirks.show_watermark = 0;
+    global.quirks.log_thread_id = 0;
+    global.quirks.log_call_duration = 0;
 
     const char *value = getenv("VDPAU_QUIRKS");
     if (!value)
@@ -62,6 +77,12 @@ initialize_quirks(void)
             } else
             if (!strcmp("showwatermark", item_start)) {
                 global.quirks.show_watermark = 1;
+            } else
+            if (!strcmp("logthreadid", item_start)) {
+                global.quirks.log_thread_id = 1;
+            } else
+            if (!strcmp("logcallduration", item_start)) {
+                global.quirks.log_call_duration = 1;
             }
 
             item_start = ptr + 1;

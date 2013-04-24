@@ -17,6 +17,8 @@ struct global_data {
     struct {
         int buggy_XCloseDisplay;
         int show_watermark;
+        int log_thread_id;
+        int log_call_duration;
     } quirks;
 };
 
