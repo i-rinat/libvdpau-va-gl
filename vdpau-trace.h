@@ -33,6 +33,9 @@ void
 traceSetHook(void (*hook)(void *param, int origin, int after), void *param);
 
 void
+traceCallHook(int origin, int after);
+
+void
 traceVdpGetErrorString(const char *impl_state, VdpStatus status);
 
 void

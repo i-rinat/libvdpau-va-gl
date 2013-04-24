@@ -30,6 +30,7 @@ VdpStatus
 lockedVdpGetApiVersion(uint32_t *api_version)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_GET_API_VERSION, 0);
     traceVdpGetApiVersion("{full}", api_version);
     VdpStatus ret = softVdpGetApiVersion(api_version);
     release_lock();
@@ -43,6 +44,7 @@ lockedVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile,
                                   uint32_t *max_height)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_DECODER_QUERY_CAPABILITIES, 0);
     traceVdpDecoderQueryCapabilities("{zilch}", device, profile, is_supported, max_level,
         max_macroblocks, max_width, max_height);
     VdpStatus ret = softVdpDecoderQueryCapabilities(device, profile, is_supported, max_level,
@@ -56,6 +58,7 @@ lockedVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t wid
                        uint32_t max_references, VdpDecoder *decoder)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_DECODER_CREATE, 0);
     traceVdpDecoderCreate("{full}", device, profile, width, height, max_references, decoder);
     VdpStatus ret = softVdpDecoderCreate(device, profile, width, height, max_references, decoder);
     release_lock();
@@ -66,6 +69,7 @@ VdpStatus
 lockedVdpDecoderDestroy(VdpDecoder decoder)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_DECODER_DESTROY, 0);
     traceVdpDecoderDestroy("{full}", decoder);
     VdpStatus ret = softVdpDecoderDestroy(decoder);
     release_lock();
@@ -77,6 +81,7 @@ lockedVdpDecoderGetParameters(VdpDecoder decoder, VdpDecoderProfile *profile,
                               uint32_t *width, uint32_t *height)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_DECODER_GET_PARAMETERS, 0);
     traceVdpDecoderGetParameters("{zilch}", decoder, profile, width, height);
     VdpStatus ret = softVdpDecoderGetParameters(decoder, profile, width, height);
     release_lock();
@@ -89,6 +94,7 @@ lockedVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                        VdpBitstreamBuffer const *bitstream_buffers)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_DECODER_RENDER, 0);
     traceVdpDecoderRender("{WIP}", decoder, target, picture_info, bitstream_buffer_count,
         bitstream_buffers);
     VdpStatus ret = softVdpDecoderRender(decoder, target, picture_info, bitstream_buffer_count,
@@ -103,6 +109,7 @@ lockedVdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_
                                         uint32_t *max_height)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_CAPABILITIES, 0);
     traceVdpOutputSurfaceQueryCapabilities("{zilch}", device, surface_rgba_format, is_supported,
         max_width, max_height);
     VdpStatus ret = softVdpOutputSurfaceQueryCapabilities(device, surface_rgba_format, is_supported,
@@ -117,6 +124,7 @@ lockedVdpOutputSurfaceQueryGetPutBitsNativeCapabilities(VdpDevice device,
                                                         VdpBool *is_supported)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_GET_PUT_BITS_NATIVE_CAPABILITIES, 0);
     traceVdpOutputSurfaceQueryGetPutBitsNativeCapabilities("{zilch}", device, surface_rgba_format,
         is_supported);
     VdpStatus ret =
@@ -134,6 +142,7 @@ lockedVdpOutputSurfaceQueryPutBitsIndexedCapabilities(VdpDevice device,
                                                       VdpBool *is_supported)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_PUT_BITS_INDEXED_CAPABILITIES, 0);
     traceVdpOutputSurfaceQueryPutBitsIndexedCapabilities("{zilch}", device, surface_rgba_format,
         bits_indexed_format, color_table_format, is_supported);
     VdpStatus ret = softVdpOutputSurfaceQueryPutBitsIndexedCapabilities(device, surface_rgba_format,
@@ -149,6 +158,7 @@ lockedVdpOutputSurfaceQueryPutBitsYCbCrCapabilities(VdpDevice device,
                                                     VdpBool *is_supported)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_PUT_BITS_Y_CB_CR_CAPABILITIES, 0);
     traceVdpOutputSurfaceQueryPutBitsYCbCrCapabilities("{zilch}", device, surface_rgba_format,
         bits_ycbcr_format, is_supported);
     VdpStatus ret = softVdpOutputSurfaceQueryPutBitsYCbCrCapabilities(device, surface_rgba_format,
@@ -162,6 +172,7 @@ lockedVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32
                              uint32_t height, VdpOutputSurface *surface)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_CREATE, 0);
     traceVdpOutputSurfaceCreate("{part}", device, rgba_format, width, height, surface);
     VdpStatus ret = softVdpOutputSurfaceCreate(device, rgba_format, width, height, surface);
     release_lock();
@@ -172,6 +183,7 @@ VdpStatus
 lockedVdpOutputSurfaceDestroy(VdpOutputSurface surface)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_DESTROY, 0);
     traceVdpOutputSurfaceDestroy("{full}", surface);
     VdpStatus ret = softVdpOutputSurfaceDestroy(surface);
     release_lock();
@@ -183,6 +195,7 @@ lockedVdpOutputSurfaceGetParameters(VdpOutputSurface surface, VdpRGBAFormat *rgb
                                     uint32_t *width, uint32_t *height)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_GET_PARAMETERS, 0);
     traceVdpOutputSurfaceGetParameters("{zilch}", surface, rgba_format, width, height);
     VdpStatus ret = softVdpOutputSurfaceGetParameters(surface, rgba_format, width, height);
     release_lock();
@@ -195,6 +208,7 @@ lockedVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sou
                                     uint32_t const *destination_pitches)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_GET_BITS_NATIVE, 0);
     traceVdpOutputSurfaceGetBitsNative("{WIP}", surface, source_rect, destination_data,
         destination_pitches);
     VdpStatus ret = softVdpOutputSurfaceGetBitsNative(surface, source_rect, destination_data,
@@ -208,6 +222,7 @@ lockedVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const 
                                     uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_NATIVE, 0);
     traceVdpOutputSurfacePutBitsNative("{full}", surface, source_data, source_pitches,
         destination_rect);
     VdpStatus ret = softVdpOutputSurfacePutBitsNative(surface, source_data, source_pitches,
@@ -225,6 +240,7 @@ lockedVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface,
                                      void const *color_table)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_INDEXED, 0);
     traceVdpOutputSurfacePutBitsIndexed("{part}", surface, source_indexed_format, source_data,
         source_pitch, destination_rect, color_table_format, color_table);
     VdpStatus ret = softVdpOutputSurfacePutBitsIndexed(surface, source_indexed_format, source_data,
@@ -239,6 +255,7 @@ lockedVdpOutputSurfacePutBitsYCbCr(VdpOutputSurface surface, VdpYCbCrFormat sour
                                    VdpRect const *destination_rect, VdpCSCMatrix const *csc_matrix)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_Y_CB_CR, 0);
     traceVdpOutputSurfacePutBitsYCbCr("{zilch}", surface, source_ycbcr_format, source_data,
         source_pitches, destination_rect, csc_matrix);
     VdpStatus ret = softVdpOutputSurfacePutBitsYCbCr(surface, source_ycbcr_format, source_data,
@@ -252,6 +269,7 @@ lockedVdpVideoMixerQueryFeatureSupport(VdpDevice device, VdpVideoMixerFeature fe
                                        VdpBool *is_supported)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_QUERY_FEATURE_SUPPORT, 0);
     traceVdpVideoMixerQueryFeatureSupport("{zilch}", device, feature, is_supported);
     VdpStatus ret = softVdpVideoMixerQueryFeatureSupport(device, feature, is_supported);
     release_lock();
@@ -263,6 +281,7 @@ lockedVdpVideoMixerQueryParameterSupport(VdpDevice device, VdpVideoMixerParamete
                                          VdpBool *is_supported)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_QUERY_PARAMETER_SUPPORT, 0);
     traceVdpVideoMixerQueryParameterSupport("{zilch}", device, parameter, is_supported);
     VdpStatus ret = softVdpVideoMixerQueryParameterSupport(device, parameter, is_supported);
     release_lock();
@@ -274,6 +293,7 @@ lockedVdpVideoMixerQueryAttributeSupport(VdpDevice device, VdpVideoMixerAttribut
                                          VdpBool *is_supported)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_QUERY_ATTRIBUTE_SUPPORT, 0);
     traceVdpVideoMixerQueryAttributeSupport("{zilch}", device, attribute, is_supported);
     VdpStatus ret = softVdpVideoMixerQueryAttributeSupport(device, attribute, is_supported);
     release_lock();
@@ -285,6 +305,7 @@ lockedVdpVideoMixerQueryParameterValueRange(VdpDevice device, VdpVideoMixerParam
                                             void *min_value, void *max_value)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_QUERY_PARAMETER_VALUE_RANGE, 0);
     traceVdpVideoMixerQueryParameterValueRange("{zilch}", device, parameter, min_value, max_value);
     VdpStatus ret = softVdpVideoMixerQueryParameterValueRange(device, parameter, min_value,
                                                               max_value);
@@ -297,6 +318,7 @@ lockedVdpVideoMixerQueryAttributeValueRange(VdpDevice device, VdpVideoMixerAttri
                                             void *min_value, void *max_value)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_QUERY_ATTRIBUTE_VALUE_RANGE, 0);
     traceVdpVideoMixerQueryAttributeValueRange("{zilch}", device, attribute, min_value, max_value);
     VdpStatus ret = softVdpVideoMixerQueryAttributeValueRange(device, attribute, min_value,
                                                               max_value);
@@ -311,6 +333,7 @@ lockedVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
                           void const *const *parameter_values, VdpVideoMixer *mixer)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_CREATE, 0);
     traceVdpVideoMixerCreate("{part}", device, feature_count, features, parameter_count, parameters,
         parameter_values, mixer);
     VdpStatus ret = softVdpVideoMixerCreate(device, feature_count, features, parameter_count,
@@ -325,6 +348,7 @@ lockedVdpVideoMixerSetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count
                                      VdpBool const *feature_enables)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_SET_FEATURE_ENABLES, 0);
     traceVdpVideoMixerSetFeatureEnables("{part}", mixer, feature_count, features, feature_enables);
     VdpStatus ret = softVdpVideoMixerSetFeatureEnables(mixer, feature_count, features,
                                                        feature_enables);
@@ -338,6 +362,7 @@ lockedVdpVideoMixerSetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_co
                                       void const *const *attribute_values)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_SET_ATTRIBUTE_VALUES, 0);
     traceVdpVideoMixerSetAttributeValues("{part}", mixer, attribute_count, attributes,
         attribute_values);
     VdpStatus ret = softVdpVideoMixerSetAttributeValues(mixer, attribute_count, attributes,
@@ -352,6 +377,7 @@ lockedVdpVideoMixerGetFeatureSupport(VdpVideoMixer mixer, uint32_t feature_count
                                      VdpBool *feature_supports)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_GET_FEATURE_SUPPORT, 0);
     traceVdpVideoMixerGetFeatureSupport("{zilch}", mixer, feature_count, features,
         feature_supports);
     VdpStatus ret = softVdpVideoMixerGetFeatureSupport(mixer, feature_count, features,
@@ -365,6 +391,7 @@ lockedVdpVideoMixerGetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count
                                      VdpVideoMixerFeature const *features, VdpBool *feature_enables)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_GET_FEATURE_ENABLES, 0);
     traceVdpVideoMixerGetFeatureEnables("{zilch}", mixer, feature_count, features, feature_enables);
     VdpStatus ret = softVdpVideoMixerGetFeatureEnables(mixer, feature_count, features,
                                                        feature_enables);
@@ -378,6 +405,7 @@ lockedVdpVideoMixerGetParameterValues(VdpVideoMixer mixer, uint32_t parameter_co
                                       void *const *parameter_values)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_GET_PARAMETER_VALUES, 0);
     traceVdpVideoMixerGetParameterValues("{zilch}", mixer, parameter_count, parameters,
         parameter_values);
     VdpStatus ret = softVdpVideoMixerGetParameterValues(mixer, parameter_count, parameters,
@@ -392,6 +420,7 @@ lockedVdpVideoMixerGetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_co
                                       void *const *attribute_values)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_GET_ATTRIBUTE_VALUES, 0);
     traceVdpVideoMixerGetAttributeValues("{zilch}", mixer, attribute_count, attributes,
         attribute_values);
     VdpStatus ret = softVdpVideoMixerGetAttributeValues(mixer, attribute_count, attributes,
@@ -404,6 +433,7 @@ VdpStatus
 lockedVdpVideoMixerDestroy(VdpVideoMixer mixer)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_DESTROY, 0);
     traceVdpVideoMixerDestroy("{full}", mixer);
     VdpStatus ret = softVdpVideoMixerDestroy(mixer);
     release_lock();
@@ -424,6 +454,7 @@ lockedVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surfa
                           uint32_t layer_count, VdpLayer const *layers)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_RENDER, 0);
     traceVdpVideoMixerRender("{part}", mixer, background_surface, background_source_rect,
         current_picture_structure, video_surface_past_count, video_surface_past,
         video_surface_current, video_surface_future_count, video_surface_future, video_source_rect,
@@ -440,6 +471,7 @@ VdpStatus
 lockedVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_target)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_TARGET_DESTROY, 0);
     traceVdpPresentationQueueTargetDestroy("{full}", presentation_queue_target);
     VdpStatus ret = softVdpPresentationQueueTargetDestroy(presentation_queue_target);
     release_lock();
@@ -452,6 +484,7 @@ lockedVdpPresentationQueueCreate(VdpDevice device,
                                  VdpPresentationQueue *presentation_queue)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_CREATE, 0);
     traceVdpPresentationQueueCreate("{part}", device, presentation_queue_target,
         presentation_queue);
     VdpStatus ret = softVdpPresentationQueueCreate(device, presentation_queue_target,
@@ -463,8 +496,9 @@ lockedVdpPresentationQueueCreate(VdpDevice device,
 VdpStatus
 lockedVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 {
-    traceVdpPresentationQueueDestroy("{full}", presentation_queue);
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_DESTROY, 0);
+    traceVdpPresentationQueueDestroy("{full}", presentation_queue);
     VdpStatus ret = softVdpPresentationQueueDestroy(presentation_queue);
     release_lock();
     return ret;
@@ -475,6 +509,7 @@ lockedVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_q
                                              VdpColor *const background_color)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_SET_BACKGROUND_COLOR, 0);
     traceVdpPresentationQueueSetBackgroundColor("{full}", presentation_queue, background_color);
     VdpStatus ret = softVdpPresentationQueueSetBackgroundColor(presentation_queue,
                                                                background_color);
@@ -487,6 +522,7 @@ lockedVdpPresentationQueueGetBackgroundColor(VdpPresentationQueue presentation_q
                                              VdpColor *background_color)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_GET_BACKGROUND_COLOR, 0);
     traceVdpPresentationQueueGetBackgroundColor("{full}", presentation_queue, background_color);
     VdpStatus ret = softVdpPresentationQueueGetBackgroundColor(presentation_queue,
                                                                background_color);
@@ -498,6 +534,7 @@ VdpStatus
 lockedVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue, VdpTime *current_time)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_GET_TIME, 0);
     traceVdpPresentationQueueGetTime("{full}", presentation_queue, current_time);
     VdpStatus ret = softVdpPresentationQueueGetTime(presentation_queue, current_time);
     release_lock();
@@ -510,6 +547,7 @@ lockedVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOu
                                   VdpTime earliest_presentation_time)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_DISPLAY, 0);
     traceVdpPresentationQueueDisplay("{full}", presentation_queue, surface, clip_width, clip_height,
         earliest_presentation_time);
     VdpStatus ret = softVdpPresentationQueueDisplay(presentation_queue, surface, clip_width,
@@ -525,6 +563,7 @@ lockedVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentatio
 
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_BLOCK_UNTIL_SURFACE_IDLE, 0);
     traceVdpPresentationQueueBlockUntilSurfaceIdle("{full}", presentation_queue, surface,
         first_presentation_time);
     VdpStatus ret = softVdpPresentationQueueBlockUntilSurfaceIdle(presentation_queue, surface,
@@ -540,6 +579,7 @@ lockedVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_q
                                              VdpTime *first_presentation_time)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_QUERY_SURFACE_STATUS, 0);
     traceVdpPresentationQueueQuerySurfaceStatus("{part}", presentation_queue, surface,
         status, first_presentation_time);
     VdpStatus ret = softVdpPresentationQueueQuerySurfaceStatus(presentation_queue, surface,
@@ -554,6 +594,7 @@ lockedVdpVideoSurfaceQueryCapabilities(VdpDevice device, VdpChromaType surface_c
                                        uint32_t *max_height)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_QUERY_CAPABILITIES, 0);
     traceVdpVideoSurfaceQueryCapabilities("{part}", device, surface_chroma_type, is_supported,
         max_width, max_height);
     VdpStatus ret = softVdpVideoSurfaceQueryCapabilities(device, surface_chroma_type, is_supported,
@@ -569,6 +610,7 @@ lockedVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(VdpDevice device,
                                                       VdpBool *is_supported)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_QUERY_GET_PUT_BITS_Y_CB_CR_CAPABILITIES, 0);
     traceVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities("{part}", device, surface_chroma_type,
         bits_ycbcr_format, is_supported);
     VdpStatus ret = softVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(device, surface_chroma_type,
@@ -582,6 +624,7 @@ lockedVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_
                             uint32_t height, VdpVideoSurface *surface)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_CREATE, 0);
     traceVdpVideoSurfaceCreate("{part}", device, chroma_type, width, height, surface);
     VdpStatus ret = softVdpVideoSurfaceCreate(device, chroma_type, width, height, surface);
     release_lock();
@@ -592,6 +635,7 @@ VdpStatus
 lockedVdpVideoSurfaceDestroy(VdpVideoSurface surface)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_DESTROY, 0);
     traceVdpVideoSurfaceDestroy("{full}", surface);
     VdpStatus ret = softVdpVideoSurfaceDestroy(surface);
     release_lock();
@@ -603,6 +647,7 @@ lockedVdpVideoSurfaceGetParameters(VdpVideoSurface surface, VdpChromaType *chrom
                                    uint32_t *width, uint32_t *height)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_GET_PARAMETERS, 0);
     traceVdpVideoSurfaceGetParameters("{zilch}", surface, chroma_type, width, height);
     VdpStatus ret = softVdpVideoSurfaceGetParameters(surface, chroma_type, width, height);
     release_lock();
@@ -615,6 +660,7 @@ lockedVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destin
                                   uint32_t const *destination_pitches)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_GET_BITS_Y_CB_CR, 0);
     traceVdpVideoSurfaceGetBitsYCbCr("{part}", surface, destination_ycbcr_format,
         destination_data, destination_pitches);
     VdpStatus ret = softVdpVideoSurfaceGetBitsYCbCr(surface, destination_ycbcr_format,
@@ -628,6 +674,7 @@ lockedVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source
                                   void const *const *source_data, uint32_t const *source_pitches)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_PUT_BITS_Y_CB_CR, 0);
     traceVdpVideoSurfacePutBitsYCbCr("{part}", surface, source_ycbcr_format, source_data,
         source_pitches);
     VdpStatus ret = softVdpVideoSurfacePutBitsYCbCr(surface, source_ycbcr_format, source_data,
@@ -642,6 +689,7 @@ lockedVdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_
                                         uint32_t *max_height)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_BITMAP_SURFACE_QUERY_CAPABILITIES, 0);
     traceVdpBitmapSurfaceQueryCapabilities("{full}", device, surface_rgba_format, is_supported,
         max_width, max_height);
     VdpStatus ret = softVdpBitmapSurfaceQueryCapabilities(device, surface_rgba_format, is_supported,
@@ -656,6 +704,7 @@ lockedVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32
                              VdpBitmapSurface *surface)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_BITMAP_SURFACE_CREATE, 0);
     traceVdpBitmapSurfaceCreate("{full}", device, rgba_format, width, height, frequently_accessed,
         surface);
     VdpStatus ret = softVdpBitmapSurfaceCreate(device, rgba_format, width, height,
@@ -668,6 +717,7 @@ VdpStatus
 lockedVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_BITMAP_SURFACE_DESTROY, 0);
     traceVdpBitmapSurfaceDestroy("{full}", surface);
     VdpStatus ret = softVdpBitmapSurfaceDestroy(surface);
     release_lock();
@@ -679,6 +729,7 @@ lockedVdpBitmapSurfaceGetParameters(VdpBitmapSurface surface, VdpRGBAFormat *rgb
                                     uint32_t *width, uint32_t *height, VdpBool *frequently_accessed)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_BITMAP_SURFACE_GET_PARAMETERS, 0);
     traceVdpBitmapSurfaceGetParameters("{full}", surface, rgba_format, width, height,
         frequently_accessed);
     VdpStatus ret = softVdpBitmapSurfaceGetParameters(surface, rgba_format, width, height,
@@ -692,6 +743,7 @@ lockedVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const 
                                     uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_BITMAP_SURFACE_PUT_BITS_NATIVE, 0);
     traceVdpBitmapSurfacePutBitsNative("{full}", surface, source_data, source_pitches,
         destination_rect);
     VdpStatus ret = softVdpBitmapSurfacePutBitsNative(surface, source_data, source_pitches,
@@ -704,6 +756,7 @@ VdpStatus
 lockedVdpDeviceDestroy(VdpDevice device)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_DEVICE_DESTROY, 0);
     traceVdpDeviceDestroy("{full}", device);
     VdpStatus ret = softVdpDeviceDestroy(device);
     release_lock();
@@ -714,6 +767,7 @@ VdpStatus
 lockedVdpGetInformationString(char const **information_string)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_GET_INFORMATION_STRING, 0);
     traceVdpGetInformationString("{full}", information_string);
     VdpStatus ret = softVdpGetInformationString(information_string);
     release_lock();
@@ -724,6 +778,7 @@ VdpStatus
 lockedVdpGenerateCSCMatrix(VdpProcamp *procamp, VdpColorStandard standard, VdpCSCMatrix *csc_matrix)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_GENERATE_CSC_MATRIX, 0);
     traceVdpGenerateCSCMatrix("{part}", procamp, standard, csc_matrix);
     VdpStatus ret = softVdpGenerateCSCMatrix(procamp, standard, csc_matrix);
     release_lock();
@@ -739,6 +794,7 @@ lockedVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
                                           uint32_t flags)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_RENDER_OUTPUT_SURFACE, 0);
     traceVdpOutputSurfaceRenderOutputSurface("{full}", destination_surface, destination_rect,
         source_surface, source_rect, colors, blend_state, flags);
     VdpStatus ret = softVdpOutputSurfaceRenderOutputSurface(destination_surface, destination_rect,
@@ -756,6 +812,7 @@ lockedVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
                                           uint32_t flags)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_RENDER_BITMAP_SURFACE, 0);
     traceVdpOutputSurfaceRenderBitmapSurface("{part}", destination_surface, destination_rect,
         source_surface, source_rect, colors, blend_state, flags);
     VdpStatus ret = softVdpOutputSurfaceRenderBitmapSurface(destination_surface, destination_rect,
@@ -768,6 +825,7 @@ VdpStatus
 lockedVdpPreemptionCallbackRegister(VdpDevice device, VdpPreemptionCallback callback, void *context)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_PREEMPTION_CALLBACK_REGISTER, 0);
     traceVdpPreemptionCallbackRegister("{zilch/fake success}", device, callback, context);
     VdpStatus ret = softVdpPreemptionCallbackRegister(device, callback, context);
     release_lock();
@@ -780,6 +838,7 @@ lockedVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
                                           VdpPresentationQueueTarget *target)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_TARGET_CREATE_X11, 0);
     traceVdpPresentationQueueTargetCreateX11("{part}", device, drawable, target);
     VdpStatus ret = softVdpPresentationQueueTargetCreateX11(device, drawable, target);
     release_lock();
@@ -790,6 +849,7 @@ VdpStatus
 lockedVdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_pointer)
 {
     acquire_lock();
+    traceCallHook(VDP_FUNC_ID_GET_PROC_ADDRESS, 0);
     traceVdpGetProcAddress("{full}", device, function_id, function_pointer);
     VdpStatus ret = softVdpGetProcAddress(device, function_id, function_pointer);
     release_lock();
@@ -801,6 +861,7 @@ lockedVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
                          VdpGetProcAddress **get_proc_address)
 {
     acquire_lock();
+    traceCallHook(-1, 0);
     traceVdpDeviceCreateX11("{full}", display, screen, device, get_proc_address);
     VdpStatus ret = softVdpDeviceCreateX11(display, screen, device, get_proc_address);
     release_lock();
