@@ -29,14 +29,20 @@ trc_hk(void *param, int origin, int after)
     (void)origin;
     int before = !after;
 
-    if (before && global.quirks.log_call_duration) {
-        struct timespec ts;
-        static struct timespec prev_ts = {0, 0};
+    if (global.quirks.log_call_duration) {
+        static __thread struct timespec start_ts = {0, 0};
+        if (before) {
+            clock_gettime(CLOCK_MONOTONIC, &start_ts);
+        }
 
-        clock_gettime(CLOCK_MONOTONIC, &ts);
-        double diff = (ts.tv_sec - prev_ts.tv_sec) + (ts.tv_nsec - prev_ts.tv_nsec) / 1.0e9;
-        printf("Previous call took %7.5f secs\n", diff);
-        prev_ts = ts;
+        if (after) {
+            struct timespec end_ts;
+            clock_gettime(CLOCK_MONOTONIC, &end_ts);
+            double diff = (end_ts.tv_sec - start_ts.tv_sec) +
+                          (end_ts.tv_nsec - start_ts.tv_nsec) / 1.0e9;
+            printf("Duration %7.5f secs, %s, %s\n",
+                diff, reverse_func_id(origin), "unknown");
+        }
     }
 
     if (before && global.quirks.log_thread_id) {
