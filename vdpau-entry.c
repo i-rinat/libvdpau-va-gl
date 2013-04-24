@@ -23,9 +23,9 @@
 #include <unistd.h>
 
 void
-trc_hk(void *param, int origin, int after)
+trc_hk(void *longterm_param, void *shortterm_param, int origin, int after)
 {
-    (void)param;
+    (void)longterm_param;
     (void)origin;
     int before = !after;
 
@@ -41,7 +41,7 @@ trc_hk(void *param, int origin, int after)
             double diff = (end_ts.tv_sec - start_ts.tv_sec) +
                           (end_ts.tv_nsec - start_ts.tv_nsec) / 1.0e9;
             printf("Duration %7.5f secs, %s, %s\n",
-                diff, reverse_func_id(origin), "unknown");
+                diff, reverse_func_id(origin), reverse_status((VdpStatus)shortterm_param));
         }
     }
 

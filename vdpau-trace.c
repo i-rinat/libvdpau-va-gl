@@ -16,8 +16,8 @@ FILE *tlog = NULL;  ///< trace target
 const char *trace_header =       "[VS] ";
 const char *trace_header_blank = "     ";
 int enabled = 1;
-void (*trace_hook)(void *, int, int);
-void *trace_hook_param = NULL;
+void (*trace_hook)(void *, void *, int, int);
+void *trace_hook_longterm_param = NULL;
 
 void
 traceEnableTracing(int flag)
@@ -38,17 +38,17 @@ traceResetTarget(void)
 }
 
 void
-traceSetHook(void (*hook)(void *param, int origin, int after), void *param)
+traceSetHook(void (*hook)(void *param1, void *param2, int origin, int after), void *param)
 {
     trace_hook = hook;
-    trace_hook_param = param;
+    trace_hook_longterm_param = param;
 }
 
 void
-traceCallHook(int origin, int after)
+traceCallHook(int origin, int after, void *shortterm_param)
 {
     if (trace_hook)
-        trace_hook(trace_hook_param, origin, after);
+        trace_hook(trace_hook_longterm_param, shortterm_param, origin, after);
 }
 
 void
@@ -63,7 +63,7 @@ traceInfo(const char *fmt, ...)
 {
     if (!enabled) return;
     va_list args;
-    traceCallHook(-2, 0);
+    traceCallHook(-2, 0, NULL);
     fprintf(tlog, "%s", trace_header);
     va_start(args, fmt);
     vfprintf(tlog, fmt, args);
