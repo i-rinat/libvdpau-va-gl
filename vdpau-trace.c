@@ -16,7 +16,7 @@ FILE *tlog = NULL;  ///< trace target
 const char *trace_header =       "[VS] ";
 const char *trace_header_blank = "     ";
 int enabled = 1;
-void (*trace_hook)(void *, int);
+void (*trace_hook)(void *, int, int);
 void *trace_hook_param = NULL;
 
 void
@@ -38,7 +38,7 @@ traceResetTarget(void)
 }
 
 void
-traceSetHook(void (*hook)(void *param, int origin), void *param)
+traceSetHook(void (*hook)(void *param, int origin, int after), void *param)
 {
     trace_hook = hook;
     trace_hook_param = param;
@@ -56,7 +56,7 @@ traceInfo(const char *fmt, ...)
 {
     if (!enabled) return;
     va_list args;
-    if (trace_hook) trace_hook(trace_hook_param, -2);
+    if (trace_hook) trace_hook(trace_hook_param, -2, 0);
     fprintf(tlog, "%s", trace_header);
     va_start(args, fmt);
     vfprintf(tlog, fmt, args);
@@ -96,7 +96,7 @@ traceVdpGetErrorString(const char *impl_state, VdpStatus status)
     (void)impl_state;
     (void)status;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_GET_ERROR_STRING);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_GET_ERROR_STRING, 0);
     //fprintf(tlog, "%s%s VdpGetErrorString status=%d\n", trace_header, impl_state, status);
 }
 
@@ -105,7 +105,7 @@ traceVdpGetApiVersion(const char *impl_state, uint32_t *api_version)
 {
     (void)api_version;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_GET_API_VERSION);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_GET_API_VERSION, 0);
     fprintf(tlog, "%s%s VdpGetApiVersion\n", trace_header, impl_state);
 }
 
@@ -121,7 +121,7 @@ traceVdpDecoderQueryCapabilities(const char *impl_state, VdpDevice device,
     (void)max_width;
     (void)max_height;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_DECODER_QUERY_CAPABILITIES);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_DECODER_QUERY_CAPABILITIES, 0);
     fprintf(tlog, "%s%s VdpDecoderQueryCapabilities device=%d, profile=%s\n",
         trace_header, impl_state, device, reverse_decoder_profile(profile));
 }
@@ -132,7 +132,7 @@ traceVdpDecoderCreate(const char *impl_state, VdpDevice device, VdpDecoderProfil
 {
     (void)decoder;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_DECODER_CREATE);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_DECODER_CREATE, 0);
     fprintf(tlog, "%s%s VdpDecoderCreate device=%d, profile=%s, width=%d, height=%d, "
         "max_references=%d\n", trace_header, impl_state, device, reverse_decoder_profile(profile),
         width, height, max_references);
@@ -142,7 +142,7 @@ void
 traceVdpDecoderDestroy(const char *impl_state, VdpDecoder decoder)
 {
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_DECODER_DESTROY);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_DECODER_DESTROY, 0);
     fprintf(tlog, "%s%s VdpDecoderDestroy decoder=%d\n", trace_header, impl_state, decoder);
 }
 
@@ -154,7 +154,7 @@ traceVdpDecoderGetParameters(const char *impl_state, VdpDecoder decoder,
     (void)width;
     (void)height;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_DECODER_GET_PARAMETERS);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_DECODER_GET_PARAMETERS, 0);
     fprintf(tlog, "%s%s VdpDecoderGetParameters decoder=%d\n", trace_header, impl_state, decoder);
 }
 
@@ -165,7 +165,7 @@ traceVdpDecoderRender(const char *impl_state, VdpDecoder decoder, VdpVideoSurfac
 {
     (void)bitstream_buffers;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_DECODER_RENDER);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_DECODER_RENDER, 0);
     fprintf(tlog, "%s%s VdpDecoderRender decoder=%d, target=%d, picture_info=%p, "
         "bitstream_buffer_count=%d\n", trace_header, impl_state, decoder, target, picture_info,
         bitstream_buffer_count);
@@ -180,7 +180,7 @@ traceVdpOutputSurfaceQueryCapabilities(const char *impl_state, VdpDevice device,
     (void)max_width;
     (void)max_height;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_CAPABILITIES);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_CAPABILITIES, 0);
     fprintf(tlog, "%s%s VdpOutputSurfaceQueryCapabilities device=%d, surface_rgba_format=%s\n",
         trace_header, impl_state, device, reverse_rgba_format(surface_rgba_format));
 }
@@ -192,8 +192,9 @@ traceVdpOutputSurfaceQueryGetPutBitsNativeCapabilities(const char *impl_state, V
 {
     (void)is_supported;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param,
-                               VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_GET_PUT_BITS_NATIVE_CAPABILITIES);
+    if (trace_hook)
+        trace_hook(trace_hook_param,
+                   VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_GET_PUT_BITS_NATIVE_CAPABILITIES, 0);
     fprintf(tlog, "%s%s VdpOutputSurfaceQueryGetPutBitsNativeCapabilities device=%d, "
         "surface_rgba_format=%s\n", trace_header, impl_state, device,
         reverse_rgba_format(surface_rgba_format));
@@ -209,7 +210,7 @@ traceVdpOutputSurfaceQueryPutBitsIndexedCapabilities(const char *impl_state, Vdp
     (void)is_supported;
     if (!enabled) return;
     if (trace_hook) trace_hook(trace_hook_param,
-                               VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_PUT_BITS_INDEXED_CAPABILITIES);
+                               VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_PUT_BITS_INDEXED_CAPABILITIES, 0);
     fprintf(tlog, "%s%s VdpOutputSurfaceQueryPutBitsIndexedCapabilities device=%d, "
         "surface_rgba_format=%s, bits_indexed_format=%s, color_table_format=%s\n",
         trace_header, impl_state, device, reverse_rgba_format(surface_rgba_format),
@@ -226,7 +227,7 @@ traceVdpOutputSurfaceQueryPutBitsYCbCrCapabilities(const char *impl_state, VdpDe
     (void)is_supported;
     if (!enabled) return;
     if (trace_hook) trace_hook(trace_hook_param,
-                               VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_PUT_BITS_Y_CB_CR_CAPABILITIES);
+                               VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_PUT_BITS_Y_CB_CR_CAPABILITIES, 0);
     fprintf(tlog, "%s%s VdpOutputSurfaceQueryPutBitsYCbCrCapabilities device=%d, "
         "surface_rgba_format=%s, bits_ycbcr_format=%s\n", trace_header, impl_state,
         device, reverse_rgba_format(surface_rgba_format), reverse_ycbcr_format(bits_ycbcr_format));
@@ -238,7 +239,7 @@ traceVdpOutputSurfaceCreate(const char *impl_state, VdpDevice device, VdpRGBAFor
 {
     (void)surface;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_CREATE);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_CREATE, 0);
     fprintf(tlog, "%s%s VdpOutputSurfaceCreate device=%d, rgba_format=%s, width=%d, height=%d\n",
         trace_header, impl_state, device, reverse_rgba_format(rgba_format), width, height);
 }
@@ -247,7 +248,7 @@ void
 traceVdpOutputSurfaceDestroy(const char *impl_state, VdpOutputSurface surface)
 {
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_DESTROY);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_DESTROY, 0);
     fprintf(tlog, "%s%s VdpOutputSurfaceDestroy surface=%d\n", trace_header, impl_state, surface);
 }
 
@@ -259,7 +260,7 @@ traceVdpOutputSurfaceGetParameters(const char *impl_state, VdpOutputSurface surf
     (void)width;
     (void)height;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_GET_PARAMETERS);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_GET_PARAMETERS, 0);
     fprintf(tlog, "%s%s VdpOutputSurfaceGetParameters surface=%d\n", trace_header, impl_state,
         surface);
 }
@@ -272,7 +273,7 @@ traceVdpOutputSurfaceGetBitsNative(const char *impl_state, VdpOutputSurface surf
     (void)destination_data;
     (void)destination_pitches;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_GET_BITS_NATIVE);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_GET_BITS_NATIVE, 0);
     fprintf(tlog, "%s%s VdpOutputSurfaceGetBitsNative surface=%d, source_rect=%s\n",
         trace_header, impl_state, surface, rect2string(source_rect));
 }
@@ -285,7 +286,7 @@ traceVdpOutputSurfacePutBitsNative(const char *impl_state, VdpOutputSurface surf
     (void)source_data;
     (void)source_pitches;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_NATIVE);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_NATIVE, 0);
     fprintf(tlog, "%s%s VdpOutputSurfacePutBitsNative surface=%d, destination_rect=%s\n",
         trace_header, impl_state, surface, rect2string(destination_rect));
 }
@@ -301,7 +302,7 @@ traceVdpOutputSurfacePutBitsIndexed(const char *impl_state, VdpOutputSurface sur
     (void)source_pitch;
     (void)color_table;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_INDEXED);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_INDEXED, 0);
     fprintf(tlog, "%s%s VdpOutputSurfacePutBitsIndexed surface=%d, source_indexed_format=%s, "
         "destination_rect=%s, color_table_format=%s\n", trace_header, impl_state, surface,
         reverse_indexed_format(source_indexed_format), rect2string(destination_rect),
@@ -317,7 +318,7 @@ traceVdpOutputSurfacePutBitsYCbCr(const char *impl_state, VdpOutputSurface surfa
     (void)source_data;
     (void)source_pitches;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_Y_CB_CR);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_Y_CB_CR, 0);
     fprintf(tlog, "%s%s VdpOutputSurfacePutBitsYCbCr surface=%d, source_ycbcr_format=%s, "
         "destination_rect=%s, csc_matrix=%p\n", trace_header, impl_state, surface,
         reverse_ycbcr_format(source_ycbcr_format), rect2string(destination_rect), csc_matrix);
@@ -329,7 +330,7 @@ traceVdpVideoMixerQueryFeatureSupport(const char *impl_state, VdpDevice device,
 {
     (void)is_supported;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_QUERY_FEATURE_SUPPORT);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_QUERY_FEATURE_SUPPORT, 0);
     fprintf(tlog, "%s%s VdpVideoMixerQueryFeatureSupport device=%d, feature=%s\n",
         trace_header, impl_state, device, reverse_video_mixer_feature(feature));
 }
@@ -341,7 +342,8 @@ traceVdpVideoMixerQueryParameterSupport(const char *impl_state, VdpDevice device
 {
     (void)is_supported;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_QUERY_PARAMETER_SUPPORT);
+    if (trace_hook)
+        trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_QUERY_PARAMETER_SUPPORT, 0);
     fprintf(tlog, "%s%s VdpVideoMixerQueryParameterSupport device=%d, parameter=%s\n",
         trace_header, impl_state, device, reverse_video_mixer_parameter(parameter));
 }
@@ -352,7 +354,8 @@ traceVdpVideoMixerQueryAttributeSupport(const char *impl_state, VdpDevice device
 {
     (void)is_supported;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_QUERY_ATTRIBUTE_SUPPORT);
+    if (trace_hook)
+        trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_QUERY_ATTRIBUTE_SUPPORT, 0);
     fprintf(tlog, "%s%s VdpVideoMixerQueryAttributeSupport device=%d, attribute=%s\n",
         trace_header, impl_state, device, reverse_video_mixer_attribute(attribute));
 }
@@ -366,7 +369,7 @@ traceVdpVideoMixerQueryParameterValueRange(const char *impl_state, VdpDevice dev
     (void)max_value;
     if (!enabled) return;
     if (trace_hook) trace_hook(trace_hook_param,
-                               VDP_FUNC_ID_VIDEO_MIXER_QUERY_PARAMETER_VALUE_RANGE);
+                               VDP_FUNC_ID_VIDEO_MIXER_QUERY_PARAMETER_VALUE_RANGE, 0);
     fprintf(tlog, "%s%s VdpVideoMixerQueryParameterValueRange device=%d, parameter=%s\n",
         trace_header, impl_state, device, reverse_video_mixer_parameter(parameter));
 }
@@ -380,7 +383,7 @@ traceVdpVideoMixerQueryAttributeValueRange(const char *impl_state, VdpDevice dev
     (void)max_value;
     if (!enabled) return;
     if (trace_hook) trace_hook(trace_hook_param,
-                               VDP_FUNC_ID_VIDEO_MIXER_QUERY_ATTRIBUTE_VALUE_RANGE);
+                               VDP_FUNC_ID_VIDEO_MIXER_QUERY_ATTRIBUTE_VALUE_RANGE, 0);
     fprintf(tlog, "%s%s VdpVideoMixerQueryAttributeValueRange device=%d, attribute=%s\n",
         trace_header, impl_state, device, reverse_video_mixer_attribute(attribute));
 }
@@ -393,7 +396,7 @@ traceVdpVideoMixerCreate(const char *impl_state, VdpDevice device, uint32_t feat
 {
     (void)mixer;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_CREATE);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_CREATE, 0);
     fprintf(tlog, "%s%s VdpVideoMixerCreate device=%d, feature_count=%d, parameter_count=%d\n",
         trace_header, impl_state, device, feature_count, parameter_count);
     for (uint32_t k = 0; k < feature_count; k ++)
@@ -428,7 +431,7 @@ traceVdpVideoMixerSetFeatureEnables(const char *impl_state, VdpVideoMixer mixer,
                                     VdpBool const *feature_enables)
 {
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_SET_FEATURE_ENABLES);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_SET_FEATURE_ENABLES, 0);
     fprintf(tlog, "%s%s VdpVideoMixerSetFeatureEnables mixer=%d, feature_count=%d\n",
         trace_header, impl_state, mixer, feature_count);
     for (uint32_t k = 0; k < feature_count; k ++) {
@@ -445,7 +448,7 @@ traceVdpVideoMixerSetAttributeValues(const char *impl_state, VdpVideoMixer mixer
                                      void const *const *attribute_values)
 {
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_SET_ATTRIBUTE_VALUES);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_SET_ATTRIBUTE_VALUES, 0);
     fprintf(tlog, "%s%s VdpVideoMixerSetAttributeValues mixer=%d, attribute_count=%d\n",
         trace_header, impl_state, mixer, attribute_count);
     for (uint32_t k = 0; k < attribute_count; k ++) {
@@ -471,7 +474,7 @@ traceVdpVideoMixerGetFeatureSupport(const char *impl_state, VdpVideoMixer mixer,
 {
     (void)feature_supports;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_GET_FEATURE_SUPPORT);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_GET_FEATURE_SUPPORT, 0);
     fprintf(tlog, "%s%s VdpVideoMixerGetFeatureSupport mixer=%d, feature_count=%d\n",
         trace_header, impl_state, mixer, feature_count);
     for (unsigned int k = 0; k < feature_count; k ++)
@@ -486,7 +489,7 @@ traceVdpVideoMixerGetFeatureEnables(const char *impl_state, VdpVideoMixer mixer,
 {
     (void)feature_enables;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_GET_FEATURE_ENABLES);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_GET_FEATURE_ENABLES, 0);
     fprintf(tlog, "%s%s VdpVideoMixerGetFeatureEnables mixer=%d, feature_count=%d\n",
         trace_header, impl_state, mixer, feature_count);
     for (unsigned int k = 0; k < feature_count; k ++)
@@ -502,7 +505,7 @@ traceVdpVideoMixerGetParameterValues(const char *impl_state, VdpVideoMixer mixer
 {
     (void)parameter_values;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_GET_PARAMETER_VALUES);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_GET_PARAMETER_VALUES, 0);
     fprintf(tlog, "%s%s VdpVideoMixerGetParameterValues mixer=%d, parameter_count=%d\n",
         trace_header, impl_state, mixer, parameter_count);
     for (unsigned int k = 0; k < parameter_count; k ++)
@@ -518,7 +521,7 @@ traceVdpVideoMixerGetAttributeValues(const char *impl_state, VdpVideoMixer mixer
 {
     (void)attribute_values;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_GET_ATTRIBUTE_VALUES);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_GET_ATTRIBUTE_VALUES, 0);
     fprintf(tlog, "%s%s VdpVideoMixerGetAttributeValues mixer=%d, attribute_count=%d\n",
         trace_header, impl_state, mixer, attribute_count);
     for (unsigned int k = 0; k < attribute_count; k ++)
@@ -530,7 +533,7 @@ void
 traceVdpVideoMixerDestroy(const char *impl_state, VdpVideoMixer mixer)
 {
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_DESTROY);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_DESTROY, 0);
     fprintf(tlog, "%s%s VdpVideoMixerDestroy mixer=%d\n", trace_header, impl_state, mixer);
 }
 
@@ -547,7 +550,7 @@ traceVdpVideoMixerRender(const char *impl_state, VdpVideoMixer mixer,
                          uint32_t layer_count, VdpLayer const *layers)
 {
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_RENDER);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_MIXER_RENDER, 0);
     fprintf(tlog, "%s%s VdpVideoMixerRender mixer=%d, background_surface=%d, "
         "background_source_rect=%s,\n", trace_header, impl_state,
         mixer, background_surface, rect2string(background_source_rect));
@@ -579,7 +582,7 @@ traceVdpPresentationQueueTargetDestroy(const char *impl_state,
                                        VdpPresentationQueueTarget presentation_queue_target)
 {
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_PRESENTATION_QUEUE_TARGET_DESTROY);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_PRESENTATION_QUEUE_TARGET_DESTROY, 0);
     fprintf(tlog, "%s%s VdpPresentationQueueTargetDestroy presentation_queue_target=%d\n",
         trace_header, impl_state, presentation_queue_target);
 }
@@ -591,7 +594,7 @@ traceVdpPresentationQueueCreate(const char *impl_state, VdpDevice device,
 {
     (void)presentation_queue;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_PRESENTATION_QUEUE_CREATE);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_PRESENTATION_QUEUE_CREATE, 0);
     fprintf(tlog, "%s%s VdpPresentationQueueCreate device=%d, presentation_queue_target=%d\n",
         trace_header, impl_state, device, presentation_queue_target);
 }
@@ -600,7 +603,7 @@ void
 traceVdpPresentationQueueDestroy(const char *impl_state, VdpPresentationQueue presentation_queue)
 {
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_PRESENTATION_QUEUE_DESTROY);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_PRESENTATION_QUEUE_DESTROY, 0);
     fprintf(tlog, "%s%s VdpPresentationQueueDestroy presentation_queue=%d\n",
         trace_header, impl_state, presentation_queue);
 }
@@ -612,7 +615,7 @@ traceVdpPresentationQueueSetBackgroundColor(const char *impl_state,
 {
     if (!enabled) return;
     if (trace_hook) trace_hook(trace_hook_param,
-                               VDP_FUNC_ID_PRESENTATION_QUEUE_SET_BACKGROUND_COLOR);
+                               VDP_FUNC_ID_PRESENTATION_QUEUE_SET_BACKGROUND_COLOR, 0);
     fprintf(tlog, "%s%s VdpPresentationQueueSetBackgroundColor presentation_queue=%d, "
         "background_color=(%.2f,%.2f,%.2f,%.2f)\n",
         trace_header, impl_state, presentation_queue, background_color->red,
@@ -627,7 +630,7 @@ traceVdpPresentationQueueGetBackgroundColor(const char *impl_state,
     (void)background_color;
     if (!enabled) return;
     if (trace_hook) trace_hook(trace_hook_param,
-                               VDP_FUNC_ID_PRESENTATION_QUEUE_GET_BACKGROUND_COLOR);
+                               VDP_FUNC_ID_PRESENTATION_QUEUE_GET_BACKGROUND_COLOR, 0);
     fprintf(tlog, "%s%s VdpPresentationQueueGetBackgroundColor  presentation_queue=%d\n",
         trace_header, impl_state, presentation_queue);
 }
@@ -638,7 +641,7 @@ traceVdpPresentationQueueGetTime(const char *impl_state, VdpPresentationQueue pr
 {
     (void)current_time;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_PRESENTATION_QUEUE_GET_TIME);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_PRESENTATION_QUEUE_GET_TIME, 0);
     fprintf(tlog, "%s%s VdpPresentationQueueGetTime presentation_queue=%d\n",
         trace_header, impl_state, presentation_queue);
 }
@@ -649,7 +652,7 @@ traceVdpPresentationQueueDisplay(const char *impl_state, VdpPresentationQueue pr
                                  uint32_t clip_height, VdpTime earliest_presentation_time)
 {
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_PRESENTATION_QUEUE_DISPLAY);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_PRESENTATION_QUEUE_DISPLAY, 0);
     fprintf(tlog, "%s%s VdpPresentationQueueDisplay presentation_queue=%d, surface=%d, "
         "clip_width=%d, clip_height=%d,\n", trace_header, impl_state, presentation_queue, surface,
         clip_width, clip_height);
@@ -667,7 +670,7 @@ traceVdpPresentationQueueBlockUntilSurfaceIdle(const char *impl_state,
     (void)first_presentation_time;
     if (!enabled) return;
     if (trace_hook) trace_hook(trace_hook_param,
-                               VDP_FUNC_ID_PRESENTATION_QUEUE_BLOCK_UNTIL_SURFACE_IDLE);
+                               VDP_FUNC_ID_PRESENTATION_QUEUE_BLOCK_UNTIL_SURFACE_IDLE, 0);
     fprintf(tlog, "%s%s VdpPresentationQueueBlockUntilSurfaceIdle presentation_queue=%d, "
         "surface=%d\n", trace_header, impl_state, presentation_queue, surface);
 }
@@ -683,7 +686,7 @@ traceVdpPresentationQueueQuerySurfaceStatus(const char *impl_state,
     (void)first_presentation_time;
     if (!enabled) return;
     if (trace_hook) trace_hook(trace_hook_param,
-                               VDP_FUNC_ID_PRESENTATION_QUEUE_QUERY_SURFACE_STATUS);
+                               VDP_FUNC_ID_PRESENTATION_QUEUE_QUERY_SURFACE_STATUS, 0);
     fprintf(tlog, "%s%s VdpPresentationQueueQuerySurfaceStatus presentation_queue=%d, "
         "surface=%d\n", trace_header, impl_state, presentation_queue, surface);
 }
@@ -697,7 +700,7 @@ traceVdpVideoSurfaceQueryCapabilities(const char *impl_state, VdpDevice device,
     (void)max_width;
     (void)max_height;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_SURFACE_QUERY_CAPABILITIES);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_SURFACE_QUERY_CAPABILITIES, 0);
     fprintf(tlog, "%s%s VdpVideoSurfaceQueryCapabilities device=%d, surface_chroma_type=%s\n",
         trace_header, impl_state, device, reverse_chroma_type(surface_chroma_type));
 }
@@ -710,8 +713,9 @@ traceVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(const char *impl_state, Vdp
 {
     (void)is_supported;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param,
-                               VDP_FUNC_ID_VIDEO_SURFACE_QUERY_GET_PUT_BITS_Y_CB_CR_CAPABILITIES);
+    if (trace_hook)
+        trace_hook(trace_hook_param,
+                   VDP_FUNC_ID_VIDEO_SURFACE_QUERY_GET_PUT_BITS_Y_CB_CR_CAPABILITIES, 0);
     fprintf(tlog, "%s%s VdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities device=%d, "
         "surface_chroma_type=%s, bits_ycbcr_format=%s\n", trace_header, impl_state,
         device, reverse_chroma_type(surface_chroma_type), reverse_ycbcr_format(bits_ycbcr_format));
@@ -723,7 +727,7 @@ traceVdpVideoSurfaceCreate(const char *impl_state, VdpDevice device, VdpChromaTy
 {
     (void)surface;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_SURFACE_CREATE);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_SURFACE_CREATE, 0);
     fprintf(tlog, "%s%s VdpVideoSurfaceCreate, device=%d, chroma_type=%s, width=%d, height=%d\n",
         trace_header, impl_state, device, reverse_chroma_type(chroma_type), width, height);
 }
@@ -732,7 +736,7 @@ void
 traceVdpVideoSurfaceDestroy(const char *impl_state, VdpVideoSurface surface)
 {
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_SURFACE_DESTROY);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_SURFACE_DESTROY, 0);
     fprintf(tlog, "%s%s VdpVideoSurfaceDestroy surface=%d\n", trace_header, impl_state, surface);
 }
 
@@ -744,7 +748,7 @@ traceVdpVideoSurfaceGetParameters(const char *impl_state, VdpVideoSurface surfac
     (void)width;
     (void)height;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_SURFACE_GET_PARAMETERS);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_SURFACE_GET_PARAMETERS, 0);
     fprintf(tlog, "%s%s VdpVideoSurfaceGetParameters surface=%d\n", trace_header, impl_state,
         surface);
 }
@@ -757,7 +761,7 @@ traceVdpVideoSurfaceGetBitsYCbCr(const char *impl_state, VdpVideoSurface surface
     (void)destination_data;
     (void)destination_pitches;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_SURFACE_GET_BITS_Y_CB_CR);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_SURFACE_GET_BITS_Y_CB_CR, 0);
     fprintf(tlog, "%s%s VdpVideoSurfaceGetBitsYCbCr surface=%d, destination_ycbcr_format=%s\n",
         trace_header, impl_state, surface, reverse_ycbcr_format(destination_ycbcr_format));
 }
@@ -770,7 +774,7 @@ traceVdpVideoSurfacePutBitsYCbCr(const char *impl_state, VdpVideoSurface surface
     (void)source_data;
     (void)source_pitches;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_SURFACE_PUT_BITS_Y_CB_CR);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_VIDEO_SURFACE_PUT_BITS_Y_CB_CR, 0);
     fprintf(tlog, "%s%s VdpVideoSurfacePutBitsYCbCr surface=%d, source_ycbcr_format=%s\n",
         trace_header, impl_state, surface, reverse_ycbcr_format(source_ycbcr_format));
 }
@@ -784,7 +788,7 @@ traceVdpBitmapSurfaceQueryCapabilities(const char *impl_state, VdpDevice device,
     (void)max_width;
     (void)max_height;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_BITMAP_SURFACE_QUERY_CAPABILITIES);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_BITMAP_SURFACE_QUERY_CAPABILITIES, 0);
     fprintf(tlog, "%s%s VdpBitmapSurfaceQueryCapabilities device=%d, surface_rgba_format=%s\n",
         trace_header, impl_state, device, reverse_rgba_format(surface_rgba_format));
 }
@@ -796,7 +800,7 @@ traceVdpBitmapSurfaceCreate(const char *impl_state, VdpDevice device, VdpRGBAFor
 {
     (void)surface;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_BITMAP_SURFACE_CREATE);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_BITMAP_SURFACE_CREATE, 0);
     fprintf(tlog, "%s%s VdpBitmapSurfaceCreate device=%d, rgba_format=%s, width=%d, height=%d,\n"
         "%s      frequently_accessed=%d\n", trace_header, impl_state, device,
         reverse_rgba_format(rgba_format), width, height, trace_header_blank, frequently_accessed);
@@ -806,7 +810,7 @@ void
 traceVdpBitmapSurfaceDestroy(const char *impl_state, VdpBitmapSurface surface)
 {
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_BITMAP_SURFACE_DESTROY);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_BITMAP_SURFACE_DESTROY, 0);
     fprintf(tlog, "%s%s VdpBitmapSurfaceDestroy surface=%d\n", trace_header, impl_state, surface);
 }
 
@@ -820,7 +824,7 @@ traceVdpBitmapSurfaceGetParameters(const char *impl_state, VdpBitmapSurface surf
     (void)height;
     (void)frequently_accessed;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_BITMAP_SURFACE_GET_PARAMETERS);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_BITMAP_SURFACE_GET_PARAMETERS, 0);
     fprintf(tlog, "%s%s VdpBitmapSurfaceGetParameters surface=%d\n",
         trace_header, impl_state, surface);
 }
@@ -833,7 +837,7 @@ traceVdpBitmapSurfacePutBitsNative(const char *impl_state, VdpBitmapSurface surf
     (void)source_data;
     (void)source_pitches;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_BITMAP_SURFACE_PUT_BITS_NATIVE);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_BITMAP_SURFACE_PUT_BITS_NATIVE, 0);
     fprintf(tlog, "%s%s VdpBitmapSurfacePutBitsNative surface=%d, destination_rect=%s\n",
         trace_header, impl_state, surface, rect2string(destination_rect));
 }
@@ -842,7 +846,7 @@ void
 traceVdpDeviceDestroy(const char *impl_state, VdpDevice device)
 {
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_DEVICE_DESTROY);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_DEVICE_DESTROY, 0);
     fprintf(tlog, "%s%s VdpDeviceDestroy device=%d\n", trace_header, impl_state, device);
 }
 
@@ -851,7 +855,7 @@ traceVdpGetInformationString(const char *impl_state, char const **information_st
 {
     (void)information_string;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_GET_INFORMATION_STRING);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_GET_INFORMATION_STRING, 0);
     fprintf(tlog, "%s%s VdpGetInformationString\n", trace_header, impl_state);
 }
 
@@ -861,7 +865,7 @@ traceVdpGenerateCSCMatrix(const char *impl_state, VdpProcamp *procamp, VdpColorS
 {
     (void)csc_matrix;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_GENERATE_CSC_MATRIX);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_GENERATE_CSC_MATRIX, 0);
     fprintf(tlog, "%s%s VdpGenerateCSCMatrix ", trace_header, impl_state);
     if (procamp) {
         fprintf(tlog, "brightness=%f, contrast=%f, saturation=%f, ", procamp->brightness,
@@ -880,7 +884,8 @@ traceVdpOutputSurfaceRenderOutputSurface(const char *impl_state,
                                          uint32_t flags)
 {
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_RENDER_OUTPUT_SURFACE);
+    if (trace_hook)
+        trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_RENDER_OUTPUT_SURFACE, 0);
     fprintf(tlog, "%s%s VdpOutputSurfaceRenderOutputSurface destination_surface=%d, "
         "destination_rect=%s,\n", trace_header, impl_state,
         destination_surface, rect2string(destination_rect));
@@ -934,7 +939,8 @@ traceVdpOutputSurfaceRenderBitmapSurface(const char *impl_state,
                                          uint32_t flags)
 {
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_RENDER_BITMAP_SURFACE);
+    if (trace_hook)
+        trace_hook(trace_hook_param, VDP_FUNC_ID_OUTPUT_SURFACE_RENDER_BITMAP_SURFACE, 0);
     fprintf(tlog, "%s%s VdpOutputSurfaceRenderBitmapSurface destination_surface=%d, "
         "destination_rect=%s,\n", trace_header, impl_state,
         destination_surface, rect2string(destination_rect));
@@ -983,7 +989,7 @@ traceVdpPreemptionCallbackRegister(const char *impl_state, VdpDevice device,
                                    VdpPreemptionCallback callback, void *context)
 {
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_PREEMPTION_CALLBACK_REGISTER);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_PREEMPTION_CALLBACK_REGISTER, 0);
     fprintf(tlog, "%s%s VdpPreemptionCallbackRegister device=%d, callback=%p, context=%p\n",
         trace_header, impl_state, device, callback, context);
 }
@@ -994,7 +1000,8 @@ traceVdpPresentationQueueTargetCreateX11(const char *impl_state, VdpDevice devic
 {
     (void)target;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_PRESENTATION_QUEUE_TARGET_CREATE_X11);
+    if (trace_hook)
+        trace_hook(trace_hook_param, VDP_FUNC_ID_PRESENTATION_QUEUE_TARGET_CREATE_X11, 0);
     fprintf(tlog, "%s%s VdpPresentationQueueTargetCreateX11, device=%d, drawable=%u\n",
         trace_header, impl_state, device, ((unsigned int)drawable));
 }
@@ -1005,7 +1012,7 @@ traceVdpGetProcAddress(const char *impl_state, VdpDevice device, VdpFuncId funct
 {
     (void)function_pointer;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_GET_PROC_ADDRESS);
+    if (trace_hook) trace_hook(trace_hook_param, VDP_FUNC_ID_GET_PROC_ADDRESS, 0);
     fprintf(tlog, "%s%s VdpGetProcAddress, device=%d, function_id=%s\n",
         trace_header, impl_state, device, reverse_func_id(function_id));
 }
@@ -1017,7 +1024,7 @@ traceVdpDeviceCreateX11(const char *trace_state, Display *display, int screen, V
     (void)device;
     (void)get_proc_address;
     if (!enabled) return;
-    if (trace_hook) trace_hook(trace_hook_param, -1);
+    if (trace_hook) trace_hook(trace_hook_param, -1, 0);
     fprintf(tlog, "%s%s vdp_imp_device_create_x11 display=%p, screen=%d\n", trace_header,
         trace_state, display, screen);
 }

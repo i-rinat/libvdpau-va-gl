@@ -30,7 +30,7 @@ void
 traceError(const char *buf, ...);
 
 void
-traceSetHook(void (*hook)(void *param, int origin), void *param);
+traceSetHook(void (*hook)(void *param, int origin, int after), void *param);
 
 void
 traceVdpGetErrorString(const char *impl_state, VdpStatus status);

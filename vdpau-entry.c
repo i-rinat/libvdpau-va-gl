@@ -23,12 +23,13 @@
 #include <unistd.h>
 
 void
-trc_hk(void *param, int origin)
+trc_hk(void *param, int origin, int after)
 {
     (void)param;
     (void)origin;
+    int before = !after;
 
-    if (global.quirks.log_call_duration) {
+    if (before && global.quirks.log_call_duration) {
         struct timespec ts;
         static struct timespec prev_ts = {0, 0};
 
@@ -38,7 +39,7 @@ trc_hk(void *param, int origin)
         prev_ts = ts;
     }
 
-    if (global.quirks.log_thread_id) {
+    if (before && global.quirks.log_thread_id) {
         printf("[%5d] ", (pid_t)syscall(__NR_gettid));
     }
 }
