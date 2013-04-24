@@ -99,6 +99,7 @@ typedef struct {
     uint32_t        width;
     uint32_t        height;
     VdpBool         frequently_accessed;
+    unsigned int    bytes_per_pixel;    ///< number of bytes per bitmap pixel
     GLuint          gl_internal_format;
     GLuint          gl_format;
     GLuint          gl_type;
@@ -1847,38 +1848,36 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     VdpBitmapSurfaceData *data = (VdpBitmapSurfaceData *)calloc(1, sizeof(VdpBitmapSurfaceData));
     if (NULL == data) return VDP_STATUS_RESOURCES;
 
-    int bytes_per_pixel;
-
     switch (rgba_format) {
     case VDP_RGBA_FORMAT_B8G8R8A8:
         data->gl_internal_format = GL_RGBA;
         data->gl_format = GL_BGRA;
         data->gl_type = GL_UNSIGNED_BYTE;
-        bytes_per_pixel = 4;
+        data->bytes_per_pixel = 4;
         break;
     case VDP_RGBA_FORMAT_R8G8B8A8:
         data->gl_internal_format = GL_RGBA;
         data->gl_format = GL_RGBA;
         data->gl_type = GL_UNSIGNED_BYTE;
-        bytes_per_pixel = 4;
+        data->bytes_per_pixel = 4;
         break;
     case VDP_RGBA_FORMAT_R10G10B10A2:
         data->gl_internal_format = GL_RGB10_A2;
         data->gl_format = GL_RGBA;
         data->gl_type = GL_UNSIGNED_INT_10_10_10_2;
-        bytes_per_pixel = 4;
+        data->bytes_per_pixel = 4;
         break;
     case VDP_RGBA_FORMAT_B10G10R10A2:
         data->gl_internal_format = GL_RGB10_A2;
         data->gl_format = GL_BGRA;
         data->gl_type = GL_UNSIGNED_INT_10_10_10_2;
-        bytes_per_pixel = 4;
+        data->bytes_per_pixel = 4;
         break;
     case VDP_RGBA_FORMAT_A8:
         data->gl_internal_format = GL_RGBA;
         data->gl_format = GL_RED;
         data->gl_type = GL_UNSIGNED_BYTE;
-        bytes_per_pixel = 1;
+        data->bytes_per_pixel = 1;
         break;
     default:
         traceError("error (VdpBitmapSurfaceCreate): %s not implemented\n",
@@ -1897,7 +1896,7 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     // Frequently accessed bitmaps reside in system memory rather that in GPU texture.
     data->dirty = 0;
     if (frequently_accessed) {
-        data->bitmap_data = (char *)calloc(width * height, bytes_per_pixel);
+        data->bitmap_data = (char *)calloc(width * height, data->bytes_per_pixel);
         if (NULL == data->bitmap_data) {
             traceError("error (VdpBitmapSurfaceCreate): calloc returned NULL\n");
             free(data);
@@ -2007,24 +2006,22 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = dstSurfData->device;
 
-    const unsigned int pixel_bytes = (VDP_RGBA_FORMAT_A8 == dstSurfData->rgba_format) ? 1 : 4;
-
     VdpRect d_rect = {0, 0, dstSurfData->width, dstSurfData->height};
     if (destination_rect) d_rect = *destination_rect;
 
     if (dstSurfData->frequently_accessed) {
-        const unsigned int bytes_per_pixel = pixel_bytes;
         if (0 == d_rect.x0 && dstSurfData->width == d_rect.x1 && source_pitches[0] == d_rect.x1) {
             // full width
             const int bytes_to_copy =
-                (d_rect.x1 - d_rect.x0) * (d_rect.y1 - d_rect.y0) * bytes_per_pixel;
-            memcpy(dstSurfData->bitmap_data + d_rect.y0 * dstSurfData->width * bytes_per_pixel,
+                (d_rect.x1 - d_rect.x0) * (d_rect.y1 - d_rect.y0) * dstSurfData->bytes_per_pixel;
+            memcpy(dstSurfData->bitmap_data +
+                        d_rect.y0 * dstSurfData->width * dstSurfData->bytes_per_pixel,
                    source_data[0], bytes_to_copy);
         } else {
-            const unsigned int bytes_in_line = (d_rect.x1 - d_rect.x0) * bytes_per_pixel;
+            const unsigned int bytes_in_line = (d_rect.x1-d_rect.x0)*dstSurfData->bytes_per_pixel;
             for (unsigned int y = d_rect.y0; y < d_rect.y1; y ++) {
-                const int dst_offset = (y * dstSurfData->width + d_rect.x0) * bytes_per_pixel;
-                memcpy(dstSurfData->bitmap_data + dst_offset,
+                memcpy(dstSurfData->bitmap_data +
+                            (y * dstSurfData->width + d_rect.x0) * dstSurfData->bytes_per_pixel,
                        source_data[0] + (y - d_rect.y0) * source_pitches[0],
                        bytes_in_line);
             }
@@ -2034,14 +2031,14 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
         glx_context_push_thread_local(deviceData);
 
         glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
-        glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0]/pixel_bytes);
-        if (4 != pixel_bytes)
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0]/dstSurfData->bytes_per_pixel);
+        if (4 != dstSurfData->bytes_per_pixel)
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         glTexSubImage2D(GL_TEXTURE_2D, 0, d_rect.x0, d_rect.y0,
             d_rect.x1 - d_rect.x0, d_rect.y1 - d_rect.y0,
             dstSurfData->gl_format, dstSurfData->gl_type, source_data[0]);
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-        if (4 != pixel_bytes)
+        if (4 != dstSurfData->bytes_per_pixel)
             glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
         GLenum gl_error = glGetError();
