@@ -18,6 +18,7 @@ Window window;
 
 void *thread_1_func(void *p)
 {
+    (void)p;    // unused
     VdpPresentationQueueTarget pq_target;
     VdpPresentationQueue pq;
     VdpOutputSurface out_surface;
