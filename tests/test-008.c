@@ -23,26 +23,32 @@ test_bitmaps_of_format(VdpDevice device, int fmt, const char *fmt_name,
 
     // trying square surface
     for (uint32_t k = 0; k < max_square_size + step; (k < step) ? (k++) : (k+=step)) {
-        const uint32_t size = MAX(0, MIN(k, max_square_size));
-        printf("trying square %s bitmap %d x %d\n", fmt_name, size, size);
-        ASSERT_OK(vdp_bitmap_surface_create(device, fmt, size, size, 1, &bmp_surf1));
-        ASSERT_OK(vdp_bitmap_surface_destroy(bmp_surf1));
+        for (uint32_t freq = 0; freq <= 1; freq ++) {
+            const uint32_t size = MAX(1, MIN(k, max_square_size));
+            printf("trying square %s bitmap %d x %d (%d)\n", fmt_name, size, size, freq);
+            ASSERT_OK(vdp_bitmap_surface_create(device, fmt, size, size, freq, &bmp_surf1));
+            ASSERT_OK(vdp_bitmap_surface_destroy(bmp_surf1));
+        }
     }
 
     // width stretched
     for (uint32_t k = 0; k < max_width + step; (k < step) ? (k++) : (k+=step)) {
-        const uint32_t size = MAX(0, MIN(k, max_width));
-        printf("trying width stretched %s bitmap %d x %d\n", fmt_name, size, 128);
-        ASSERT_OK(vdp_bitmap_surface_create(device, fmt, size, 128, 1, &bmp_surf1));
-        ASSERT_OK(vdp_bitmap_surface_destroy(bmp_surf1));
+        for (uint32_t freq = 0; freq <= 1; freq ++) {
+            const uint32_t size = MAX(1, MIN(k, max_width));
+            printf("trying width stretched %s bitmap %d x %d (%d)\n", fmt_name, size, 128, freq);
+            ASSERT_OK(vdp_bitmap_surface_create(device, fmt, size, 128, freq, &bmp_surf1));
+            ASSERT_OK(vdp_bitmap_surface_destroy(bmp_surf1));
+        }
     }
 
     // height stretched
     for (uint32_t k = 0; k < max_height + step; (k < step) ? (k++) : (k+=step)) {
-        const uint32_t size = MAX(0, MIN(k, max_height));
-        printf("trying height stretched %s bitmap %d x %d\n", fmt_name, 128, size);
-        ASSERT_OK(vdp_bitmap_surface_create(device, fmt, 128, size, 1, &bmp_surf1));
-        ASSERT_OK(vdp_bitmap_surface_destroy(bmp_surf1));
+        for (uint32_t freq = 0; freq <= 1; freq ++) {
+            const uint32_t size = MAX(1, MIN(k, max_height));
+            printf("trying height stretched %s bitmap %d x %d (%d)\n", fmt_name, 128, size, freq);
+            ASSERT_OK(vdp_bitmap_surface_create(device, fmt, 128, size, freq, &bmp_surf1));
+            ASSERT_OK(vdp_bitmap_surface_destroy(bmp_surf1));
+        }
     }
 }
 
