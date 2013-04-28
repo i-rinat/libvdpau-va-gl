@@ -1812,8 +1812,8 @@ softVdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
     case VDP_RGBA_FORMAT_R10G10B10A2:
     case VDP_RGBA_FORMAT_B10G10R10A2:
     case VDP_RGBA_FORMAT_A8:
-        *is_supported = 1;          // say this is supported formats, although not verified
-        break;                      // TODO: check for actual 10-bit format support?
+        *is_supported = 1;          // All these formats should be supported by OpenGL
+        break;                      // implementation.
     default:
         *is_supported = 0;
         break;
