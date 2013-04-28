@@ -46,7 +46,7 @@ lockedVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile,
 {
     acquire_lock();
     traceCallHook(VDP_FUNC_ID_DECODER_QUERY_CAPABILITIES, 0, NULL);
-    traceVdpDecoderQueryCapabilities("{zilch}", device, profile, is_supported, max_level,
+    traceVdpDecoderQueryCapabilities("{part}", device, profile, is_supported, max_level,
         max_macroblocks, max_width, max_height);
     VdpStatus ret = softVdpDecoderQueryCapabilities(device, profile, is_supported, max_level,
         max_macroblocks, max_width, max_height);

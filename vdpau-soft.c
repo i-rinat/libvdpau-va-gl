@@ -155,9 +155,148 @@ softVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, Vdp
                                 uint32_t *max_level, uint32_t *max_macroblocks,
                                 uint32_t *max_width, uint32_t *max_height)
 {
-    (void)device; (void)profile; (void)is_supported; (void)max_level; (void)max_macroblocks;
-    (void)max_width; (void)max_height;
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
+    if (NULL == deviceData)
+        return VDP_STATUS_INVALID_HANDLE;
+
+    if (NULL == is_supported || NULL == max_level || NULL == max_macroblocks ||
+        NULL == max_width || NULL == max_height)
+    {
+        return VDP_STATUS_INVALID_POINTER;
+    }
+
+    *max_level = 0;
+    *max_macroblocks = 0;
+    *max_width = 0;
+    *max_height = 0;
+
+    if (! deviceData->va_available) {
+        *is_supported = 0;
+        return VDP_STATUS_OK;
+    }
+
+    VAProfile *va_profile_list = malloc(sizeof(VAProfile) * vaMaxNumProfiles(deviceData->va_dpy));
+    if (NULL == va_profile_list)
+        return VDP_STATUS_RESOURCES;
+
+    int num_profiles;
+    VAStatus status = vaQueryConfigProfiles(deviceData->va_dpy, va_profile_list, &num_profiles);
+    if (VA_STATUS_SUCCESS != status) {
+        free(va_profile_list);
+        return VDP_STATUS_ERROR;
+    }
+
+    struct {
+        int mpeg2_simple;
+        int mpeg2_main;
+        int h264_baseline;
+        int h264_main;
+        int h264_high;
+        int vc1_simple;
+        int vc1_main;
+        int vc1_advanced;
+    } available_profiles = {0, 0, 0, 0, 0, 0, 0, 0};
+
+    for (int k = 0; k < num_profiles; k ++) {
+        switch (va_profile_list[k]) {
+        case VAProfileMPEG2Main:
+            available_profiles.mpeg2_main = 1;
+            /* fall through */
+        case VAProfileMPEG2Simple:
+            available_profiles.mpeg2_simple = 1;
+            break;
+
+        case VAProfileH264High:
+            available_profiles.h264_high = 1;
+            /* fall through */
+        case VAProfileH264Main:
+            available_profiles.h264_main = 1;
+            /* fall through */
+        case VAProfileH264Baseline:
+            available_profiles.h264_baseline = 1;
+            /* fall though */
+        case VAProfileH264ConstrainedBaseline:
+            break;
+
+        case VAProfileVC1Advanced:
+            available_profiles.vc1_advanced = 1;
+            /* fall though */
+        case VAProfileVC1Main:
+            available_profiles.vc1_main = 1;
+            /* fall though */
+        case VAProfileVC1Simple:
+            available_profiles.vc1_simple = 1;
+            break;
+
+        // unhandled profiles
+        case VAProfileH263Baseline:
+        case VAProfileJPEGBaseline:
+        default:
+            // do nothing
+            break;
+        }
+    }
+    free(va_profile_list);
+
+    *is_supported = 0;
+    // TODO: How to determine max width and height width libva?
+    *max_width = 2048;
+    *max_height = 2048;
+    *max_macroblocks = 16384;
+    switch (profile) {
+    case VDP_DECODER_PROFILE_MPEG2_SIMPLE:
+        *is_supported = available_profiles.mpeg2_simple;
+        *max_level = VDP_DECODER_LEVEL_MPEG2_HL;
+        break;
+    case VDP_DECODER_PROFILE_MPEG2_MAIN:
+        *is_supported = available_profiles.mpeg2_main;
+        *max_level = VDP_DECODER_LEVEL_MPEG2_HL;
+        break;
+
+    case VDP_DECODER_PROFILE_H264_BASELINE:
+        *is_supported = available_profiles.h264_baseline;
+        // TODO: Do underlying libva really support 5.1?
+        *max_level = VDP_DECODER_LEVEL_H264_5_1;
+        break;
+    case VDP_DECODER_PROFILE_H264_MAIN:
+        *is_supported = available_profiles.h264_main;
+        *max_level = VDP_DECODER_LEVEL_H264_5_1;
+        break;
+    case VDP_DECODER_PROFILE_H264_HIGH:
+        *is_supported = available_profiles.h264_high;
+        *max_level = VDP_DECODER_LEVEL_H264_5_1;
+        break;
+
+    case VDP_DECODER_PROFILE_VC1_SIMPLE:
+        *is_supported = available_profiles.vc1_simple;
+        *max_level = VDP_DECODER_LEVEL_VC1_SIMPLE_MEDIUM;
+        break;
+    case VDP_DECODER_PROFILE_VC1_MAIN:
+        *is_supported = available_profiles.vc1_main;
+        *max_level = VDP_DECODER_LEVEL_VC1_MAIN_HIGH;
+        break;
+    case VDP_DECODER_PROFILE_VC1_ADVANCED:
+        *is_supported = available_profiles.vc1_advanced;
+        *max_level = VDP_DECODER_LEVEL_VC1_ADVANCED_L4;
+        break;
+
+    // unsupported
+    case VDP_DECODER_PROFILE_MPEG1:
+    case VDP_DECODER_PROFILE_MPEG4_PART2_SP:
+    case VDP_DECODER_PROFILE_MPEG4_PART2_ASP:
+    case VDP_DECODER_PROFILE_DIVX4_QMOBILE:
+    case VDP_DECODER_PROFILE_DIVX4_MOBILE:
+    case VDP_DECODER_PROFILE_DIVX4_HOME_THEATER:
+    case VDP_DECODER_PROFILE_DIVX4_HD_1080P:
+    case VDP_DECODER_PROFILE_DIVX5_QMOBILE:
+    case VDP_DECODER_PROFILE_DIVX5_MOBILE:
+    case VDP_DECODER_PROFILE_DIVX5_HOME_THEATER:
+    case VDP_DECODER_PROFILE_DIVX5_HD_1080P:
+    default:
+        break;
+    }
+
+    return VDP_STATUS_OK;
 }
 
 VdpStatus
