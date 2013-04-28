@@ -1560,8 +1560,18 @@ VdpStatus
 softVdpVideoSurfaceGetParameters(VdpVideoSurface surface, VdpChromaType *chroma_type,
                                  uint32_t *width, uint32_t *height)
 {
-    (void)surface; (void)chroma_type; (void)width; (void)height;
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    VdpVideoSurfaceData *videoSurf = handlestorage_get(surface, HANDLETYPE_VIDEO_SURFACE);
+    if (NULL == videoSurf)
+        return VDP_STATUS_INVALID_HANDLE;
+
+    if (NULL == chroma_type || NULL == width || NULL == height)
+        return VDP_STATUS_INVALID_POINTER;
+
+    *chroma_type = videoSurf->chroma_type;
+    *width       = videoSurf->width;
+    *height      = videoSurf->height;
+
+    return VDP_STATUS_OK;
 }
 
 VdpStatus

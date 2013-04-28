@@ -692,7 +692,7 @@ lockedVdpVideoSurfaceGetParameters(VdpVideoSurface surface, VdpChromaType *chrom
 {
     acquire_lock();
     traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_GET_PARAMETERS, 0, NULL);
-    traceVdpVideoSurfaceGetParameters("{zilch}", surface, chroma_type, width, height);
+    traceVdpVideoSurfaceGetParameters("{full}", surface, chroma_type, width, height);
     VdpStatus ret = softVdpVideoSurfaceGetParameters(surface, chroma_type, width, height);
     traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_GET_PARAMETERS, 1, (void*)ret);
     release_lock();
