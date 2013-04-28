@@ -590,8 +590,38 @@ softVdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
                                       VdpBool *is_supported, uint32_t *max_width,
                                       uint32_t *max_height)
 {
-    (void)device; (void)surface_rgba_format; (void)is_supported; (void)max_width; (void)max_height;
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
+    if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
+
+    if (NULL == is_supported || NULL == max_width || NULL == max_height)
+        return VDP_STATUS_INVALID_POINTER;
+
+    switch (surface_rgba_format) {
+    case VDP_RGBA_FORMAT_B8G8R8A8:
+    case VDP_RGBA_FORMAT_R8G8B8A8:
+    case VDP_RGBA_FORMAT_R10G10B10A2:
+    case VDP_RGBA_FORMAT_B10G10R10A2:
+    case VDP_RGBA_FORMAT_A8:
+        *is_supported = 1;          // All these formats should be supported by OpenGL
+        break;                      // implementation.
+    default:
+        *is_supported = 0;
+        break;
+    }
+
+    GLint max_texture_size;
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
+
+    GLenum gl_error = glGetError();
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (VdpOutputSurfaceQueryCapabilities): gl error %d\n", gl_error);
+        return VDP_STATUS_ERROR;
+    }
+
+    *max_width = max_texture_size;
+    *max_height = max_texture_size;
+
+    return VDP_STATUS_OK;
 }
 
 VdpStatus

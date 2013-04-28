@@ -116,7 +116,7 @@ lockedVdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_
 {
     acquire_lock();
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_CAPABILITIES, 0, NULL);
-    traceVdpOutputSurfaceQueryCapabilities("{zilch}", device, surface_rgba_format, is_supported,
+    traceVdpOutputSurfaceQueryCapabilities("{full}", device, surface_rgba_format, is_supported,
         max_width, max_height);
     VdpStatus ret = softVdpOutputSurfaceQueryCapabilities(device, surface_rgba_format, is_supported,
                                                           max_width, max_height);
