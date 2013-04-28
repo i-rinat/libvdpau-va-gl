@@ -100,7 +100,7 @@ lockedVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
 {
     acquire_lock();
     traceCallHook(VDP_FUNC_ID_DECODER_RENDER, 0, NULL);
-    traceVdpDecoderRender("{WIP}", decoder, target, picture_info, bitstream_buffer_count,
+    traceVdpDecoderRender("{part}", decoder, target, picture_info, bitstream_buffer_count,
         bitstream_buffers);
     VdpStatus ret = softVdpDecoderRender(decoder, target, picture_info, bitstream_buffer_count,
         bitstream_buffers);
@@ -222,7 +222,7 @@ lockedVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sou
 {
     acquire_lock();
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_GET_BITS_NATIVE, 0, NULL);
-    traceVdpOutputSurfaceGetBitsNative("{WIP}", surface, source_rect, destination_data,
+    traceVdpOutputSurfaceGetBitsNative("{part}", surface, source_rect, destination_data,
         destination_pitches);
     VdpStatus ret = softVdpOutputSurfaceGetBitsNative(surface, source_rect, destination_data,
         destination_pitches);
