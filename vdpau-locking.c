@@ -86,7 +86,7 @@ lockedVdpDecoderGetParameters(VdpDecoder decoder, VdpDecoderProfile *profile,
 {
     acquire_lock();
     traceCallHook(VDP_FUNC_ID_DECODER_GET_PARAMETERS, 0, NULL);
-    traceVdpDecoderGetParameters("{zilch}", decoder, profile, width, height);
+    traceVdpDecoderGetParameters("{full}", decoder, profile, width, height);
     VdpStatus ret = softVdpDecoderGetParameters(decoder, profile, width, height);
     traceCallHook(VDP_FUNC_ID_DECODER_GET_PARAMETERS, 1, (void*)ret);
     release_lock();

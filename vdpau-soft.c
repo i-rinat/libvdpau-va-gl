@@ -267,8 +267,18 @@ VdpStatus
 softVdpDecoderGetParameters(VdpDecoder decoder, VdpDecoderProfile *profile,
                             uint32_t *width, uint32_t *height)
 {
-    (void)decoder; (void)profile; (void)width; (void)height;
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    VdpDecoderData *decoderData = handlestorage_get(decoder, HANDLETYPE_DECODER);
+    if (NULL == decoderData)
+        return VDP_STATUS_INVALID_HANDLE;
+
+    if (NULL == profile || NULL == width || NULL == height)
+        return VDP_STATUS_INVALID_HANDLE;
+
+    *profile = decoderData->profile;
+    *width   = decoderData->width;
+    *height  = decoderData->height;
+
+    return VDP_STATUS_OK;
 }
 
 static
