@@ -208,7 +208,7 @@ lockedVdpOutputSurfaceGetParameters(VdpOutputSurface surface, VdpRGBAFormat *rgb
 {
     acquire_lock();
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_GET_PARAMETERS, 0, NULL);
-    traceVdpOutputSurfaceGetParameters("{zilch}", surface, rgba_format, width, height);
+    traceVdpOutputSurfaceGetParameters("{full}", surface, rgba_format, width, height);
     VdpStatus ret = softVdpOutputSurfaceGetParameters(surface, rgba_format, width, height);
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_GET_PARAMETERS, 1, (void*)ret);
     release_lock();

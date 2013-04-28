@@ -748,8 +748,18 @@ VdpStatus
 softVdpOutputSurfaceGetParameters(VdpOutputSurface surface, VdpRGBAFormat *rgba_format,
                                   uint32_t *width, uint32_t *height)
 {
-    (void)surface; (void)rgba_format; (void)width; (void)height;
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    VdpOutputSurfaceData *surfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
+    if (NULL == surfData)
+        return VDP_STATUS_INVALID_HANDLE;
+
+    if (NULL == rgba_format || NULL == width || NULL == height)
+        return VDP_STATUS_INVALID_HANDLE;
+
+    *rgba_format = surfData->rgba_format;
+    *width       = surfData->width;
+    *height      = surfData->height;
+
+    return VDP_STATUS_OK;
 }
 
 VdpStatus
