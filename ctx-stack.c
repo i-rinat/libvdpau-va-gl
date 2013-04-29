@@ -22,6 +22,7 @@
 static __thread Display *glx_ctx_stack_display;
 static __thread Drawable glx_ctx_stack_wnd;
 static __thread GLXContext glx_ctx_stack_glc;
+static __thread int glx_ctx_stack_same;
 static __thread int glx_ctx_stack_element_count = 0;
 
 void
@@ -33,9 +34,16 @@ glx_context_push_global(Display *dpy, Drawable wnd, GLXContext glc)
     glx_ctx_stack_display = glXGetCurrentDisplay();
     glx_ctx_stack_wnd =     glXGetCurrentDrawable();
     glx_ctx_stack_glc =     glXGetCurrentContext();
+    glx_ctx_stack_same =    0;
     glx_ctx_stack_element_count ++;
 
-    locked_glXMakeCurrent(dpy, wnd, glc);
+    if (dpy == glx_ctx_stack_display && wnd == glx_ctx_stack_wnd && glc == glx_ctx_stack_glc) {
+        // Same context. Don't call MakeCurrent.
+        glx_ctx_stack_same = 1;
+    } else {
+        glx_ctx_stack_same = 0;
+        locked_glXMakeCurrent(dpy, wnd, glc);
+    }
 
     pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
 }
@@ -60,7 +68,13 @@ glx_context_push_thread_local(VdpDeviceData *deviceData)
     glx_ctx_stack_glc =     glXGetCurrentContext();
     glx_ctx_stack_element_count ++;
 
-    locked_glXMakeCurrent(dpy, wnd, glc);
+    if (dpy == glx_ctx_stack_display && wnd == glx_ctx_stack_wnd && glc == glx_ctx_stack_glc) {
+        // Same context. Don't call MakeCurrent.
+        glx_ctx_stack_same = 1;
+    } else {
+        glx_ctx_stack_same = 0;
+        locked_glXMakeCurrent(dpy, wnd, glc);
+    }
 
     pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
 }
@@ -71,8 +85,10 @@ glx_context_pop()
     pthread_mutex_lock(&global.glx_ctx_stack_mutex);
     assert(1 == glx_ctx_stack_element_count);
 
-    if (glx_ctx_stack_display)
-        locked_glXMakeCurrent(glx_ctx_stack_display, glx_ctx_stack_wnd, glx_ctx_stack_glc);
+    if (!glx_ctx_stack_same) {
+        if (glx_ctx_stack_display)
+            locked_glXMakeCurrent(glx_ctx_stack_display, glx_ctx_stack_wnd, glx_ctx_stack_glc);
+    }
 
     glx_ctx_stack_element_count --;
 
