@@ -306,12 +306,15 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
 {
     VdpStatus retval = VDP_STATUS_ERROR;
     VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
-    if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
-    if (!deviceData->va_available) return VDP_STATUS_INVALID_DECODER_PROFILE;
+    if (NULL == deviceData)
+        return VDP_STATUS_INVALID_HANDLE;
+    if (!deviceData->va_available)
+        return VDP_STATUS_INVALID_DECODER_PROFILE;
     VADisplay va_dpy = deviceData->va_dpy;
 
     VdpDecoderData *data = calloc(1, sizeof(VdpDecoderData));
-    if (NULL == data) return VDP_STATUS_RESOURCES;
+    if (NULL == data)
+        return VDP_STATUS_RESOURCES;
 
     data->type = HANDLETYPE_DECODER;
     data->device = deviceData;
@@ -358,7 +361,8 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
             break;
     }
 
-    if (VA_STATUS_SUCCESS != status) goto error;
+    if (VA_STATUS_SUCCESS != status)
+        goto error;
 
     // Create surfaces. All video surfaces created here, rather than in VdpVideoSurfaceCreate.
     // VAAPI requires surfaces to be bound with context on its creation time, while VDPAU allows
@@ -368,11 +372,13 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
     // TODO: check format of surfaces created
     status = vaCreateSurfaces(va_dpy, width, height, VA_RT_FORMAT_YUV420,
         data->num_render_targets, data->render_targets);
-    if (VA_STATUS_SUCCESS != status) goto error;
+    if (VA_STATUS_SUCCESS != status)
+        goto error;
 
     status = vaCreateContext(va_dpy, data->config_id, width, height, VA_PROGRESSIVE,
         data->render_targets, data->num_render_targets, &data->context_id);
-    if (VA_STATUS_SUCCESS != status) goto error;
+    if (VA_STATUS_SUCCESS != status)
+        goto error;
 
     deviceData->refcount ++;
     *decoder = handlestorage_add(data);
@@ -387,7 +393,8 @@ VdpStatus
 softVdpDecoderDestroy(VdpDecoder decoder)
 {
     VdpDecoderData *decoderData = handlestorage_get(decoder, HANDLETYPE_DECODER);
-    if (NULL == decoderData) return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == decoderData)
+        return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = decoderData->device;
 
     if (deviceData->va_available) {
@@ -564,7 +571,8 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
 {
     VdpDecoderData *decoderData = handlestorage_get(decoder, HANDLETYPE_DECODER);
     VdpVideoSurfaceData *dstSurfData = handlestorage_get(target, HANDLETYPE_VIDEO_SURFACE);
-    if (NULL == decoderData || NULL == dstSurfData) return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == decoderData || NULL == dstSurfData)
+        return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = decoderData->device;
     VADisplay va_dpy = deviceData->va_dpy;
     VAStatus status;
@@ -585,10 +593,12 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
 
         status = vaCreateBuffer(va_dpy, decoderData->context_id, VAPictureParameterBufferType,
             sizeof(VAPictureParameterBufferH264), 1, NULL, &pic_param_buf);
-        if (VA_STATUS_SUCCESS != status) goto error;
+        if (VA_STATUS_SUCCESS != status)
+            goto error;
 
         status = vaMapBuffer(va_dpy, pic_param_buf, (void **)&pic_param);
-        if (VA_STATUS_SUCCESS != status) goto error;
+        if (VA_STATUS_SUCCESS != status)
+            goto error;
 
         vs = h264_translate_reference_frames(dstSurfData, decoderData, pic_param, vdppi);
         if (VDP_STATUS_RESOURCES == vs)
@@ -605,21 +615,26 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
 
         status = vaCreateBuffer(va_dpy, decoderData->context_id, VAIQMatrixBufferType,
             sizeof(VAIQMatrixBufferH264), 1, NULL, &iq_matrix_buf);
-        if (VA_STATUS_SUCCESS != status) goto error;
+        if (VA_STATUS_SUCCESS != status)
+            goto error;
 
         status = vaMapBuffer(va_dpy, iq_matrix_buf, (void **)&iq_matrix);
-        if (VA_STATUS_SUCCESS != status) goto error;
+        if (VA_STATUS_SUCCESS != status)
+            goto error;
 
         h264_translate_iq_matrix(iq_matrix, vdppi);
         vaUnmapBuffer(va_dpy, iq_matrix_buf);
 
         // send data to decoding hardware
         status = vaBeginPicture(va_dpy, decoderData->context_id, dstSurfData->va_surf);
-        if (VA_STATUS_SUCCESS != status) goto error;
+        if (VA_STATUS_SUCCESS != status)
+            goto error;
         status = vaRenderPicture(va_dpy, decoderData->context_id, &pic_param_buf, 1);
-        if (VA_STATUS_SUCCESS != status) goto error;
+        if (VA_STATUS_SUCCESS != status)
+            goto error;
         status = vaRenderPicture(va_dpy, decoderData->context_id, &iq_matrix_buf, 1);
-        if (VA_STATUS_SUCCESS != status) goto error;
+        if (VA_STATUS_SUCCESS != status)
+            goto error;
 
         vaDestroyBuffer(va_dpy, pic_param_buf);
         vaDestroyBuffer(va_dpy, iq_matrix_buf);
@@ -681,17 +696,21 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
             VABufferID slice_parameters_buf;
             status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceParameterBufferType,
                 sizeof(VASliceParameterBufferH264), 1, &sp_h264, &slice_parameters_buf);
-            if (VA_STATUS_SUCCESS != status) goto error;
+            if (VA_STATUS_SUCCESS != status)
+                goto error;
             status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_parameters_buf, 1);
-            if (VA_STATUS_SUCCESS != status) goto error;
+            if (VA_STATUS_SUCCESS != status)
+                goto error;
 
             VABufferID slice_buf;
             status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceDataBufferType,
                 sp_h264.slice_data_size, 1, merged_bitstream + nal_offset, &slice_buf);
-            if (VA_STATUS_SUCCESS != status) goto error;
+            if (VA_STATUS_SUCCESS != status)
+                goto error;
 
             status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_buf, 1);
-            if (VA_STATUS_SUCCESS != status) goto error;
+            if (VA_STATUS_SUCCESS != status)
+                goto error;
 
             vaDestroyBuffer(va_dpy, slice_parameters_buf);
             vaDestroyBuffer(va_dpy, slice_buf);
@@ -702,7 +721,8 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         } while (1);
 
         status = vaEndPicture(va_dpy, decoderData->context_id);
-        if (VA_STATUS_SUCCESS != status) goto error;
+        if (VA_STATUS_SUCCESS != status)
+            goto error;
 
         free(merged_bitstream);
     } else {
@@ -731,7 +751,8 @@ softVdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
                                       uint32_t *max_height)
 {
     VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
-    if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == deviceData)
+        return VDP_STATUS_INVALID_HANDLE;
 
     if (NULL == is_supported || NULL == max_width || NULL == max_height)
         return VDP_STATUS_INVALID_POINTER;
@@ -943,7 +964,8 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
                                   uint32_t const *destination_pitches)
 {
     VdpOutputSurfaceData *srcSurfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
-    if (NULL == srcSurfData) return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == srcSurfData)
+        return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = srcSurfData->device;
 
     VdpRect srcRect = {0, 0, srcSurfData->width, srcSurfData->height};
@@ -977,7 +999,8 @@ softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *s
                                   uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
     VdpOutputSurfaceData *dstSurfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
-    if (NULL == dstSurfData) return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == dstSurfData)
+        return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = dstSurfData->device;
 
     VdpRect dstRect = {0, 0, dstSurfData->width, dstSurfData->height};
@@ -1014,11 +1037,13 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
                                    VdpColorTableFormat color_table_format, void const *color_table)
 {
     VdpOutputSurfaceData *surfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
-    if (NULL == surfData) return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == surfData)
+        return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = surfData->device;
 
     VdpRect dstRect = {0, 0, surfData->width, surfData->height};
-    if (destination_rect) dstRect = *destination_rect;
+    if (destination_rect)
+        dstRect = *destination_rect;
 
     // there is no other formats anyway
     if (VDP_COLOR_TABLE_FORMAT_B8G8R8X8 != color_table_format)
@@ -1238,8 +1263,10 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         handlestorage_get(video_surface_current, HANDLETYPE_VIDEO_SURFACE);
     VdpOutputSurfaceData *dstSurfData =
         handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
-    if (NULL == srcSurfData || NULL == dstSurfData) return VDP_STATUS_INVALID_HANDLE;
-    if (srcSurfData->device != dstSurfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+    if (NULL == srcSurfData || NULL == dstSurfData)
+        return VDP_STATUS_INVALID_HANDLE;
+    if (srcSurfData->device != dstSurfData->device)
+        return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     VdpDeviceData *deviceData = srcSurfData->device;
 
     VdpRect srcVideoRect = {0, 0, srcSurfData->width, srcSurfData->height};
@@ -1408,15 +1435,18 @@ softVdpPresentationQueueCreate(VdpDevice device,
                                VdpPresentationQueue *presentation_queue)
 {
     VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
-    if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == deviceData)
+        return VDP_STATUS_INVALID_HANDLE;
 
     VdpPresentationQueueTargetData *targetData =
         handlestorage_get(presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET);
-    if (NULL == targetData) return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == targetData)
+        return VDP_STATUS_INVALID_HANDLE;
 
     VdpPresentationQueueData *data =
         (VdpPresentationQueueData *)calloc(1, sizeof(VdpPresentationQueueData));
-    if (NULL == data) return VDP_STATUS_RESOURCES;
+    if (NULL == data)
+        return VDP_STATUS_RESOURCES;
 
     data->type = HANDLETYPE_PRESENTATION_QUEUE;
     data->device = deviceData;
@@ -1439,7 +1469,8 @@ softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 {
     VdpPresentationQueueData *data =
         handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
-    if (NULL == data) return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == data)
+        return VDP_STATUS_INVALID_HANDLE;
 
     handlestorage_expunge(presentation_queue);
     data->device->refcount --;
@@ -1506,8 +1537,10 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     VdpOutputSurfaceData *surfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
     VdpPresentationQueueData *pqueueData =
         handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
-    if (NULL == surfData || NULL == pqueueData) return VDP_STATUS_INVALID_HANDLE;
-    if (pqueueData->device != surfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+    if (NULL == surfData || NULL == pqueueData)
+        return VDP_STATUS_INVALID_HANDLE;
+    if (pqueueData->device != surfData->device)
+        return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     VdpDeviceData *deviceData = surfData->device;
 
     glx_context_push_global(deviceData->display, pqueueData->target->drawable, pqueueData->target->glc);
@@ -1950,7 +1983,8 @@ softVdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
                                       uint32_t *max_height)
 {
     VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
-    if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == deviceData)
+        return VDP_STATUS_INVALID_HANDLE;
 
     if (NULL == is_supported || NULL == max_width || NULL == max_height)
         return VDP_STATUS_INVALID_POINTER;
@@ -1988,10 +2022,12 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
                            uint32_t height, VdpBool frequently_accessed, VdpBitmapSurface *surface)
 {
     VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
-    if (NULL == deviceData) return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == deviceData)
+        return VDP_STATUS_INVALID_HANDLE;
 
     VdpBitmapSurfaceData *data = (VdpBitmapSurfaceData *)calloc(1, sizeof(VdpBitmapSurfaceData));
-    if (NULL == data) return VDP_STATUS_RESOURCES;
+    if (NULL == data)
+        return VDP_STATUS_RESOURCES;
 
     switch (rgba_format) {
     case VDP_RGBA_FORMAT_B8G8R8A8:
@@ -2122,7 +2158,8 @@ softVdpBitmapSurfaceGetParameters(VdpBitmapSurface surface, VdpRGBAFormat *rgba_
                                   uint32_t *width, uint32_t *height, VdpBool *frequently_accessed)
 {
     VdpBitmapSurfaceData *srcSurfData = handlestorage_get(surface, HANDLETYPE_BITMAP_SURFACE);
-    if (NULL == srcSurfData) return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == srcSurfData)
+        return VDP_STATUS_INVALID_HANDLE;
 
     if (NULL == rgba_format || NULL == width || NULL == height || NULL == frequently_accessed)
         return VDP_STATUS_INVALID_POINTER;
@@ -2145,7 +2182,8 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
     VdpDeviceData *deviceData = dstSurfData->device;
 
     VdpRect d_rect = {0, 0, dstSurfData->width, dstSurfData->height};
-    if (destination_rect) d_rect = *destination_rect;
+    if (destination_rect)
+        d_rect = *destination_rect;
 
     if (dstSurfData->frequently_accessed) {
         if (0 == d_rect.x0 && dstSurfData->width == d_rect.x1 && source_pitches[0] == d_rect.x1) {
@@ -2463,12 +2501,15 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
 
     VdpOutputSurfaceData *dstSurfData =
         handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
-    if (NULL == dstSurfData) return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == dstSurfData)
+        return VDP_STATUS_INVALID_HANDLE;
 
     VdpOutputSurfaceData *srcSurfData =
         handlestorage_get(source_surface, HANDLETYPE_OUTPUT_SURFACE);
-    if (NULL == srcSurfData) return VDP_STATUS_INVALID_HANDLE;
-    if (srcSurfData->device != dstSurfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+    if (NULL == srcSurfData)
+        return VDP_STATUS_INVALID_HANDLE;
+    if (srcSurfData->device != dstSurfData->device)
+        return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     VdpDeviceData *deviceData = srcSurfData->device;
 
     const int dstWidth = dstSurfData->width;
@@ -2483,8 +2524,10 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
 
     // select blend functions
     struct blend_state_struct bs = vdpBlendStateToGLBlendState(blend_state);
-    if (bs.invalid_func) return VDP_STATUS_INVALID_BLEND_FACTOR;
-    if (bs.invalid_eq) return VDP_STATUS_INVALID_BLEND_EQUATION;
+    if (bs.invalid_func)
+        return VDP_STATUS_INVALID_BLEND_FACTOR;
+    if (bs.invalid_eq)
+        return VDP_STATUS_INVALID_BLEND_EQUATION;
 
     glx_context_push_thread_local(deviceData);
     glBindFramebuffer(GL_FRAMEBUFFER, dstSurfData->fbo_id);
@@ -2550,19 +2593,25 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
         handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
     VdpBitmapSurfaceData *srcSurfData =
         handlestorage_get(source_surface, HANDLETYPE_BITMAP_SURFACE);
-    if (NULL == dstSurfData || NULL == srcSurfData) return VDP_STATUS_INVALID_HANDLE;
-    if (srcSurfData->device != dstSurfData->device) return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+    if (NULL == dstSurfData || NULL == srcSurfData)
+        return VDP_STATUS_INVALID_HANDLE;
+    if (srcSurfData->device != dstSurfData->device)
+        return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     VdpDeviceData *deviceData = srcSurfData->device;
 
     VdpRect srcRect = {0, 0, srcSurfData->width, srcSurfData->height};
     VdpRect dstRect = {0, 0, dstSurfData->width, dstSurfData->height};
-    if (source_rect) srcRect = *source_rect;
-    if (destination_rect) dstRect = *destination_rect;
+    if (source_rect)
+        srcRect = *source_rect;
+    if (destination_rect)
+        dstRect = *destination_rect;
 
     // select blend functions
     struct blend_state_struct bs = vdpBlendStateToGLBlendState(blend_state);
-    if (bs.invalid_func) return VDP_STATUS_INVALID_BLEND_FACTOR;
-    if (bs.invalid_eq) return VDP_STATUS_INVALID_BLEND_EQUATION;
+    if (bs.invalid_func)
+        return VDP_STATUS_INVALID_BLEND_FACTOR;
+    if (bs.invalid_eq)
+        return VDP_STATUS_INVALID_BLEND_EQUATION;
 
     glx_context_push_thread_local(deviceData);
     glBindFramebuffer(GL_FRAMEBUFFER, dstSurfData->fbo_id);
