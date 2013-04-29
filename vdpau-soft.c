@@ -75,6 +75,7 @@ typedef struct {
     GLuint          gl_internal_format;
     GLuint          gl_format;
     GLuint          gl_type;
+    unsigned int    bytes_per_pixel;
 } VdpOutputSurfaceData;
 
 typedef struct {
@@ -815,26 +816,31 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
         data->gl_internal_format = GL_RGBA;
         data->gl_format = GL_BGRA;
         data->gl_type = GL_UNSIGNED_BYTE;
+        data->bytes_per_pixel = 4;
         break;
     case VDP_RGBA_FORMAT_R8G8B8A8:
         data->gl_internal_format = GL_RGBA;
         data->gl_format = GL_RGBA;
         data->gl_type = GL_UNSIGNED_BYTE;
+        data->bytes_per_pixel = 4;
         break;
     case VDP_RGBA_FORMAT_R10G10B10A2:
         data->gl_internal_format = GL_RGB10_A2;
         data->gl_format = GL_RGBA;
         data->gl_type = GL_UNSIGNED_INT_10_10_10_2;
+        data->bytes_per_pixel = 4;
         break;
     case VDP_RGBA_FORMAT_B10G10R10A2:
         data->gl_internal_format = GL_RGB10_A2;
         data->gl_format = GL_BGRA;
         data->gl_type = GL_UNSIGNED_INT_10_10_10_2;
+        data->bytes_per_pixel = 4;
         break;
     case VDP_RGBA_FORMAT_A8:
         data->gl_internal_format = GL_RGBA;
         data->gl_format = GL_RED;
         data->gl_type = GL_UNSIGNED_BYTE;
+        data->bytes_per_pixel = 1;
         break;
     default:
         traceError("error (VdpOutputSurfaceCreate): %s is not implemented\n",
@@ -941,18 +947,20 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
     VdpDeviceData *deviceData = srcSurfData->device;
 
     VdpRect srcRect = {0, 0, srcSurfData->width, srcSurfData->height};
-    if (source_rect) srcRect = *source_rect;
-    const unsigned int pixel_bytes = (VDP_RGBA_FORMAT_A8 == srcSurfData->rgba_format) ? 1 : 4;
+    if (source_rect)
+        srcRect = *source_rect;
 
     glx_context_push_thread_local(deviceData);
     glBindFramebuffer(GL_FRAMEBUFFER, srcSurfData->fbo_id);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, destination_pitches[0]/pixel_bytes);
-    if (4 != pixel_bytes) glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, destination_pitches[0] / srcSurfData->bytes_per_pixel);
+    if (4 != srcSurfData->bytes_per_pixel)
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glReadPixels(srcRect.x0, srcRect.y0, srcRect.x1 - srcRect.x0, srcRect.y1 - srcRect.y0,
                  srcSurfData->gl_format, srcSurfData->gl_type, destination_data[0]);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    if (4 != pixel_bytes) glPixelStorei(GL_PACK_ALIGNMENT, 4);
+    if (4 != srcSurfData->bytes_per_pixel)
+        glPixelStorei(GL_PACK_ALIGNMENT, 4);
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -973,19 +981,21 @@ softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *s
     VdpDeviceData *deviceData = dstSurfData->device;
 
     VdpRect dstRect = {0, 0, dstSurfData->width, dstSurfData->height};
-    if (destination_rect) dstRect = *destination_rect;
-    const unsigned int pixel_bytes = (VDP_RGBA_FORMAT_A8 == dstSurfData->rgba_format) ? 1 : 4;
+    if (destination_rect)
+        dstRect = *destination_rect;
 
     glx_context_push_thread_local(deviceData);
     glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
 
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0]/pixel_bytes);
-    if (4 != pixel_bytes) glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0] / dstSurfData->bytes_per_pixel);
+    if (4 != dstSurfData->bytes_per_pixel)
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexSubImage2D(GL_TEXTURE_2D, 0, dstRect.x0, dstRect.y0,
                     dstRect.x1 - dstRect.x0, dstRect.y1 - dstRect.y0,
                     dstSurfData->gl_format, dstSurfData->gl_type, source_data[0]);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    if (4 != pixel_bytes) glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    if (4 != dstSurfData->bytes_per_pixel)
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
     GLenum gl_error = glGetError();
     glx_context_pop();
