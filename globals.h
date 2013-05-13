@@ -19,6 +19,7 @@ struct global_data {
         int show_watermark;
         int log_thread_id;
         int log_call_duration;
+        int avoid_va;
     } quirks;
 };
 

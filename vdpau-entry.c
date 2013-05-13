@@ -58,6 +58,7 @@ initialize_quirks(void)
     global.quirks.show_watermark = 0;
     global.quirks.log_thread_id = 0;
     global.quirks.log_call_duration = 0;
+    global.quirks.avoid_va = 0;
 
     const char *value = getenv("VDPAU_QUIRKS");
     if (!value)
@@ -90,6 +91,9 @@ initialize_quirks(void)
             } else
             if (!strcmp("logcallduration", item_start)) {
                 global.quirks.log_call_duration = 1;
+            } else
+            if (!strcmp("avoidva", item_start)) {
+                global.quirks.avoid_va = 1;
             }
 
             item_start = ptr + 1;

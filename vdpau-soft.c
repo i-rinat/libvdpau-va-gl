@@ -2985,18 +2985,24 @@ softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
     glLoadIdentity();
 
     // initialize VAAPI
-    data->va_dpy = vaGetDisplayGLX(display);
-    data->va_available = 0;
-
-    VAStatus status = vaInitialize(data->va_dpy, &data->va_version_major, &data->va_version_minor);
-    if (VA_STATUS_SUCCESS == status) {
-        data->va_available = 1;
-        traceInfo("libva (version %d.%d) library initialized\n",
-            data->va_version_major, data->va_version_minor);
-    } else {
+    if (global.quirks.avoid_va) {
+        // pretend there is no VA-API available
         data->va_available = 0;
-        traceInfo("warning: failed to initialize libva. "
-                  "No video decode acceleration available.\n");
+    } else {
+        data->va_dpy = vaGetDisplayGLX(display);
+        data->va_available = 0;
+
+        VAStatus status = vaInitialize(data->va_dpy, &data->va_version_major,
+                                       &data->va_version_minor);
+        if (VA_STATUS_SUCCESS == status) {
+            data->va_available = 1;
+            traceInfo("libva (version %d.%d) library initialized\n",
+                      data->va_version_major, data->va_version_minor);
+        } else {
+            data->va_available = 0;
+            traceInfo("warning: failed to initialize libva. "
+                      "No video decode acceleration available.\n");
+        }
     }
 
     glGenTextures(1, &data->watermark_tex_id);
