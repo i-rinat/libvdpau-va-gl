@@ -1,0 +1,5 @@
+2013-05-14  Rinat Ibragimov  <ibragimovrinat@mail.ru>
+
+	* libvdpau-va-gl add new quirk named AvoidVA, which disables using
+	VA-API even on systems that have it
+	* libvdpau-va-gl start writing changes to ChangeLog
