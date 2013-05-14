@@ -2332,9 +2332,8 @@ softVdpDeviceDestroy(VdpDevice device)
     glx_context_pop();
 
     locked_glXMakeCurrent(data->display, None, NULL);
-    glXDestroyContext(data->display, data->glc);
-    XFree(data->vi);
-    glx_context_destroy_glc_hash_table(data->display, data->glc_hash_table);
+
+    glx_context_unref_glc_hash_table(data->display);
 
     handlestorage_expunge(device);
     XUnlockDisplay(data->display);
@@ -2958,21 +2957,11 @@ softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
     data->display_orig = display_orig;   // save supplied pointer too
     data->screen = screen;
     data->refcount = 0;
-
-    // initialize OpenGL context
-    GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
-    data->vi = glXChooseVisual(display, screen, att);
-    if (NULL == data->vi) {
-        traceError("error (softVdpDeviceCreateX11): glXChooseVisual failed\n");
-        free(data);
-        XUnlockDisplay(display);
-        return VDP_STATUS_ERROR;
-    }
+    data->root = DefaultRootWindow(display);
 
     // create master GLX context to share data between further created ones
-    data->glc = glXCreateContext(display, data->vi, NULL, GL_TRUE);
-    data->root = DefaultRootWindow(display);
-    data->glc_hash_table = glx_context_new_glc_hash_table();
+    glx_context_ref_glc_hash_table(display, screen);
+    data->glc = glx_context_get_root_context();
 
     glx_context_push_thread_local(data);
 

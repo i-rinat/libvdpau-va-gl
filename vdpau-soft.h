@@ -23,9 +23,7 @@ typedef struct {
     Display    *display_orig;
     int         screen;
     GLXContext  glc;
-    GHashTable *glc_hash_table;
     Window      root;
-    XVisualInfo *vi;
     VADisplay   va_dpy;
     int         va_available;
     int         va_version_major;

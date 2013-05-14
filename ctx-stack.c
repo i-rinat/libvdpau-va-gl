@@ -24,6 +24,10 @@ static __thread Drawable glx_ctx_stack_wnd;
 static __thread GLXContext glx_ctx_stack_glc;
 static __thread int glx_ctx_stack_same;
 static __thread int glx_ctx_stack_element_count = 0;
+GHashTable     *glc_hash_table = NULL;
+int             glc_hash_table_ref_count = 0;
+GLXContext      root_glc;
+XVisualInfo    *root_vi;
 
 void
 glx_context_push_global(Display *dpy, Drawable wnd, GLXContext glc)
@@ -56,11 +60,11 @@ glx_context_push_thread_local(VdpDeviceData *deviceData)
     const Window wnd = deviceData->root;
     const gint thread_id = (gint) syscall(__NR_gettid);
 
-    GLXContext glc = g_hash_table_lookup(deviceData->glc_hash_table, GINT_TO_POINTER(thread_id));
+    GLXContext glc = g_hash_table_lookup(glc_hash_table, GINT_TO_POINTER(thread_id));
     if (!glc) {
-        glc = glXCreateContext(dpy, deviceData->vi, deviceData->glc, GL_TRUE);
+        glc = glXCreateContext(dpy, root_vi, deviceData->glc, GL_TRUE);
         assert(glc);
-        g_hash_table_insert(deviceData->glc_hash_table, GINT_TO_POINTER(thread_id), glc);
+        g_hash_table_insert(glc_hash_table, GINT_TO_POINTER(thread_id), glc);
     }
 
     glx_ctx_stack_display = glXGetCurrentDisplay();
@@ -95,10 +99,28 @@ glx_context_pop()
     pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
 }
 
-GHashTable *
-glx_context_new_glc_hash_table(void)
+void
+glx_context_ref_glc_hash_table(Display *dpy, int screen)
 {
-    return g_hash_table_new(g_direct_hash, g_direct_equal);
+    pthread_mutex_lock(&global.glx_ctx_stack_mutex);
+    if (0 == glc_hash_table_ref_count) {
+        glc_hash_table = g_hash_table_new(g_direct_hash, g_direct_equal);
+        glc_hash_table_ref_count = 1;
+
+        XLockDisplay(dpy);
+        GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
+        root_vi = glXChooseVisual(dpy, screen, att);
+        if (NULL == root_vi) {
+            traceError("error (glx_context_ref_glc_hash_table): glXChooseVisual failed\n");
+            XUnlockDisplay(dpy);
+            return;
+        }
+        root_glc = glXCreateContext(dpy, root_vi, NULL, GL_TRUE);
+        XUnlockDisplay(dpy);
+    } else {
+        glc_hash_table_ref_count ++;
+    }
+    pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
 }
 
 static
@@ -112,11 +134,25 @@ glc_hash_destroy_func(gpointer key, gpointer value, gpointer user_data)
 }
 
 void
-glx_context_destroy_glc_hash_table(Display *dpy, GHashTable *ht)
+glx_context_unref_glc_hash_table(Display *dpy)
 {
     pthread_mutex_lock(&global.glx_ctx_stack_mutex);
-    XLockDisplay(dpy);
-    g_hash_table_foreach(ht, glc_hash_destroy_func, dpy);
-    XUnlockDisplay(dpy);
+    glc_hash_table_ref_count --;
+    if (0 == glc_hash_table_ref_count) {
+        XLockDisplay(dpy);
+        g_hash_table_foreach(glc_hash_table, glc_hash_destroy_func, dpy);
+        g_hash_table_unref(glc_hash_table);
+        glc_hash_table = NULL;
+
+        glXDestroyContext(dpy, root_glc);
+        XFree(root_vi);
+        XUnlockDisplay(dpy);
+    }
     pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
+}
+
+GLXContext
+glx_context_get_root_context(void)
+{
+    return root_glc;
 }
