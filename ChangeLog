@@ -1,5 +1,8 @@
 2013-05-14  Rinat Ibragimov  <ibragimovrinat@mail.ru>
 
+	* libvdpau-va-gl use common GL context pool across several vdp
+	devices. Shrinks memory overhead from ~100% to ~50%
+
 	* libvdpau-va-gl add new quirk named AvoidVA, which disables using
 	VA-API even on systems that have it
 	* libvdpau-va-gl start writing changes to ChangeLog
