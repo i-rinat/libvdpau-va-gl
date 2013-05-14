@@ -47,7 +47,6 @@ typedef struct {
     int             refcount;
     Drawable        drawable;
     GLXContext      glc;
-    GLuint          gl_displaylist;
 } VdpPresentationQueueTargetData;
 
 typedef struct {
@@ -1412,8 +1411,6 @@ softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_qu
 
     // drawable may be destroyed already, so one should activate global context
     glx_context_push_thread_local(deviceData);
-    // this display list shared between context, so it's fine to delete it here
-    glDeleteLists(pqTargetData->gl_displaylist, 1);
     glXDestroyContext(deviceData->display, pqTargetData->glc);
 
     GLenum gl_error = glGetError();
@@ -2707,17 +2704,6 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
     XLockDisplay(deviceData->display);
     data->glc = glXCreateContext(deviceData->display, vi, deviceData->glc, GL_TRUE);
     XUnlockDisplay(deviceData->display);
-    // TODO: check for error
-
-    glx_context_push_thread_local(deviceData);
-    data->gl_displaylist = glGenLists(1);
-
-    GLenum gl_error = glGetError();
-    glx_context_pop();
-    if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpPresentationQueueTargetCreateX11): gl error %d\n", gl_error);
-        return VDP_STATUS_ERROR;
-    }
 
     deviceData->refcount ++;
     *target = handlestorage_add(data);
