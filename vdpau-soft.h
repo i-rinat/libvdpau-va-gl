@@ -16,19 +16,19 @@
 
 
 typedef struct {
-    HandleType  type;
-    void       *self;
+    HandleType  type;               ///< common type field
+    void       *self;               ///< link to device. For VdpDeviceData this is link to itself
     int         refcount;
-    Display    *display;
-    Display    *display_orig;
-    int         screen;
-    GLXContext  root_glc;
-    Window      root;
-    VADisplay   va_dpy;
-    int         va_available;
+    Display    *display;            ///< own X display connection
+    Display    *display_orig;       ///< supplied X display connection
+    int         screen;             ///< X screen
+    GLXContext  root_glc;           ///< master GL context
+    Window      root;               ///< X drawable (root window) used for offscreen drawing
+    VADisplay   va_dpy;             ///< VA display
+    int         va_available;       ///< 1 if VA-API available
     int         va_version_major;
     int         va_version_minor;
-    GLuint      watermark_tex_id;
+    GLuint      watermark_tex_id;   ///< GL texture id for watermark
 } VdpDeviceData;
 
 
