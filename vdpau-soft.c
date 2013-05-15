@@ -2702,7 +2702,7 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
 
     // create context for dislaying result (can share display lists with deviceData->glc
     XLockDisplay(deviceData->display);
-    data->glc = glXCreateContext(deviceData->display, vi, deviceData->glc, GL_TRUE);
+    data->glc = glXCreateContext(deviceData->display, vi, deviceData->root_glc, GL_TRUE);
     XUnlockDisplay(deviceData->display);
 
     deviceData->refcount ++;
@@ -2947,7 +2947,7 @@ softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
 
     // create master GLX context to share data between further created ones
     glx_context_ref_glc_hash_table(display, screen);
-    data->glc = glx_context_get_root_context();
+    data->root_glc = glx_context_get_root_context();
 
     glx_context_push_thread_local(data);
 

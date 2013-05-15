@@ -62,7 +62,7 @@ glx_context_push_thread_local(VdpDeviceData *deviceData)
 
     GLXContext glc = g_hash_table_lookup(glc_hash_table, GINT_TO_POINTER(thread_id));
     if (!glc) {
-        glc = glXCreateContext(dpy, root_vi, deviceData->glc, GL_TRUE);
+        glc = glXCreateContext(dpy, root_vi, root_glc, GL_TRUE);
         assert(glc);
         g_hash_table_insert(glc_hash_table, GINT_TO_POINTER(thread_id), glc);
     }

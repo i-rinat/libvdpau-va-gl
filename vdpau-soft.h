@@ -22,7 +22,7 @@ typedef struct {
     Display    *display;
     Display    *display_orig;
     int         screen;
-    GLXContext  glc;
+    GLXContext  root_glc;
     Window      root;
     VADisplay   va_dpy;
     int         va_available;
