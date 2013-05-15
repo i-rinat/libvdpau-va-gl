@@ -11,9 +11,12 @@
 
 #include <pthread.h>
 
+/** @brief place where all shared global variables live */
 struct global_data {
     pthread_mutex_t     mutex;
-    pthread_mutex_t     glx_ctx_stack_mutex;
+    pthread_mutex_t     glx_ctx_stack_mutex;    ///< mutex for GLX context management functions
+
+    /** @brief tunables */
     struct {
         int buggy_XCloseDisplay;
         int show_watermark;

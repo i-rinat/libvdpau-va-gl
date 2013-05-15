@@ -14,7 +14,7 @@
 #include <va/va.h>
 #include "handle-storage.h"
 
-
+/** @brief VdpDevice object parameters */
 typedef struct {
     HandleType  type;               ///< common type field
     void       *self;               ///< link to device. For VdpDeviceData this is link to itself

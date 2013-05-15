@@ -25,9 +25,14 @@ typedef uint32_t    HandleType;
 #define HANDLETYPE_BITMAP_SURFACE              (HandleType)7
 #define HANDLETYPE_DECODER                     (HandleType)8
 
+/** @brief Generic handle struct.
+
+    Every other handle struct has same members at same place so it's possible
+    to use type casting to determine handle type and parent.
+*/
 typedef struct {
-    HandleType type;
-    void      *parent;
+    HandleType type;        ///< handle type
+    void      *parent;      ///< link to parent
 } VdpGenericHandle;
 
 void handlestorage_initialize(void);
