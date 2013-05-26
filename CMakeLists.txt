@@ -44,4 +44,4 @@ set_target_properties (vdpau_va_gl
 	VERSION 1
 )
 
-install (TARGETS vdpau_va_gl DESTINATION lib)
+install (TARGETS vdpau_va_gl DESTINATION lib/vdpau)
