@@ -6,6 +6,8 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(SOMELIBS vdpau glib-2.0 libswscale libva-glx gl glu REQUIRED)
 
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
+add_custom_target(build-tests)
+add_dependencies(check build-tests)
 enable_testing()
 add_subdirectory(tests)
 
