@@ -1,6 +1,6 @@
 project (libvdpau-va-gl)
 cmake_minimum_required (VERSION 2.6)
-add_definitions(-std=gnu99 -Wall -fvisibility=hidden -ggdb)
+add_definitions(-std=gnu99 -Wall -fvisibility=hidden)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SOMELIBS vdpau glib-2.0 libswscale libva-glx gl glu REQUIRED)
