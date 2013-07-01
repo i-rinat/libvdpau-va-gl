@@ -46,8 +46,7 @@ set_target_properties (vdpau_va_gl
 	VERSION 1
 )
 
-if(NOT DEFINED LIB_INSTALL_DIR)
-	set(LIB_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX})
-endif(NOT DEFINED LIB_INSTALL_DIR)
+set(LIB_SUFFIX "" CACHE STRING "library path suffix (if needed)")
+set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/vdpau" CACHE PATH "library installation path")
 
-install (TARGETS vdpau_va_gl DESTINATION ${LIB_INSTALL_DIR}/vdpau)
+install (TARGETS vdpau_va_gl DESTINATION ${LIB_INSTALL_DIR})
