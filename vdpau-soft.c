@@ -374,8 +374,13 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
     // DecoderRender.
 
     // TODO: check format of surfaces created
+#if VA_CHECK_VERSION(0, 34, 0)
+    status = vaCreateSurfaces(va_dpy, VA_RT_FORMAT_YUV420, width, height,
+        data->render_targets, data->num_render_targets, NULL, 0);
+#else
     status = vaCreateSurfaces(va_dpy, width, height, VA_RT_FORMAT_YUV420,
         data->num_render_targets, data->render_targets);
+#endif
     if (VA_STATUS_SUCCESS != status)
         goto error;
 
