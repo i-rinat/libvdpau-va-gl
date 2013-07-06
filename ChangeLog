@@ -1,3 +1,11 @@
+2013-07-06  Rinat Ibragimov  <ibragimovrinat@mail.ru>
+
+	* tag: v0.1.0
+	* core: remove miscellaneous unused code
+	* core: add basic documentation on structures
+	* core: fix build system to simplify further packaging
+	* core: enable compiling against new libva 1.2.1 release
+
 2013-05-14  Rinat Ibragimov  <ibragimovrinat@mail.ru>
 
 	* libvdpau-va-gl use common GL context pool across several vdp
