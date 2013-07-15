@@ -826,22 +826,27 @@ traceVdpOutputSurfaceRenderOutputSurface(const char *impl_state,
         destination_surface, rect2string(destination_rect));
     fprintf(tlog, "%s      source_surface=%d, source_rect=%s\n",
         trace_header_blank, source_surface, rect2string(source_rect));
-    fprintf(tlog,   "%s      blend_state.blend_factor_source_color=%s\n"
-                    "%s      blend_state.blend_factor_destination_color=%s\n"
-                    "%s      blend_state.blend_factor_source_alpha=%s\n"
-                    "%s      blend_state.blend_factor_destination_alpha=%s\n"
-                    "%s      blend_state.blend_equation_color=%s\n"
-                    "%s      blend_state.blend_equation_alpha=%s\n"
-                    "%s      blend_constant = (%11f, %11f, %11f, %11f)\n",
-        trace_header_blank, reverse_blend_factor(blend_state->blend_factor_source_color),
-        trace_header_blank, reverse_blend_factor(blend_state->blend_factor_destination_color),
-        trace_header_blank, reverse_blend_factor(blend_state->blend_factor_source_alpha),
-        trace_header_blank, reverse_blend_factor(blend_state->blend_factor_destination_alpha),
-        trace_header_blank, reverse_blend_equation(blend_state->blend_equation_color),
-        trace_header_blank, reverse_blend_equation(blend_state->blend_equation_alpha),
-        trace_header_blank,
-        blend_state->blend_constant.red, blend_state->blend_constant.green,
-        blend_state->blend_constant.blue, blend_state->blend_constant.alpha);
+    if (blend_state) {
+        fprintf(tlog,
+            "%s      blend_state.blend_factor_source_color=%s\n"
+            "%s      blend_state.blend_factor_destination_color=%s\n"
+            "%s      blend_state.blend_factor_source_alpha=%s\n"
+            "%s      blend_state.blend_factor_destination_alpha=%s\n"
+            "%s      blend_state.blend_equation_color=%s\n"
+            "%s      blend_state.blend_equation_alpha=%s\n"
+            "%s      blend_constant = (%11f, %11f, %11f, %11f)\n",
+            trace_header_blank, reverse_blend_factor(blend_state->blend_factor_source_color),
+            trace_header_blank, reverse_blend_factor(blend_state->blend_factor_destination_color),
+            trace_header_blank, reverse_blend_factor(blend_state->blend_factor_source_alpha),
+            trace_header_blank, reverse_blend_factor(blend_state->blend_factor_destination_alpha),
+            trace_header_blank, reverse_blend_equation(blend_state->blend_equation_color),
+            trace_header_blank, reverse_blend_equation(blend_state->blend_equation_alpha),
+            trace_header_blank,
+            blend_state->blend_constant.red, blend_state->blend_constant.green,
+            blend_state->blend_constant.blue, blend_state->blend_constant.alpha);
+    } else {
+        fprintf(tlog, "%s      blend_state=NULL\n", trace_header_blank);
+    }
     fprintf(tlog, "%s      flags = %s", trace_header_blank,
             reverse_output_surface_render_rotate(flags));
     if (flags & VDP_OUTPUT_SURFACE_RENDER_COLOR_PER_VERTEX)
@@ -879,22 +884,27 @@ traceVdpOutputSurfaceRenderBitmapSurface(const char *impl_state,
         destination_surface, rect2string(destination_rect));
     fprintf(tlog, "%s      source_surface=%d, source_rect=%s\n",
         trace_header_blank, source_surface, rect2string(source_rect));
-    fprintf(tlog,   "%s      blend_state.blend_factor_source_color=%s\n"
-                    "%s      blend_state.blend_factor_destination_color=%s\n"
-                    "%s      blend_state.blend_factor_source_alpha=%s\n"
-                    "%s      blend_state.blend_factor_destination_alpha=%s\n"
-                    "%s      blend_state.blend_equation_color=%s\n"
-                    "%s      blend_state.blend_equation_alpha=%s\n"
-                    "%s      blend_constant = (%11f, %11f, %11f, %11f)\n",
-        trace_header_blank, reverse_blend_factor(blend_state->blend_factor_source_color),
-        trace_header_blank, reverse_blend_factor(blend_state->blend_factor_destination_color),
-        trace_header_blank, reverse_blend_factor(blend_state->blend_factor_source_alpha),
-        trace_header_blank, reverse_blend_factor(blend_state->blend_factor_destination_alpha),
-        trace_header_blank, reverse_blend_equation(blend_state->blend_equation_color),
-        trace_header_blank, reverse_blend_equation(blend_state->blend_equation_alpha),
-        trace_header_blank,
-        blend_state->blend_constant.red, blend_state->blend_constant.green,
-        blend_state->blend_constant.blue, blend_state->blend_constant.alpha);
+    if (blend_state) {
+        fprintf(tlog,
+            "%s      blend_state.blend_factor_source_color=%s\n"
+            "%s      blend_state.blend_factor_destination_color=%s\n"
+            "%s      blend_state.blend_factor_source_alpha=%s\n"
+            "%s      blend_state.blend_factor_destination_alpha=%s\n"
+            "%s      blend_state.blend_equation_color=%s\n"
+            "%s      blend_state.blend_equation_alpha=%s\n"
+            "%s      blend_constant = (%11f, %11f, %11f, %11f)\n",
+            trace_header_blank, reverse_blend_factor(blend_state->blend_factor_source_color),
+            trace_header_blank, reverse_blend_factor(blend_state->blend_factor_destination_color),
+            trace_header_blank, reverse_blend_factor(blend_state->blend_factor_source_alpha),
+            trace_header_blank, reverse_blend_factor(blend_state->blend_factor_destination_alpha),
+            trace_header_blank, reverse_blend_equation(blend_state->blend_equation_color),
+            trace_header_blank, reverse_blend_equation(blend_state->blend_equation_alpha),
+            trace_header_blank,
+            blend_state->blend_constant.red, blend_state->blend_constant.green,
+            blend_state->blend_constant.blue, blend_state->blend_constant.alpha);
+    } else {
+        fprintf(tlog, "%s      blend_state=NULL\n", trace_header_blank);
+    }
     fprintf(tlog, "%s      flags = %s", trace_header_blank,
             reverse_output_surface_render_rotate(flags));
     if (flags & VDP_OUTPUT_SURFACE_RENDER_COLOR_PER_VERTEX)
