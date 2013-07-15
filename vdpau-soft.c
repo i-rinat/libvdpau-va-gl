@@ -2472,10 +2472,17 @@ vdpBlendStateToGLBlendState(VdpOutputSurfaceRenderBlendState const *blend_state)
     struct blend_state_struct bs;
     bs.invalid_func = 0;
     bs.invalid_eq = 0;
-    bs.srcFuncRGB = vdpBlendFuncToGLBlendFunc(blend_state->blend_factor_source_color);
-    bs.srcFuncAlpha = vdpBlendFuncToGLBlendFunc(blend_state->blend_factor_source_alpha);
-    bs.dstFuncRGB = vdpBlendFuncToGLBlendFunc(blend_state->blend_factor_destination_color);
-    bs.dstFuncAlpha = vdpBlendFuncToGLBlendFunc(blend_state->blend_factor_destination_alpha);
+
+    // it's ok to pass NULL as blend_state
+    if (blend_state) {
+        bs.srcFuncRGB = vdpBlendFuncToGLBlendFunc(blend_state->blend_factor_source_color);
+        bs.srcFuncAlpha = vdpBlendFuncToGLBlendFunc(blend_state->blend_factor_source_alpha);
+        bs.dstFuncRGB = vdpBlendFuncToGLBlendFunc(blend_state->blend_factor_destination_color);
+        bs.dstFuncAlpha = vdpBlendFuncToGLBlendFunc(blend_state->blend_factor_destination_alpha);
+    } else {
+        bs.srcFuncRGB = bs.srcFuncAlpha = GL_ONE;
+        bs.dstFuncRGB = bs.dstFuncAlpha = GL_ZERO;
+    }
 
     if (GL_INVALID_VALUE == bs.srcFuncRGB || GL_INVALID_VALUE == bs.srcFuncAlpha ||
         GL_INVALID_VALUE == bs.dstFuncRGB || GL_INVALID_VALUE == bs.dstFuncAlpha)
@@ -2483,8 +2490,12 @@ vdpBlendStateToGLBlendState(VdpOutputSurfaceRenderBlendState const *blend_state)
         bs.invalid_func = 1;
     }
 
-    bs.modeRGB = vdpBlendEquationToGLEquation(blend_state->blend_equation_color);
-    bs.modeAlpha = vdpBlendEquationToGLEquation(blend_state->blend_equation_alpha);
+    if (blend_state) {
+        bs.modeRGB = vdpBlendEquationToGLEquation(blend_state->blend_equation_color);
+        bs.modeAlpha = vdpBlendEquationToGLEquation(blend_state->blend_equation_alpha);
+    } else {
+        bs.modeRGB = bs.modeAlpha = GL_FUNC_ADD;
+    }
     if (GL_INVALID_VALUE == bs.modeRGB || GL_INVALID_VALUE == bs.modeAlpha)
         bs.invalid_eq = 1;
 
@@ -2500,8 +2511,10 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
                                         uint32_t flags)
 {
     (void)flags;    // TODO: handle flags
-    if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version)
-        return VDP_STATUS_INVALID_VALUE;
+
+    if (blend_state)
+        if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version)
+            return VDP_STATUS_INVALID_VALUE;
 
     VdpOutputSurfaceData *dstSurfData =
         handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
@@ -2590,8 +2603,10 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
                                         uint32_t flags)
 {
     (void)flags;    // TODO: handle flags
-    if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version)
-        return VDP_STATUS_INVALID_VALUE;
+
+    if (blend_state)
+        if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version)
+            return VDP_STATUS_INVALID_VALUE;
 
     VdpOutputSurfaceData *dstSurfData =
         handlestorage_get(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
