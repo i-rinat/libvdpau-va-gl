@@ -19,7 +19,11 @@ include_directories (
 	${SOMELIBS_INCLUDE_DIRS}
 )
 
-add_library (vdpau_va_gl SHARED
+set(DRIVER_NAME "vdpau_va_gl" CACHE STRING "driver name")
+set(LIB_SUFFIX "" CACHE STRING "library path suffix (if needed)")
+set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/vdpau" CACHE PATH "library installation path")
+
+add_library (${DRIVER_NAME} SHARED
 	vdpau-soft.c
 	vdpau-entry.c
 	vdpau-trace.c
@@ -35,18 +39,15 @@ add_library (vdpau_va_gl SHARED
 
 add_library (xinitthreads SHARED xinitthreads.c)
 
-target_link_libraries (vdpau_va_gl
+target_link_libraries (${DRIVER_NAME}
 	${SOMELIBS_LIBRARIES}
 )
 
 target_link_libraries (xinitthreads -lpthread -lX11)
 
-set_target_properties (vdpau_va_gl
+set_target_properties (${DRIVER_NAME}
 	PROPERTIES
 	VERSION 1
 )
 
-set(LIB_SUFFIX "" CACHE STRING "library path suffix (if needed)")
-set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/vdpau" CACHE PATH "library installation path")
-
-install (TARGETS vdpau_va_gl DESTINATION ${LIB_INSTALL_DIR})
+install (TARGETS ${DRIVER_NAME} DESTINATION ${LIB_INSTALL_DIR})
