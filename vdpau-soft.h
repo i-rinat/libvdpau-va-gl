@@ -14,6 +14,10 @@
 #include <va/va.h>
 #include "handle-storage.h"
 
+#define MAX_RENDER_TARGETS          21
+#define NUM_RENDER_TARGETS_H264     21
+
+
 /** @brief VdpDevice object parameters */
 typedef struct {
     HandleType  type;               ///< common type field
@@ -30,6 +34,93 @@ typedef struct {
     int         va_version_minor;
     GLuint      watermark_tex_id;   ///< GL texture id for watermark
 } VdpDeviceData;
+
+/** @brief VdpPresentationQueueTarget object parameters */
+typedef struct {
+    HandleType      type;           ///< handle type
+    VdpDeviceData  *device;         ///< link to parent
+    int             refcount;
+    Drawable        drawable;       ///< X drawable to output to
+    GLXContext      glc;            ///< GL context used for output
+} VdpPresentationQueueTargetData;
+
+/** @brief VdpPresentationQueue object parameters */
+typedef struct {
+    HandleType                      type;       ///< handle type
+    VdpDeviceData                  *device;     ///< link to parent
+    VdpPresentationQueueTargetData *target;
+    VdpColor                        bg_color;   ///< background color
+} VdpPresentationQueueData;
+
+/** @brief VdpVideoMixer object parameters */
+typedef struct {
+    HandleType      type;       ///< handle type
+    VdpDeviceData  *device;     ///< link to parent
+} VdpVideoMixerData;
+
+/** @brief VdpOutputSurface object parameters */
+typedef struct {
+    HandleType      type;               ///< handle type
+    VdpDeviceData  *device;             ///< link to parent
+    VdpRGBAFormat   rgba_format;        ///< RGBA format of data stored
+    GLuint          tex_id;             ///< associated GL texture id
+    GLuint          fbo_id;             ///< framebuffer object id
+    uint32_t        width;
+    uint32_t        height;
+    GLuint          gl_internal_format; ///< GL texture format: internal format
+    GLuint          gl_format;          ///< GL texture format: preferred external format
+    GLuint          gl_type;            ///< GL texture format: pixel type
+    unsigned int    bytes_per_pixel;    ///< number of bytes per pixel
+} VdpOutputSurfaceData;
+
+/** @brief VdpVideoSurface object parameters */
+typedef struct {
+    HandleType      type;           ///< handle type
+    VdpDeviceData  *device;         ///< link to parent
+    VdpChromaType   chroma_type;    ///< video chroma type
+    uint32_t        width;
+    uint32_t        stride;         ///< distance between first pixels of two consecutive rows (in pixels)
+    uint32_t        height;
+    void           *y_plane;        ///< luma data (software)
+    void           *v_plane;        ///< chroma data (software)
+    void           *u_plane;        ///< chroma data (software)
+    VASurfaceID     va_surf;        ///< VA-API surface
+    void           *va_glx;         ///< handle for VA-API/GLX interaction
+    GLuint          tex_id;         ///< GL texture id (RGBA)
+} VdpVideoSurfaceData;
+
+/** @brief VdpBitmapSurface object parameters */
+typedef struct {
+    HandleType      type;               ///< handle type
+    VdpDeviceData  *device;             ///< link to parent
+    VdpRGBAFormat   rgba_format;        ///< RGBA format of data stored
+    GLuint          tex_id;             ///< GL texture id
+    uint32_t        width;
+    uint32_t        height;
+    VdpBool         frequently_accessed;///< 1 if surface should be optimized for frequent access
+    unsigned int    bytes_per_pixel;    ///< number of bytes per bitmap pixel
+    GLuint          gl_internal_format; ///< GL texture format: internal format
+    GLuint          gl_format;          ///< GL texture format: preferred external format
+    GLuint          gl_type;            ///< GL texture format: pixel type
+    char           *bitmap_data;        ///< system-memory buffer for frequently accessed bitmaps
+    int             dirty;              ///< dirty flag. True if system-memory buffer contains data
+                                        ///< newer than GPU texture contents
+} VdpBitmapSurfaceData;
+
+/** @brief VdpDecoder object parameters */
+typedef struct {
+    HandleType          type;           ///< handle type
+    VdpDeviceData      *device;         ///< link to parent
+    VdpDecoderProfile   profile;        ///< decoder profile
+    uint32_t            width;
+    uint32_t            height;
+    uint32_t            max_references; ///< maximum count of reference frames
+    VAConfigID          config_id;      ///< VA-API config id
+    VASurfaceID         render_targets[MAX_RENDER_TARGETS]; ///< spare VA surfaces
+    uint32_t            num_render_targets;
+    uint32_t            next_surface_idx;   ///< next free surface in render_targets
+    VAContextID         context_id;     ///< VA-API context id
+} VdpDecoderData;
 
 
 VdpStatus
