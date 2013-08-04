@@ -345,9 +345,9 @@ softVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue,
                                 VdpTime *current_time)
 {
     (void)presentation_queue;
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    *current_time = (uint64_t)tv.tv_sec * 1000000000LL + (uint64_t)tv.tv_usec * 1000LL;
+    struct timespec now;
+    clock_gettime(CLOCK_REALTIME, &now);
+    *current_time = timespec2vdptime(now);
     return VDP_STATUS_OK;
 }
 
