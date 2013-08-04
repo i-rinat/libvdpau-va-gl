@@ -40,11 +40,19 @@ softVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_
                                               VdpTime *first_presentation_time)
 
 {
-    if (! handlestorage_valid(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE))
+    VdpPresentationQueueData *pqData =
+        handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
+    if (NULL == pqData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    if (! handlestorage_valid(surface, HANDLETYPE_OUTPUT_SURFACE))
+    VdpOutputSurfaceData *surfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
+    if (NULL == surfData)
         return VDP_STATUS_INVALID_HANDLE;
+
+    // TODO: use conditional variable instead of tight loop
+    while (surfData->busy) {
+        usleep(2000);
+    }
 
     // use current time as presentation time
     softVdpPresentationQueueGetTime(presentation_queue, first_presentation_time);
@@ -65,8 +73,10 @@ softVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_que
 
 static
 void
-do_blocked_presentation_queue_display_and_unlock_mutex(VdpPresentationQueueData *pqueueData)
+do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
 {
+    acquire_global_lock();
+    pthread_mutex_lock(&pqueueData->queue_mutex);
     assert(pqueueData->queue.used > 0);
     const int entry = pqueueData->queue.head;
 
@@ -83,6 +93,7 @@ do_blocked_presentation_queue_display_and_unlock_mutex(VdpPresentationQueueData 
     pthread_mutex_unlock(&pqueueData->queue_mutex);
 
     glx_context_push_global(deviceData->display, pqueueData->target->drawable, pqueueData->target->glc);
+    surfData->busy = 1;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     const uint32_t target_width  = (clip_width > 0)  ? clip_width  : surfData->width;
@@ -137,6 +148,8 @@ do_blocked_presentation_queue_display_and_unlock_mutex(VdpPresentationQueueData 
     }
 
     locked_glXSwapBuffers(deviceData->display, pqueueData->target->drawable);
+    release_global_lock();
+    surfData->busy = 0;
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -185,7 +198,8 @@ presentation_thread(void *param)
         }
 
         // do event processing
-        do_blocked_presentation_queue_display_and_unlock_mutex(pqData);
+        pthread_mutex_unlock(&pqData->queue_mutex);
+        do_presentation_queue_display(pqData);
     }
 
 quit:
@@ -266,10 +280,13 @@ softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
         return VDP_STATUS_INVALID_HANDLE;
 
     data->turning_off = 1;
+    // release lock in order to allow worker thread successfully terminate
+    release_global_lock();
     if (0 != pthread_join(data->worker_thread, NULL)) {
         traceError("VdpPresentationQueueDestroy: failed to stop worker thread");
         return VDP_STATUS_ERROR;
     }
+    acquire_global_lock();
 
     handlestorage_expunge(presentation_queue);
     data->device->refcount --;

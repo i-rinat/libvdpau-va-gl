@@ -55,6 +55,7 @@ typedef struct {
     GLuint          gl_format;          ///< GL texture format: preferred external format
     GLuint          gl_type;            ///< GL texture format: pixel type
     unsigned int    bytes_per_pixel;    ///< number of bytes per pixel
+    volatile int    busy;
 } VdpOutputSurfaceData;
 
 /** @brief VdpPresentationQueueTarget object parameters */

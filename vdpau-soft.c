@@ -794,6 +794,7 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     data->height = height;
     data->device = deviceData;
     data->rgba_format = rgba_format;
+    data->busy = 0;
 
     glx_context_push_thread_local(deviceData);
     glGenTextures(1, &data->tex_id);
