@@ -515,7 +515,7 @@ lockedVdpPresentationQueueCreate(VdpDevice device,
 {
     acquire_global_lock();
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_CREATE, 0, NULL);
-    traceVdpPresentationQueueCreate("{part}", device, presentation_queue_target,
+    traceVdpPresentationQueueCreate("{full}", device, presentation_queue_target,
         presentation_queue);
     VdpStatus ret = softVdpPresentationQueueCreate(device, presentation_queue_target,
         presentation_queue);
@@ -617,7 +617,7 @@ lockedVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_q
 {
     acquire_global_lock();
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_QUERY_SURFACE_STATUS, 0, NULL);
-    traceVdpPresentationQueueQuerySurfaceStatus("{part}", presentation_queue, surface,
+    traceVdpPresentationQueueQuerySurfaceStatus("{full}", presentation_queue, surface,
         status, first_presentation_time);
     VdpStatus ret = softVdpPresentationQueueQuerySurfaceStatus(presentation_queue, surface,
         status, first_presentation_time);
@@ -895,7 +895,7 @@ lockedVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
 {
     acquire_global_lock();
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_TARGET_CREATE_X11, 0, NULL);
-    traceVdpPresentationQueueTargetCreateX11("{part}", device, drawable, target);
+    traceVdpPresentationQueueTargetCreateX11("{full}", device, drawable, target);
     VdpStatus ret = softVdpPresentationQueueTargetCreateX11(device, drawable, target);
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_TARGET_CREATE_X11, 1, (void*)ret);
     release_global_lock();
