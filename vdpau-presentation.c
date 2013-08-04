@@ -23,6 +23,12 @@
 #include "vdpau-trace.h"
 #include "watermark.h"
 
+static
+VdpTime
+timespec2vdptime(struct timespec t)
+{
+    return (uint64_t)t.tv_sec * 1000 * 1000 * 1000 + t.tv_nsec;
+}
 
 static
 struct timespec
@@ -49,14 +55,12 @@ softVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_
     if (NULL == surfData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    // TODO: use conditional variable instead of tight loop
+    // TODO: use locking instead of busy loop
     while (surfData->busy) {
         usleep(2000);
     }
 
-    // use current time as presentation time
-    softVdpPresentationQueueGetTime(presentation_queue, first_presentation_time);
-
+    *first_presentation_time = surfData->first_presentation_time;
     return VDP_STATUS_OK;
 }
 
@@ -148,6 +152,9 @@ do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
     }
 
     locked_glXSwapBuffers(deviceData->display, pqueueData->target->drawable);
+    struct timespec now;
+    clock_gettime(CLOCK_REALTIME, &now);
+    surfData->first_presentation_time = timespec2vdptime(now);
     release_global_lock();
     surfData->busy = 0;
 
@@ -296,7 +303,6 @@ softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
     return VDP_STATUS_OK;
 }
 
-
 VdpStatus
 softVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_queue,
                                            VdpColor *const background_color)
@@ -375,6 +381,7 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     pqData->queue.item[new_item].clip_width = clip_width;
     pqData->queue.item[new_item].clip_height = clip_height;
     pqData->queue.item[new_item].surfData = surfData;
+    surfData->first_presentation_time = 0;
 
     // keep queue sorted
     if (pqData->queue.head == -1 || earliest_presentation_time < pqData->queue.item[pqData->queue.head].t) {
