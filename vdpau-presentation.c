@@ -70,8 +70,19 @@ softVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_que
                                            VdpPresentationQueueStatus *status,
                                            VdpTime *first_presentation_time)
 {
-    (void)presentation_queue; (void)surface; (void)first_presentation_time;
-    *status = VDP_PRESENTATION_QUEUE_STATUS_VISIBLE;
+    VdpPresentationQueueData *pqData =
+        handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
+    if (NULL == pqData)
+        return VDP_STATUS_INVALID_HANDLE;
+    VdpOutputSurfaceData *surfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
+    if (NULL == surfData)
+        return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == status)
+        return VDP_STATUS_INVALID_POINTER;
+
+    *status = surfData->status;
+    *first_presentation_time = surfData->first_presentation_time;
+
     return VDP_STATUS_OK;
 }
 
@@ -79,6 +90,8 @@ static
 void
 do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
 {
+    static VdpOutputSurfaceData *previousSurfData = NULL;
+
     acquire_global_lock();
     pthread_mutex_lock(&pqueueData->queue_mutex);
     assert(pqueueData->queue.used > 0);
@@ -152,9 +165,17 @@ do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
     }
 
     locked_glXSwapBuffers(deviceData->display, pqueueData->target->drawable);
+
     struct timespec now;
     clock_gettime(CLOCK_REALTIME, &now);
+
     surfData->first_presentation_time = timespec2vdptime(now);
+    surfData->status = VDP_PRESENTATION_QUEUE_STATUS_VISIBLE;
+
+    if (previousSurfData)
+        previousSurfData->status = VDP_PRESENTATION_QUEUE_STATUS_IDLE;
+    previousSurfData = surfData;
+
     release_global_lock();
     surfData->busy = 0;
 
@@ -382,6 +403,7 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     pqData->queue.item[new_item].clip_height = clip_height;
     pqData->queue.item[new_item].surfData = surfData;
     surfData->first_presentation_time = 0;
+    surfData->status = VDP_PRESENTATION_QUEUE_STATUS_QUEUED;
 
     // keep queue sorted
     if (pqData->queue.head == -1 || earliest_presentation_time < pqData->queue.item[pqData->queue.head].t) {

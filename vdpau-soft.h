@@ -57,6 +57,7 @@ typedef struct {
     unsigned int    bytes_per_pixel;    ///< number of bytes per pixel
     volatile int    busy;               ///< 1 if surface currently in presentation queue
     VdpTime         first_presentation_time;    ///< first displayed time in queue
+    VdpPresentationQueueStatus  status; ///< status in presentation queue
 } VdpOutputSurfaceData;
 
 /** @brief VdpPresentationQueueTarget object parameters */
