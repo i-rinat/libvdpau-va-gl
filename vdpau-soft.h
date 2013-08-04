@@ -17,6 +17,7 @@
 #define MAX_RENDER_TARGETS          21
 #define NUM_RENDER_TARGETS_H264     21
 
+#define PRESENTATION_QUEUE_LENGTH   10
 
 /** @brief VdpDevice object parameters */
 typedef struct {
@@ -34,23 +35,6 @@ typedef struct {
     int         va_version_minor;
     GLuint      watermark_tex_id;   ///< GL texture id for watermark
 } VdpDeviceData;
-
-/** @brief VdpPresentationQueueTarget object parameters */
-typedef struct {
-    HandleType      type;           ///< handle type
-    VdpDeviceData  *device;         ///< link to parent
-    int             refcount;
-    Drawable        drawable;       ///< X drawable to output to
-    GLXContext      glc;            ///< GL context used for output
-} VdpPresentationQueueTargetData;
-
-/** @brief VdpPresentationQueue object parameters */
-typedef struct {
-    HandleType                      type;       ///< handle type
-    VdpDeviceData                  *device;     ///< link to parent
-    VdpPresentationQueueTargetData *target;
-    VdpColor                        bg_color;   ///< background color
-} VdpPresentationQueueData;
 
 /** @brief VdpVideoMixer object parameters */
 typedef struct {
@@ -72,6 +56,42 @@ typedef struct {
     GLuint          gl_type;            ///< GL texture format: pixel type
     unsigned int    bytes_per_pixel;    ///< number of bytes per pixel
 } VdpOutputSurfaceData;
+
+/** @brief VdpPresentationQueueTarget object parameters */
+typedef struct {
+    HandleType      type;           ///< handle type
+    VdpDeviceData  *device;         ///< link to parent
+    int             refcount;
+    Drawable        drawable;       ///< X drawable to output to
+    GLXContext      glc;            ///< GL context used for output
+} VdpPresentationQueueTargetData;
+
+/** @brief VdpPresentationQueue object parameters */
+typedef struct {
+    HandleType                      type;       ///< handle type
+    VdpDeviceData                  *device;     ///< link to parent
+    VdpPresentationQueueTargetData *target;
+    VdpColor                        bg_color;   ///< background color
+
+    struct {
+        int head;
+        int used;
+        int firstfree;
+        int freelist[PRESENTATION_QUEUE_LENGTH];
+        struct {
+            VdpTime                 t;      ///< earliest_presentation_time
+            int                     next;
+            uint32_t                clip_width;
+            uint32_t                clip_height;
+            VdpOutputSurfaceData   *surfData;
+        } item[PRESENTATION_QUEUE_LENGTH];
+    } queue;
+
+    pthread_t           worker_thread;
+    pthread_mutex_t     queue_mutex;
+    pthread_cond_t      new_work_available;
+    int                 turning_off;
+} VdpPresentationQueueData;
 
 /** @brief VdpVideoSurface object parameters */
 typedef struct {
