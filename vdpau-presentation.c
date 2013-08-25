@@ -110,7 +110,6 @@ do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
     pthread_mutex_unlock(&pqueueData->queue_mutex);
 
     glx_context_push_global(deviceData->display, pqueueData->target->drawable, pqueueData->target->glc);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     const uint32_t target_width  = (clip_width > 0)  ? clip_width  : surfData->width;
     const uint32_t target_height = (clip_height > 0) ? clip_height : surfData->height;
