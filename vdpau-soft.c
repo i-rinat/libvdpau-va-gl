@@ -820,6 +820,7 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
 
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glClear(GL_COLOR_BUFFER_BIT);
+    glFinish();
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -902,6 +903,7 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     if (4 != srcSurfData->bytes_per_pixel)
         glPixelStorei(GL_PACK_ALIGNMENT, 4);
+    glFinish();
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -938,6 +940,7 @@ softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *s
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     if (4 != dstSurfData->bytes_per_pixel)
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    glFinish();
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -996,6 +999,7 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
             glTexSubImage2D(GL_TEXTURE_2D, 0, dstRect.x0, dstRect.y0,
                             dstRect.x1 - dstRect.x0, dstRect.y1 - dstRect.y0,
                             GL_BGRA, GL_UNSIGNED_BYTE, unpacked_buf);
+            glFinish();
             free(unpacked_buf);
 
             GLenum gl_error = glGetError();
@@ -1303,6 +1307,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         free(img_buf);
     }
+    glFinish();
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -1371,6 +1376,7 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data->width, data->height, 0,
                  GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+    glFinish();
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -1772,6 +1778,7 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, data->gl_internal_format, width, height, 0,
                  data->gl_format, data->gl_type, NULL);
+    glFinish();
     GLuint gl_error = glGetError();
     if (GL_NO_ERROR != gl_error) {
         // Requested RGBA format was wrong
@@ -1892,6 +1899,7 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         if (4 != dstSurfData->bytes_per_pixel)
             glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        glFinish();
 
         GLenum gl_error = glGetError();
         glx_context_pop();
@@ -2254,6 +2262,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     glEnd();
 
     glColor4f(1, 1, 1, 1);
+    glFinish();
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -2349,6 +2358,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     glEnd();
 
     glColor4f(1, 1, 1, 1);
+    glFinish();
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -2653,6 +2663,7 @@ softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, watermark_width, watermark_height, 0, GL_RED,
                  GL_UNSIGNED_BYTE, watermark_data);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    glFinish();
 
     *device = handlestorage_add(data);
     *get_proc_address = &softVdpGetProcAddress;
