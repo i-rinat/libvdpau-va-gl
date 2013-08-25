@@ -299,25 +299,26 @@ err:
 VdpStatus
 softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 {
-    VdpPresentationQueueData *data =
+    VdpPresentationQueueData *pqData =
         handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
-    if (NULL == data)
+    if (NULL == pqData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    data->turning_off = 1;
+    pqData->turning_off = 1;
+    pthread_cond_broadcast(&pqData->new_work_available);
     // release lock in order to allow worker thread successfully terminate
     release_global_lock();
-    if (0 != pthread_join(data->worker_thread, NULL)) {
+    if (0 != pthread_join(pqData->worker_thread, NULL)) {
         traceError("VdpPresentationQueueDestroy: failed to stop worker thread");
         return VDP_STATUS_ERROR;
     }
     acquire_global_lock();
 
     handlestorage_expunge(presentation_queue);
-    data->device->refcount --;
-    data->target->refcount --;
+    pqData->device->refcount --;
+    pqData->target->refcount --;
 
-    free(data);
+    free(pqData);
     return VDP_STATUS_OK;
 }
 
