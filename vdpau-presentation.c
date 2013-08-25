@@ -56,8 +56,8 @@ softVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_
         return VDP_STATUS_INVALID_HANDLE;
 
     // TODO: use locking instead of busy loop
-    while (surfData->busy) {
-        usleep(2000);
+    while (surfData->status != VDP_PRESENTATION_QUEUE_STATUS_IDLE) {
+        usleep(1000);
     }
 
     *first_presentation_time = surfData->first_presentation_time;
@@ -110,7 +110,6 @@ do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
     pthread_mutex_unlock(&pqueueData->queue_mutex);
 
     glx_context_push_global(deviceData->display, pqueueData->target->drawable, pqueueData->target->glc);
-    surfData->busy = 1;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     const uint32_t target_width  = (clip_width > 0)  ? clip_width  : surfData->width;
@@ -177,7 +176,6 @@ do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
     previousSurfData = surfData;
 
     release_global_lock();
-    surfData->busy = 0;
 
     GLenum gl_error = glGetError();
     glx_context_pop();

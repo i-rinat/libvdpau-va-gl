@@ -55,7 +55,6 @@ typedef struct {
     GLuint          gl_format;          ///< GL texture format: preferred external format
     GLuint          gl_type;            ///< GL texture format: pixel type
     unsigned int    bytes_per_pixel;    ///< number of bytes per pixel
-    volatile int    busy;               ///< 1 if surface currently in presentation queue
     VdpTime         first_presentation_time;    ///< first displayed time in queue
     VdpPresentationQueueStatus  status; ///< status in presentation queue
 } VdpOutputSurfaceData;
