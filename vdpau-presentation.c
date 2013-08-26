@@ -57,7 +57,9 @@ softVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_
 
     // TODO: use locking instead of busy loop
     while (surfData->status != VDP_PRESENTATION_QUEUE_STATUS_IDLE) {
+        release_global_lock();
         usleep(1000);
+        acquire_global_lock();
     }
 
     *first_presentation_time = surfData->first_presentation_time;
@@ -166,9 +168,8 @@ do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
 
     struct timespec now;
     clock_gettime(CLOCK_REALTIME, &now);
-
     surfData->first_presentation_time = timespec2vdptime(now);
-    surfData->status = VDP_PRESENTATION_QUEUE_STATUS_VISIBLE;
+    surfData->status = VDP_PRESENTATION_QUEUE_STATUS_IDLE;
 
     if (global.quirks.log_pq_delay) {
             const int64_t delta = timespec2vdptime(now) - surfData->queued_at;
