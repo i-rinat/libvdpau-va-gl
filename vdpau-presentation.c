@@ -170,6 +170,13 @@ do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
     surfData->first_presentation_time = timespec2vdptime(now);
     surfData->status = VDP_PRESENTATION_QUEUE_STATUS_VISIBLE;
 
+    if (global.quirks.log_pq_delay) {
+            const int64_t delta = timespec2vdptime(now) - surfData->queued_at;
+            const struct timespec delta_ts = vdptime2timespec(delta);
+            traceInfo("pqdelay %d.%09d %d.%09d\n", (int)now.tv_sec, (int)now.tv_nsec,
+                      delta_ts.tv_sec, delta_ts.tv_nsec);
+    }
+
     if (previousSurfData)
         previousSurfData->status = VDP_PRESENTATION_QUEUE_STATUS_IDLE;
     previousSurfData = surfData;
@@ -419,6 +426,13 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     }
 
     pthread_mutex_unlock(&pqData->queue_mutex);
+
+    if (global.quirks.log_pq_delay) {
+        struct timespec now;
+        clock_gettime(CLOCK_REALTIME, &now);
+        surfData->queued_at = timespec2vdptime(now);
+    }
+
     pthread_cond_broadcast(&pqData->new_work_available);
 
     return VDP_STATUS_OK;
