@@ -205,10 +205,10 @@ softVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, Vdp
     for (int k = 0; k < num_profiles; k ++) {
         switch (va_profile_list[k]) {
         case VAProfileMPEG2Main:
-            available_profiles.mpeg2_main = 1;
+            available_profiles.mpeg2_main = 0;
             /* fall through */
         case VAProfileMPEG2Simple:
-            available_profiles.mpeg2_simple = 1;
+            available_profiles.mpeg2_simple = 0;
             break;
 
         case VAProfileH264High:
@@ -224,13 +224,13 @@ softVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, Vdp
             break;
 
         case VAProfileVC1Advanced:
-            available_profiles.vc1_advanced = 1;
+            available_profiles.vc1_advanced = 0;
             /* fall though */
         case VAProfileVC1Main:
-            available_profiles.vc1_main = 1;
+            available_profiles.vc1_main = 0;
             /* fall though */
         case VAProfileVC1Simple:
-            available_profiles.vc1_simple = 1;
+            available_profiles.vc1_simple = 0;
             break;
 
         // unhandled profiles
