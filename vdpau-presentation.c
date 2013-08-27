@@ -92,8 +92,6 @@ static
 void
 do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
 {
-    static VdpOutputSurfaceData *previousSurfData = NULL;
-
     acquire_global_lock();
     pthread_mutex_lock(&pqueueData->queue_mutex);
     assert(pqueueData->queue.used > 0);
@@ -177,10 +175,6 @@ do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
             traceInfo("pqdelay %d.%09d %d.%09d\n", (int)now.tv_sec, (int)now.tv_nsec,
                       delta_ts.tv_sec, delta_ts.tv_nsec);
     }
-
-    if (previousSurfData)
-        previousSurfData->status = VDP_PRESENTATION_QUEUE_STATUS_IDLE;
-    previousSurfData = surfData;
 
     release_global_lock();
 
