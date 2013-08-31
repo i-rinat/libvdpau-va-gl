@@ -108,7 +108,7 @@ traceVdpGetApiVersion(uint32_t *api_version)
     if (!trace_enabled)
         goto skip;
     fprintf(tlog, "%s%s VdpGetApiVersion\n", trace_header, impl_state);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_GET_API_VERSION, 0, NULL);
     VdpStatus ret = softVdpGetApiVersion(api_version);
     traceCallHook(VDP_FUNC_ID_GET_API_VERSION, 1, (void *)ret);
@@ -126,7 +126,7 @@ traceVdpDecoderQueryCapabilities(VdpDevice device,
         goto skip;
     fprintf(tlog, "%s%s VdpDecoderQueryCapabilities device=%d, profile=%s\n",
         trace_header, impl_state, device, reverse_decoder_profile(profile));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_DECODER_QUERY_CAPABILITIES, 0, NULL);
     VdpStatus ret = softVdpDecoderQueryCapabilities(device, profile, is_supported, max_level,
         max_macroblocks, max_width, max_height);
@@ -144,7 +144,7 @@ traceVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile,
     fprintf(tlog, "%s%s VdpDecoderCreate device=%d, profile=%s, width=%d, height=%d, "
         "max_references=%d\n", trace_header, impl_state, device, reverse_decoder_profile(profile),
         width, height, max_references);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_DECODER_CREATE, 0, NULL);
     VdpStatus ret = softVdpDecoderCreate(device, profile, width, height, max_references, decoder);
     traceCallHook(VDP_FUNC_ID_DECODER_CREATE, 1, (void*)ret);
@@ -158,7 +158,7 @@ traceVdpDecoderDestroy(VdpDecoder decoder)
     if (!trace_enabled)
         goto skip;
     fprintf(tlog, "%s%s VdpDecoderDestroy decoder=%d\n", trace_header, impl_state, decoder);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_DECODER_DESTROY, 0, NULL);
     VdpStatus ret = softVdpDecoderDestroy(decoder);
     traceCallHook(VDP_FUNC_ID_DECODER_DESTROY, 1, (void*)ret);
@@ -173,7 +173,7 @@ traceVdpDecoderGetParameters(VdpDecoder decoder,
     if (!trace_enabled)
         goto skip;
     fprintf(tlog, "%s%s VdpDecoderGetParameters decoder=%d\n", trace_header, impl_state, decoder);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_DECODER_GET_PARAMETERS, 0, NULL);
     VdpStatus ret = softVdpDecoderGetParameters(decoder, profile, width, height);
     traceCallHook(VDP_FUNC_ID_DECODER_GET_PARAMETERS, 1, (void*)ret);
@@ -191,7 +191,7 @@ traceVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
     fprintf(tlog, "%s%s VdpDecoderRender decoder=%d, target=%d, picture_info=%p, "
         "bitstream_buffer_count=%d\n", trace_header, impl_state, decoder, target, picture_info,
         bitstream_buffer_count);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_DECODER_RENDER, 0, NULL);
     VdpStatus ret = softVdpDecoderRender(decoder, target, picture_info, bitstream_buffer_count,
         bitstream_buffers);
@@ -209,7 +209,7 @@ traceVdpOutputSurfaceQueryCapabilities(VdpDevice device,
         goto skip;
     fprintf(tlog, "%s%s VdpOutputSurfaceQueryCapabilities device=%d, surface_rgba_format=%s\n",
         trace_header, impl_state, device, reverse_rgba_format(surface_rgba_format));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_CAPABILITIES, 0, NULL);
     VdpStatus ret = softVdpOutputSurfaceQueryCapabilities(device, surface_rgba_format, is_supported,
                                                           max_width, max_height);
@@ -228,7 +228,7 @@ traceVdpOutputSurfaceQueryGetPutBitsNativeCapabilities(VdpDevice device,
     fprintf(tlog, "%s%s VdpOutputSurfaceQueryGetPutBitsNativeCapabilities device=%d, "
         "surface_rgba_format=%s\n", trace_header, impl_state, device,
         reverse_rgba_format(surface_rgba_format));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_GET_PUT_BITS_NATIVE_CAPABILITIES, 0, NULL);
     VdpStatus ret =
         softVdpOutputSurfaceQueryGetPutBitsNativeCapabilities(device, surface_rgba_format,
@@ -252,7 +252,7 @@ traceVdpOutputSurfaceQueryPutBitsIndexedCapabilities(VdpDevice device,
         trace_header, impl_state, device, reverse_rgba_format(surface_rgba_format),
         reverse_indexed_format(bits_indexed_format),
         reverse_color_table_format(color_table_format));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_PUT_BITS_INDEXED_CAPABILITIES, 0, NULL);
     VdpStatus ret = softVdpOutputSurfaceQueryPutBitsIndexedCapabilities(device, surface_rgba_format,
         bits_indexed_format, color_table_format, is_supported);
@@ -272,7 +272,7 @@ traceVdpOutputSurfaceQueryPutBitsYCbCrCapabilities(VdpDevice device,
     fprintf(tlog, "%s%s VdpOutputSurfaceQueryPutBitsYCbCrCapabilities device=%d, "
         "surface_rgba_format=%s, bits_ycbcr_format=%s\n", trace_header, impl_state,
         device, reverse_rgba_format(surface_rgba_format), reverse_ycbcr_format(bits_ycbcr_format));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_QUERY_PUT_BITS_Y_CB_CR_CAPABILITIES, 0, NULL);
     VdpStatus ret = softVdpOutputSurfaceQueryPutBitsYCbCrCapabilities(device, surface_rgba_format,
         bits_ycbcr_format, is_supported);
@@ -289,7 +289,7 @@ traceVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format,
         goto skip;
     fprintf(tlog, "%s%s VdpOutputSurfaceCreate device=%d, rgba_format=%s, width=%d, height=%d\n",
         trace_header, impl_state, device, reverse_rgba_format(rgba_format), width, height);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_CREATE, 0, NULL);
     VdpStatus ret = softVdpOutputSurfaceCreate(device, rgba_format, width, height, surface);
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_CREATE, 1, (void*)ret);
@@ -303,7 +303,7 @@ traceVdpOutputSurfaceDestroy(VdpOutputSurface surface)
     if (!trace_enabled)
         goto skip;
     fprintf(tlog, "%s%s VdpOutputSurfaceDestroy surface=%d\n", trace_header, impl_state, surface);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_DESTROY, 0, NULL);
     VdpStatus ret = softVdpOutputSurfaceDestroy(surface);
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_DESTROY, 1, (void*)ret);
@@ -319,7 +319,7 @@ traceVdpOutputSurfaceGetParameters(VdpOutputSurface surface,
         goto skip;
     fprintf(tlog, "%s%s VdpOutputSurfaceGetParameters surface=%d\n", trace_header, impl_state,
         surface);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_GET_PARAMETERS, 0, NULL);
     VdpStatus ret = softVdpOutputSurfaceGetParameters(surface, rgba_format, width, height);
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_GET_PARAMETERS, 1, (void*)ret);
@@ -336,7 +336,7 @@ traceVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface,
         goto skip;
     fprintf(tlog, "%s%s VdpOutputSurfaceGetBitsNative surface=%d, source_rect=%s\n",
         trace_header, impl_state, surface, rect2string(source_rect));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_GET_BITS_NATIVE, 0, NULL);
     VdpStatus ret = softVdpOutputSurfaceGetBitsNative(surface, source_rect, destination_data,
         destination_pitches);
@@ -354,7 +354,7 @@ traceVdpOutputSurfacePutBitsNative(VdpOutputSurface surface,
         goto skip;
     fprintf(tlog, "%s%s VdpOutputSurfacePutBitsNative surface=%d, destination_rect=%s\n",
         trace_header, impl_state, surface, rect2string(destination_rect));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_NATIVE, 0, NULL);
     VdpStatus ret = softVdpOutputSurfacePutBitsNative(surface, source_data, source_pitches,
         destination_rect);
@@ -376,7 +376,7 @@ traceVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface,
         "destination_rect=%s, color_table_format=%s\n", trace_header, impl_state, surface,
         reverse_indexed_format(source_indexed_format), rect2string(destination_rect),
         reverse_color_table_format(color_table_format));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_INDEXED, 0, NULL);
     VdpStatus ret = softVdpOutputSurfacePutBitsIndexed(surface, source_indexed_format, source_data,
         source_pitch, destination_rect, color_table_format, color_table);
@@ -396,7 +396,7 @@ traceVdpOutputSurfacePutBitsYCbCr(VdpOutputSurface surface,
     fprintf(tlog, "%s%s VdpOutputSurfacePutBitsYCbCr surface=%d, source_ycbcr_format=%s, "
         "destination_rect=%s, csc_matrix=%p\n", trace_header, impl_state, surface,
         reverse_ycbcr_format(source_ycbcr_format), rect2string(destination_rect), csc_matrix);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_PUT_BITS_Y_CB_CR, 0, NULL);
     VdpStatus ret = softVdpOutputSurfacePutBitsYCbCr(surface, source_ycbcr_format, source_data,
         source_pitches, destination_rect, csc_matrix);
@@ -413,7 +413,7 @@ traceVdpVideoMixerQueryFeatureSupport(VdpDevice device,
         goto skip;
     fprintf(tlog, "%s%s VdpVideoMixerQueryFeatureSupport device=%d, feature=%s\n",
         trace_header, impl_state, device, reverse_video_mixer_feature(feature));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_QUERY_FEATURE_SUPPORT, 0, NULL);
     VdpStatus ret = softVdpVideoMixerQueryFeatureSupport(device, feature, is_supported);
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_QUERY_FEATURE_SUPPORT, 1, (void*)ret);
@@ -430,7 +430,7 @@ traceVdpVideoMixerQueryParameterSupport(VdpDevice device,
         goto skip;
     fprintf(tlog, "%s%s VdpVideoMixerQueryParameterSupport device=%d, parameter=%s\n",
         trace_header, impl_state, device, reverse_video_mixer_parameter(parameter));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_QUERY_PARAMETER_SUPPORT, 0, NULL);
     VdpStatus ret = softVdpVideoMixerQueryParameterSupport(device, parameter, is_supported);
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_QUERY_PARAMETER_SUPPORT, 1, (void*)ret);
@@ -446,7 +446,7 @@ traceVdpVideoMixerQueryAttributeSupport(VdpDevice device,
         goto skip;
     fprintf(tlog, "%s%s VdpVideoMixerQueryAttributeSupport device=%d, attribute=%s\n",
         trace_header, impl_state, device, reverse_video_mixer_attribute(attribute));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_QUERY_ATTRIBUTE_SUPPORT, 0, NULL);
     VdpStatus ret = softVdpVideoMixerQueryAttributeSupport(device, attribute, is_supported);
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_QUERY_ATTRIBUTE_SUPPORT, 1, (void*)ret);
@@ -463,7 +463,7 @@ traceVdpVideoMixerQueryParameterValueRange(VdpDevice device,
         goto skip;
     fprintf(tlog, "%s%s VdpVideoMixerQueryParameterValueRange device=%d, parameter=%s\n",
         trace_header, impl_state, device, reverse_video_mixer_parameter(parameter));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_QUERY_PARAMETER_VALUE_RANGE, 0, NULL);
     VdpStatus ret = softVdpVideoMixerQueryParameterValueRange(device, parameter, min_value,
                                                               max_value);
@@ -481,7 +481,7 @@ traceVdpVideoMixerQueryAttributeValueRange(VdpDevice device,
         goto skip;
     fprintf(tlog, "%s%s VdpVideoMixerQueryAttributeValueRange device=%d, attribute=%s\n",
         trace_header, impl_state, device, reverse_video_mixer_attribute(attribute));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_QUERY_ATTRIBUTE_VALUE_RANGE, 0, NULL);
     VdpStatus ret = softVdpVideoMixerQueryAttributeValueRange(device, attribute, min_value,
                                                               max_value);
@@ -524,7 +524,7 @@ traceVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
             break;
         }
     }
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_CREATE, 0, NULL);
     VdpStatus ret = softVdpVideoMixerCreate(device, feature_count, features, parameter_count,
                                             parameters, parameter_values, mixer);
@@ -547,7 +547,7 @@ traceVdpVideoMixerSetFeatureEnables(VdpVideoMixer mixer,
             features[k], reverse_video_mixer_feature(features[k]),
             feature_enables[k] ? "enabled" : "disabled");
     }
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_SET_FEATURE_ENABLES, 0, NULL);
     VdpStatus ret = softVdpVideoMixerSetFeatureEnables(mixer, feature_count, features,
                                                        feature_enables);
@@ -580,7 +580,7 @@ traceVdpVideoMixerSetAttributeValues(VdpVideoMixer mixer,
             }
         }
     }
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_SET_ATTRIBUTE_VALUES, 0, NULL);
     VdpStatus ret = softVdpVideoMixerSetAttributeValues(mixer, attribute_count, attributes,
         attribute_values);
@@ -601,7 +601,7 @@ traceVdpVideoMixerGetFeatureSupport(VdpVideoMixer mixer,
     for (unsigned int k = 0; k < feature_count; k ++)
         fprintf(tlog, "%s      feature %s\n", trace_header_blank,
             reverse_video_mixer_feature(features[k]));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_GET_FEATURE_SUPPORT, 0, NULL);
     VdpStatus ret = softVdpVideoMixerGetFeatureSupport(mixer, feature_count, features,
         feature_supports);
@@ -622,7 +622,7 @@ traceVdpVideoMixerGetFeatureEnables(VdpVideoMixer mixer,
     for (unsigned int k = 0; k < feature_count; k ++)
         fprintf(tlog, "%s      feature %s\n", trace_header_blank,
             reverse_video_mixer_feature(features[k]));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_GET_FEATURE_ENABLES, 0, NULL);
     VdpStatus ret = softVdpVideoMixerGetFeatureEnables(mixer, feature_count, features,
                                                        feature_enables);
@@ -644,7 +644,7 @@ traceVdpVideoMixerGetParameterValues(VdpVideoMixer mixer,
     for (unsigned int k = 0; k < parameter_count; k ++)
         fprintf(tlog, "%s      parameter %s\n", trace_header_blank,
             reverse_video_mixer_parameter(parameters[k]));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_GET_PARAMETER_VALUES, 0, NULL);
     VdpStatus ret = softVdpVideoMixerGetParameterValues(mixer, parameter_count, parameters,
         parameter_values);
@@ -666,7 +666,7 @@ traceVdpVideoMixerGetAttributeValues(VdpVideoMixer mixer,
     for (unsigned int k = 0; k < attribute_count; k ++)
         fprintf(tlog, "%s      attribute %s\n", trace_header_blank,
             reverse_video_mixer_attribute(attributes[k]));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_GET_ATTRIBUTE_VALUES, 0, NULL);
     VdpStatus ret = softVdpVideoMixerGetAttributeValues(mixer, attribute_count, attributes,
         attribute_values);
@@ -681,7 +681,7 @@ traceVdpVideoMixerDestroy(VdpVideoMixer mixer)
     if (!trace_enabled)
         goto skip;
     fprintf(tlog, "%s%s VdpVideoMixerDestroy mixer=%d\n", trace_header, impl_state, mixer);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_DESTROY, 0, NULL);
     VdpStatus ret = softVdpVideoMixerDestroy(mixer);
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_DESTROY, 1, (void*)ret);
@@ -727,7 +727,7 @@ traceVdpVideoMixerRender(VdpVideoMixer mixer,
             rect2string(layers[k].source_rect), rect2string(layers[k].destination_rect));
     }
     fprintf(tlog, "]\n");
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_RENDER, 0, NULL);
     VdpStatus ret = softVdpVideoMixerRender(mixer, background_surface, background_source_rect,
         current_picture_structure, video_surface_past_count, video_surface_past,
@@ -745,7 +745,7 @@ traceVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_q
         goto skip;
     fprintf(tlog, "%s%s VdpPresentationQueueTargetDestroy presentation_queue_target=%d\n",
         trace_header, impl_state, presentation_queue_target);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_TARGET_DESTROY, 0, NULL);
     VdpStatus ret = softVdpPresentationQueueTargetDestroy(presentation_queue_target);
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_TARGET_DESTROY, 1, (void*)ret);
@@ -762,7 +762,7 @@ traceVdpPresentationQueueCreate(VdpDevice device,
         goto skip;
     fprintf(tlog, "%s%s VdpPresentationQueueCreate device=%d, presentation_queue_target=%d\n",
         trace_header, impl_state, device, presentation_queue_target);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_CREATE, 0, NULL);
     VdpStatus ret = softVdpPresentationQueueCreate(device, presentation_queue_target,
         presentation_queue);
@@ -778,7 +778,7 @@ traceVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
         goto skip;
     fprintf(tlog, "%s%s VdpPresentationQueueDestroy presentation_queue=%d\n",
         trace_header, impl_state, presentation_queue);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_DESTROY, 0, NULL);
     VdpStatus ret = softVdpPresentationQueueDestroy(presentation_queue);
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_DESTROY, 1, (void*)ret);
@@ -796,7 +796,7 @@ traceVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_qu
         "background_color=(%.2f,%.2f,%.2f,%.2f)\n",
         trace_header, impl_state, presentation_queue, background_color->red,
         background_color->green, background_color->blue, background_color->alpha);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_SET_BACKGROUND_COLOR, 0, NULL);
     VdpStatus ret = softVdpPresentationQueueSetBackgroundColor(presentation_queue,
                                                                background_color);
@@ -813,7 +813,7 @@ traceVdpPresentationQueueGetBackgroundColor(VdpPresentationQueue presentation_qu
         goto skip;
     fprintf(tlog, "%s%s VdpPresentationQueueGetBackgroundColor  presentation_queue=%d\n",
         trace_header, impl_state, presentation_queue);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_GET_BACKGROUND_COLOR, 0, NULL);
     VdpStatus ret = softVdpPresentationQueueGetBackgroundColor(presentation_queue,
                                                                background_color);
@@ -830,7 +830,7 @@ traceVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue,
         goto skip;
     fprintf(tlog, "%s%s VdpPresentationQueueGetTime presentation_queue=%d\n",
         trace_header, impl_state, presentation_queue);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_GET_TIME, 0, NULL);
     VdpStatus ret = softVdpPresentationQueueGetTime(presentation_queue, current_time);
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_GET_TIME, 1, (void*)ret);
@@ -850,7 +850,7 @@ traceVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue,
         clip_width, clip_height);
     fprintf(tlog, "%s      earliest_presentation_time=%"PRIu64"\n", trace_header_blank,
         earliest_presentation_time);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_DISPLAY, 0, NULL);
     VdpStatus ret = softVdpPresentationQueueDisplay(presentation_queue, surface, clip_width,
                                                     clip_height, earliest_presentation_time);
@@ -869,7 +869,7 @@ traceVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation
         goto skip;
     fprintf(tlog, "%s%s VdpPresentationQueueBlockUntilSurfaceIdle presentation_queue=%d, "
         "surface=%d\n", trace_header, impl_state, presentation_queue, surface);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_BLOCK_UNTIL_SURFACE_IDLE, 0, NULL);
     VdpStatus ret = softVdpPresentationQueueBlockUntilSurfaceIdle(presentation_queue, surface,
         first_presentation_time);
@@ -888,7 +888,7 @@ traceVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_qu
         goto skip;
     fprintf(tlog, "%s%s VdpPresentationQueueQuerySurfaceStatus presentation_queue=%d, "
         "surface=%d\n", trace_header, impl_state, presentation_queue, surface);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_QUERY_SURFACE_STATUS, 0, NULL);
     VdpStatus ret = softVdpPresentationQueueQuerySurfaceStatus(presentation_queue, surface,
         status, first_presentation_time);
@@ -906,7 +906,7 @@ traceVdpVideoSurfaceQueryCapabilities(VdpDevice device,
         goto skip;
     fprintf(tlog, "%s%s VdpVideoSurfaceQueryCapabilities device=%d, surface_chroma_type=%s\n",
         trace_header, impl_state, device, reverse_chroma_type(surface_chroma_type));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_QUERY_CAPABILITIES, 0, NULL);
     VdpStatus ret = softVdpVideoSurfaceQueryCapabilities(device, surface_chroma_type, is_supported,
         max_width, max_height);
@@ -926,7 +926,7 @@ traceVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(VdpDevice device,
     fprintf(tlog, "%s%s VdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities device=%d, "
         "surface_chroma_type=%s, bits_ycbcr_format=%s\n", trace_header, impl_state,
         device, reverse_chroma_type(surface_chroma_type), reverse_ycbcr_format(bits_ycbcr_format));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_QUERY_GET_PUT_BITS_Y_CB_CR_CAPABILITIES, 0, NULL);
     VdpStatus ret = softVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(device, surface_chroma_type,
         bits_ycbcr_format, is_supported);
@@ -943,7 +943,7 @@ traceVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type,
         goto skip;
     fprintf(tlog, "%s%s VdpVideoSurfaceCreate, device=%d, chroma_type=%s, width=%d, height=%d\n",
         trace_header, impl_state, device, reverse_chroma_type(chroma_type), width, height);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_CREATE, 0, NULL);
     VdpStatus ret = softVdpVideoSurfaceCreate(device, chroma_type, width, height, surface);
     traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_CREATE, 1, (void*)ret);
@@ -957,7 +957,7 @@ traceVdpVideoSurfaceDestroy(VdpVideoSurface surface)
     if (!trace_enabled)
         goto skip;
     fprintf(tlog, "%s%s VdpVideoSurfaceDestroy surface=%d\n", trace_header, impl_state, surface);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_DESTROY, 0, NULL);
     VdpStatus ret = softVdpVideoSurfaceDestroy(surface);
     traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_DESTROY, 1, (void*)ret);
@@ -973,7 +973,7 @@ traceVdpVideoSurfaceGetParameters(VdpVideoSurface surface,
         goto skip;
     fprintf(tlog, "%s%s VdpVideoSurfaceGetParameters surface=%d\n", trace_header, impl_state,
         surface);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_GET_PARAMETERS, 0, NULL);
     VdpStatus ret = softVdpVideoSurfaceGetParameters(surface, chroma_type, width, height);
     traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_GET_PARAMETERS, 1, (void*)ret);
@@ -990,7 +990,7 @@ traceVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface,
         goto skip;
     fprintf(tlog, "%s%s VdpVideoSurfaceGetBitsYCbCr surface=%d, destination_ycbcr_format=%s\n",
         trace_header, impl_state, surface, reverse_ycbcr_format(destination_ycbcr_format));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_GET_BITS_Y_CB_CR, 0, NULL);
     VdpStatus ret = softVdpVideoSurfaceGetBitsYCbCr(surface, destination_ycbcr_format,
         destination_data, destination_pitches);
@@ -1008,7 +1008,7 @@ traceVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface,
         goto skip;
     fprintf(tlog, "%s%s VdpVideoSurfacePutBitsYCbCr surface=%d, source_ycbcr_format=%s\n",
         trace_header, impl_state, surface, reverse_ycbcr_format(source_ycbcr_format));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_VIDEO_SURFACE_PUT_BITS_Y_CB_CR, 0, NULL);
     VdpStatus ret = softVdpVideoSurfacePutBitsYCbCr(surface, source_ycbcr_format, source_data,
         source_pitches);
@@ -1026,7 +1026,7 @@ traceVdpBitmapSurfaceQueryCapabilities(VdpDevice device,
         goto skip;
     fprintf(tlog, "%s%s VdpBitmapSurfaceQueryCapabilities device=%d, surface_rgba_format=%s\n",
         trace_header, impl_state, device, reverse_rgba_format(surface_rgba_format));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_BITMAP_SURFACE_QUERY_CAPABILITIES, 0, NULL);
     VdpStatus ret = softVdpBitmapSurfaceQueryCapabilities(device, surface_rgba_format, is_supported,
         max_width, max_height);
@@ -1045,7 +1045,7 @@ traceVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format,
     fprintf(tlog, "%s%s VdpBitmapSurfaceCreate device=%d, rgba_format=%s, width=%d, height=%d,\n"
         "%s      frequently_accessed=%d\n", trace_header, impl_state, device,
         reverse_rgba_format(rgba_format), width, height, trace_header_blank, frequently_accessed);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_BITMAP_SURFACE_CREATE, 0, NULL);
     VdpStatus ret = softVdpBitmapSurfaceCreate(device, rgba_format, width, height,
                                                frequently_accessed, surface);
@@ -1060,7 +1060,7 @@ traceVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
     if (!trace_enabled)
         goto skip;
     fprintf(tlog, "%s%s VdpBitmapSurfaceDestroy surface=%d\n", trace_header, impl_state, surface);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_BITMAP_SURFACE_DESTROY, 0, NULL);
     VdpStatus ret = softVdpBitmapSurfaceDestroy(surface);
     traceCallHook(VDP_FUNC_ID_BITMAP_SURFACE_DESTROY, 1, (void*)ret);
@@ -1077,7 +1077,7 @@ traceVdpBitmapSurfaceGetParameters(VdpBitmapSurface surface,
         goto skip;
     fprintf(tlog, "%s%s VdpBitmapSurfaceGetParameters surface=%d\n",
         trace_header, impl_state, surface);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_BITMAP_SURFACE_GET_PARAMETERS, 0, NULL);
     VdpStatus ret = softVdpBitmapSurfaceGetParameters(surface, rgba_format, width, height,
         frequently_accessed);
@@ -1095,7 +1095,7 @@ traceVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface,
         goto skip;
     fprintf(tlog, "%s%s VdpBitmapSurfacePutBitsNative surface=%d, destination_rect=%s\n",
         trace_header, impl_state, surface, rect2string(destination_rect));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_BITMAP_SURFACE_PUT_BITS_NATIVE, 0, NULL);
     VdpStatus ret = softVdpBitmapSurfacePutBitsNative(surface, source_data, source_pitches,
         destination_rect);
@@ -1110,7 +1110,7 @@ traceVdpDeviceDestroy(VdpDevice device)
     if (!trace_enabled)
         goto skip;
     fprintf(tlog, "%s%s VdpDeviceDestroy device=%d\n", trace_header, impl_state, device);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_DEVICE_DESTROY, 0, NULL);
     VdpStatus ret = softVdpDeviceDestroy(device);
     traceCallHook(VDP_FUNC_ID_DEVICE_DESTROY, 1, (void*)ret);
@@ -1124,7 +1124,7 @@ traceVdpGetInformationString(char const **information_string)
     if (!trace_enabled)
         goto skip;
     fprintf(tlog, "%s%s VdpGetInformationString\n", trace_header, impl_state);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_GET_INFORMATION_STRING, 0, NULL);
     VdpStatus ret = softVdpGetInformationString(information_string);
     traceCallHook(VDP_FUNC_ID_GET_INFORMATION_STRING, 1, (void*)ret);
@@ -1144,7 +1144,7 @@ traceVdpGenerateCSCMatrix(VdpProcamp *procamp, VdpColorStandard standard,
             procamp->contrast, procamp->saturation);
     }
     fprintf(tlog, "standard=%s\n", reverse_color_standard(standard));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_GENERATE_CSC_MATRIX, 0, NULL);
     VdpStatus ret = softVdpGenerateCSCMatrix(procamp, standard, csc_matrix);
     traceCallHook(VDP_FUNC_ID_GENERATE_CSC_MATRIX, 1, (void*)ret);
@@ -1208,7 +1208,7 @@ traceVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
                 colors[k].alpha);
     }
     fprintf(tlog, "]\n");
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_RENDER_OUTPUT_SURFACE, 0, NULL);
     VdpStatus ret = softVdpOutputSurfaceRenderOutputSurface(destination_surface, destination_rect,
         source_surface, source_rect, colors, blend_state, flags);
@@ -1273,7 +1273,7 @@ traceVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
                 colors[k].alpha);
     }
     fprintf(tlog, "]\n");
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_RENDER_BITMAP_SURFACE, 0, NULL);
     VdpStatus ret = softVdpOutputSurfaceRenderBitmapSurface(destination_surface, destination_rect,
         source_surface, source_rect, colors, blend_state, flags);
@@ -1290,7 +1290,7 @@ traceVdpPreemptionCallbackRegister(VdpDevice device,
         goto skip;
     fprintf(tlog, "%s%s VdpPreemptionCallbackRegister device=%d, callback=%p, context=%p\n",
         trace_header, impl_state, device, callback, context);
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_PREEMPTION_CALLBACK_REGISTER, 0, NULL);
     VdpStatus ret = softVdpPreemptionCallbackRegister(device, callback, context);
     traceCallHook(VDP_FUNC_ID_PREEMPTION_CALLBACK_REGISTER, 1, (void*)ret);
@@ -1306,7 +1306,7 @@ traceVdpPresentationQueueTargetCreateX11(VdpDevice device,
         goto skip;
     fprintf(tlog, "%s%s VdpPresentationQueueTargetCreateX11, device=%d, drawable=%u\n",
         trace_header, impl_state, device, ((unsigned int)drawable));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_TARGET_CREATE_X11, 0, NULL);
     VdpStatus ret = softVdpPresentationQueueTargetCreateX11(device, drawable, target);
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_TARGET_CREATE_X11, 1, (void*)ret);
@@ -1322,7 +1322,7 @@ traceVdpGetProcAddress(VdpDevice device, VdpFuncId function_id,
         goto skip;
     fprintf(tlog, "%s%s VdpGetProcAddress, device=%d, function_id=%s\n",
         trace_header, impl_state, device, reverse_func_id(function_id));
-skip:;
+skip:
     traceCallHook(VDP_FUNC_ID_GET_PROC_ADDRESS, 0, NULL);
     VdpStatus ret = softVdpGetProcAddress(device, function_id, function_pointer);
     traceCallHook(VDP_FUNC_ID_GET_PROC_ADDRESS, 1, (void*)ret);
@@ -1338,7 +1338,7 @@ traceVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
         goto skip;
     fprintf(tlog, "%s%s vdp_imp_device_create_x11 display=%p, screen=%d\n", trace_header,
         impl_state, display, screen);
-skip:;
+skip:
     traceCallHook(-1, 0, NULL);
     VdpStatus ret = softVdpDeviceCreateX11(display, screen, device, get_proc_address);
     traceCallHook(-1, 1, (void*)ret);
