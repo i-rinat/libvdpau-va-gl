@@ -163,8 +163,5 @@ VdpStatus
 vdp_imp_device_create_x11(Display *display, int screen, VdpDevice *device,
                           VdpGetProcAddress **get_proc_address)
 {
-    // Select appropriate sub-backend. For now only software backend available.
-    if (1) {
-        return lockedVdpDeviceCreateX11(display, screen, device, get_proc_address);
-    }
+    return traceVdpDeviceCreateX11(display, screen, device, get_proc_address);
 }
