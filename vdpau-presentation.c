@@ -57,9 +57,7 @@ softVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_
 
     // TODO: use locking instead of busy loop
     while (surfData->status != VDP_PRESENTATION_QUEUE_STATUS_IDLE) {
-        release_global_lock();
         usleep(1000);
-        acquire_global_lock();
     }
 
     *first_presentation_time = surfData->first_presentation_time;
@@ -92,7 +90,6 @@ static
 void
 do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
 {
-    acquire_global_lock();
     pthread_mutex_lock(&pqueueData->queue_mutex);
     assert(pqueueData->queue.used > 0);
     const int entry = pqueueData->queue.head;
@@ -175,8 +172,6 @@ do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
             traceInfo("pqdelay %d.%09d %d.%09d\n", (int)now.tv_sec, (int)now.tv_nsec,
                       delta_ts.tv_sec, delta_ts.tv_nsec);
     }
-
-    release_global_lock();
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -308,13 +303,11 @@ softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 
     pqData->turning_off = 1;
     pthread_cond_broadcast(&pqData->new_work_available);
-    // release lock in order to allow worker thread successfully terminate
-    release_global_lock();
+
     if (0 != pthread_join(pqData->worker_thread, NULL)) {
         traceError("VdpPresentationQueueDestroy: failed to stop worker thread");
         return VDP_STATUS_ERROR;
     }
-    acquire_global_lock();
 
     handlestorage_expunge(presentation_queue);
     pqData->device->refcount --;

@@ -118,7 +118,6 @@ library_constructor(void)
     handlestorage_initialize();
 
     // Initialize global data
-    pthread_mutex_init(&global.mutex, NULL);
     pthread_mutex_init(&global.glx_ctx_stack_mutex, NULL);
     initialize_quirks();
 
