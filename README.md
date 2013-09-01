@@ -4,7 +4,7 @@ About
 Briefly, this is the [VDPAU](http://en.wikipedia.org/wiki/VDPAU) driver with
 [VA-API](http://en.wikipedia.org/wiki/Video_Acceleration_API)/OpenGL backend.
 
-There are applications exists that can use VDPAU. Amongst them Adobe Flash Player
+There are applications exists that can use VDPAU. Amongst them are Adobe Flash Player
 and Mplayer. They both can use VDPAU, but since there is no VDPAU available on Intel
 chips, they fall back to different drawing techniques. And while Mplayer can use
 XVideo extension to offload scaling to GPU, Flash Player can not and does all
@@ -19,9 +19,9 @@ environment variable.
 
 Here is one. Named libvdpau_va_gl.so.1, it uses OpenGL under the hood to
 accelerate drawing and scaling and VA-API (if available) to accelerate video
-decoding. For now VA-API available on some Intel chips, and on some AMD video
+decoding. For now VA-API is available on some Intel chips, and on some AMD video
 adapters with help of [xvba-va-driver](http://cgit.freedesktop.org/vaapi/xvba-driver/).
-OpenGL available, you know, on systems with OpenGL available.
+OpenGL is available, you know, on systems with OpenGL available.
 
 
 Install
@@ -43,12 +43,13 @@ variables that control runtime behavior of va_gl driver.
 
    * `XCloseDisplay`	Disables calling of XCloseDisplay which may segfault on systems with some AMD cards
    * `ShowWatermark`	Enables displaying string "va_gl" in bottom-right corner of window
-   * `LogThreadId`		Adds thread id to trace output
+   * `LogThreadId`	Adds thread id to trace output
    * `LogCallDuration`	Adds call duration to trace output
    * `LogPqDelay`	Adds presentation queue introduced delay to trace output
+   * `LogTimestamp`	Displays timestamps
    * `AvoidVA`          Makes libvdpau-va-gl NOT use VA-API
 
-Parameters of VDPAU_QUIRKS are actually case-insensetive.
+Parameters of VDPAU_QUIRKS are case-insensetive.
 
 Copying
 =======

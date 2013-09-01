@@ -44,6 +44,12 @@ trc_hk(void *longterm_param, void *shortterm_param, int origin, int after)
         }
     }
 
+    if (before && global.quirks.log_timestamp) {
+        struct timespec now;
+        clock_gettime(CLOCK_REALTIME, &now);
+        printf("%d.%03d ", (int)now.tv_sec, (int)now.tv_nsec/1000000);
+    }
+
     if (before && global.quirks.log_thread_id) {
         printf("[%5d] ", (pid_t)syscall(__NR_gettid));
     }
@@ -58,6 +64,7 @@ initialize_quirks(void)
     global.quirks.log_thread_id = 0;
     global.quirks.log_call_duration = 0;
     global.quirks.log_pq_delay = 0;
+    global.quirks.log_timestamp = 0;
     global.quirks.avoid_va = 0;
 
     const char *value = getenv("VDPAU_QUIRKS");
@@ -94,6 +101,9 @@ initialize_quirks(void)
             } else
             if (!strcmp("logpqdelay", item_start)) {
                 global.quirks.log_pq_delay = 1;
+            } else
+            if (!strcmp("logtimestamp", item_start)) {
+                global.quirks.log_timestamp = 1;
             } else
             if (!strcmp("avoidva", item_start)) {
                 global.quirks.avoid_va = 1;
