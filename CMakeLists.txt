@@ -28,7 +28,6 @@ add_library (${DRIVER_NAME} SHARED
 	vdpau-presentation.c
 	vdpau-entry.c
 	vdpau-trace.c
-	vdpau-locking.c
 	reverse-constant.c
 	handle-storage.c
 	bitstream.c

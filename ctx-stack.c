@@ -15,7 +15,6 @@
 #include "globals.h"
 #include <assert.h>
 #include "vdpau-trace.h"
-#include "vdpau-locking.h"
 #include <sys/syscall.h>
 #include <unistd.h>
 

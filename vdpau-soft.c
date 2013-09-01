@@ -28,7 +28,6 @@
 #include "reverse-constant.h"
 #include "handle-storage.h"
 #include "vdpau-trace.h"
-#include "vdpau-locking.h"
 #include "watermark.h"
 #include "globals.h"
 

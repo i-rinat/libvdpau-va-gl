@@ -18,7 +18,6 @@
 #include "ctx-stack.h"
 #include "globals.h"
 #include "handle-storage.h"
-#include "vdpau-locking.h"
 #include "vdpau-soft.h"
 #include "vdpau-trace.h"
 #include "watermark.h"
