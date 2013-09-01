@@ -169,7 +169,7 @@ do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
         glEnd();
     }
 
-    locked_glXSwapBuffers(deviceData->display, pqueueData->target->drawable);
+    glXSwapBuffers(deviceData->display, pqueueData->target->drawable);
 
     struct timespec now;
     clock_gettime(CLOCK_REALTIME, &now);
@@ -457,22 +457,22 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
     data->drawable = drawable;
     data->refcount = 0;
 
+    pthread_mutex_lock(&global.glx_ctx_stack_mutex);
     GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
     XVisualInfo *vi;
     vi = glXChooseVisual(deviceData->display, deviceData->screen, att);
     if (NULL == vi) {
         traceError("error (softVdpPresentationQueueTargetCreateX11): glXChooseVisual failed\n");
         free(data);
+        pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
         return VDP_STATUS_ERROR;
     }
 
     // create context for dislaying result (can share display lists with deviceData->glc
-    XLockDisplay(deviceData->display);
     data->glc = glXCreateContext(deviceData->display, vi, deviceData->root_glc, GL_TRUE);
-    XUnlockDisplay(deviceData->display);
-
     deviceData->refcount ++;
     *target = handlestorage_add(data);
+    pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
 
     return VDP_STATUS_OK;
 }

@@ -15,7 +15,5 @@
 #include <GL/glx.h>
 #include "globals.h"
 
-Bool locked_glXMakeCurrent(Display *dpy, GLXDrawable drawable, GLXContext ctx);
-void locked_glXSwapBuffers(Display *dpy, GLXDrawable drawable);
 
 #endif /* __VDPAU_LOCKING_H */

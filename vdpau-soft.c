@@ -2022,20 +2022,18 @@ softVdpDeviceDestroy(VdpDevice device)
     if (data->va_available)
         vaTerminate(data->va_dpy);
 
-    XLockDisplay(data->display);
-
     glx_context_push_thread_local(data);
     glDeleteTextures(1, &data->watermark_tex_id);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glx_context_pop();
 
-    locked_glXMakeCurrent(data->display, None, NULL);
+    pthread_mutex_lock(&global.glx_ctx_stack_mutex);
+    glXMakeCurrent(data->display, None, NULL);
+    pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
 
     glx_context_unref_glc_hash_table(data->display);
 
     handlestorage_expunge(device);
-    XUnlockDisplay(data->display);
-
     handlestorage_xdpy_copy_unref(data->display_orig);
 
     GLenum gl_error = glGetError();
@@ -2634,8 +2632,6 @@ softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
 
-    XLockDisplay(display);
-
     data->type = HANDLETYPE_DEVICE;
     data->display = display;
     data->display_orig = display_orig;   // save supplied pointer too
@@ -2701,7 +2697,7 @@ softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
 
     GLenum gl_error = glGetError();
     glx_context_pop();
-    XUnlockDisplay(display);
+
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpDeviceCreateX11): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
