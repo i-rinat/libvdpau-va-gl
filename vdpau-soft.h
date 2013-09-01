@@ -58,6 +58,7 @@ typedef struct {
     VdpTime         first_presentation_time;    ///< first displayed time in queue
     VdpPresentationQueueStatus  status; ///< status in presentation queue
     VdpTime         queued_at;
+    pthread_mutex_t mutex;
 } VdpOutputSurfaceData;
 
 /** @brief VdpPresentationQueueTarget object parameters */

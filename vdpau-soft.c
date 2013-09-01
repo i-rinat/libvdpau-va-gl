@@ -794,6 +794,7 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     data->height = height;
     data->device = deviceData;
     data->rgba_format = rgba_format;
+    pthread_mutex_init(&data->mutex, NULL);
 
     glx_context_push_thread_local(deviceData);
     glGenTextures(1, &data->tex_id);
@@ -843,6 +844,7 @@ softVdpOutputSurfaceDestroy(VdpOutputSurface surface)
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = data->device;
 
+    pthread_mutex_lock(&data->mutex);
     glx_context_push_thread_local(deviceData);
     glDeleteTextures(1, &data->tex_id);
     glDeleteFramebuffers(1, &data->fbo_id);
@@ -856,6 +858,7 @@ softVdpOutputSurfaceDestroy(VdpOutputSurface surface)
 
     handlestorage_expunge(surface);
     deviceData->refcount --;
+    pthread_mutex_unlock(&data->mutex);
     free(data);
     return VDP_STATUS_OK;
 }
@@ -869,11 +872,14 @@ softVdpOutputSurfaceGetParameters(VdpOutputSurface surface, VdpRGBAFormat *rgba_
         return VDP_STATUS_INVALID_HANDLE;
 
     if (NULL == rgba_format || NULL == width || NULL == height)
-        return VDP_STATUS_INVALID_HANDLE;
+        return VDP_STATUS_INVALID_POINTER;
 
+    pthread_mutex_lock(&surfData->mutex);
+    // TODO: check surfData validity again
     *rgba_format = surfData->rgba_format;
     *width       = surfData->width;
     *height      = surfData->height;
+    pthread_mutex_unlock(&surfData->mutex);
 
     return VDP_STATUS_OK;
 }
@@ -888,6 +894,7 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = srcSurfData->device;
 
+    pthread_mutex_lock(&srcSurfData->mutex);
     VdpRect srcRect = {0, 0, srcSurfData->width, srcSurfData->height};
     if (source_rect)
         srcRect = *source_rect;
@@ -907,6 +914,7 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
 
     GLenum gl_error = glGetError();
     glx_context_pop();
+    pthread_mutex_unlock(&srcSurfData->mutex);
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpOutputSurfaceGetBitsNative): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
@@ -924,6 +932,7 @@ softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *s
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = dstSurfData->device;
 
+    pthread_mutex_lock(&dstSurfData->mutex);
     VdpRect dstRect = {0, 0, dstSurfData->width, dstSurfData->height};
     if (destination_rect)
         dstRect = *destination_rect;
@@ -944,6 +953,7 @@ softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *s
 
     GLenum gl_error = glGetError();
     glx_context_pop();
+    pthread_mutex_unlock(&dstSurfData->mutex);
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpOutputSurfacePutBitsNative): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
@@ -963,13 +973,16 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = surfData->device;
 
+    pthread_mutex_lock(&surfData->mutex);
     VdpRect dstRect = {0, 0, surfData->width, surfData->height};
     if (destination_rect)
         dstRect = *destination_rect;
 
     // there is no other formats anyway
-    if (VDP_COLOR_TABLE_FORMAT_B8G8R8X8 != color_table_format)
+    if (VDP_COLOR_TABLE_FORMAT_B8G8R8X8 != color_table_format) {
+        pthread_mutex_unlock(&surfData->mutex);
         return VDP_STATUS_INVALID_COLOR_TABLE_FORMAT;
+    }
     const uint32_t *color_table32 = color_table;
 
     glx_context_push_thread_local(deviceData);
@@ -1004,6 +1017,7 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
 
             GLenum gl_error = glGetError();
             glx_context_pop();
+            pthread_mutex_unlock(&surfData->mutex);
             if (GL_NO_ERROR != gl_error) {
                 traceError("error (VdpOutputSurfacePutBitsIndexed): gl error %d\n", gl_error);
                 return VDP_STATUS_ERROR;
@@ -1015,6 +1029,7 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
     default:
         traceError("error (VdpOutputSurfacePutBitsIndexed): unsupported indexed format %s\n",
                    reverse_indexed_format(source_indexed_format));
+        pthread_mutex_unlock(&surfData->mutex);
         return VDP_STATUS_INVALID_INDEXED_FORMAT;
     }
 }
@@ -1262,7 +1277,6 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
             glTexCoord2i(srcVideoRect.x0, srcVideoRect.y1);
             glVertex2f(dstVideoRect.x0, dstVideoRect.y1);
         glEnd();
-
     } else {
         // fall back to software convertion
         // TODO: make sure not to do scaling in software, only colorspace conversion
@@ -2208,6 +2222,9 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
         return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     VdpDeviceData *deviceData = srcSurfData->device;
 
+    pthread_mutex_lock(&srcSurfData->mutex);
+    pthread_mutex_lock(&dstSurfData->mutex);
+
     const int dstWidth = dstSurfData->width;
     const int dstHeight = dstSurfData->height;
     const int srcWidth = srcSurfData->width;
@@ -2220,10 +2237,16 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
 
     // select blend functions
     struct blend_state_struct bs = vdpBlendStateToGLBlendState(blend_state);
-    if (bs.invalid_func)
+    if (bs.invalid_func) {
+        pthread_mutex_unlock(&dstSurfData->mutex);
+        pthread_mutex_unlock(&srcSurfData->mutex);
         return VDP_STATUS_INVALID_BLEND_FACTOR;
-    if (bs.invalid_eq)
+    }
+    if (bs.invalid_eq) {
+        pthread_mutex_unlock(&dstSurfData->mutex);
+        pthread_mutex_unlock(&srcSurfData->mutex);
         return VDP_STATUS_INVALID_BLEND_EQUATION;
+    }
 
     glx_context_push_thread_local(deviceData);
     glBindFramebuffer(GL_FRAMEBUFFER, dstSurfData->fbo_id);
@@ -2266,6 +2289,8 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
 
     GLenum gl_error = glGetError();
     glx_context_pop();
+    pthread_mutex_unlock(&dstSurfData->mutex);
+    pthread_mutex_unlock(&srcSurfData->mutex);
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpOutputSurfaceRenderOutputSurface): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
@@ -2298,6 +2323,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
         return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     VdpDeviceData *deviceData = srcSurfData->device;
 
+    pthread_mutex_lock(&dstSurfData->mutex);
     VdpRect srcRect = {0, 0, srcSurfData->width, srcSurfData->height};
     VdpRect dstRect = {0, 0, dstSurfData->width, dstSurfData->height};
     if (source_rect)
@@ -2307,10 +2333,14 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
 
     // select blend functions
     struct blend_state_struct bs = vdpBlendStateToGLBlendState(blend_state);
-    if (bs.invalid_func)
+    if (bs.invalid_func) {
+        pthread_mutex_unlock(&dstSurfData->mutex);
         return VDP_STATUS_INVALID_BLEND_FACTOR;
-    if (bs.invalid_eq)
+    }
+    if (bs.invalid_eq) {
+        pthread_mutex_unlock(&dstSurfData->mutex);
         return VDP_STATUS_INVALID_BLEND_EQUATION;
+    }
 
     glx_context_push_thread_local(deviceData);
     glBindFramebuffer(GL_FRAMEBUFFER, dstSurfData->fbo_id);
@@ -2362,6 +2392,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
 
     GLenum gl_error = glGetError();
     glx_context_pop();
+    pthread_mutex_unlock(&dstSurfData->mutex);
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpOutputSurfaceRenderBitmapSurface): gl error %d\n", gl_error);
         return VDP_STATUS_ERROR;
