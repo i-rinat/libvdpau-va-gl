@@ -113,7 +113,6 @@ do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
     pqueueData->queue.freelist[pqueueData->queue.head] = pqueueData->queue.firstfree;
     pqueueData->queue.firstfree = pqueueData->queue.head;
     pqueueData->queue.head = pqueueData->queue.item[pqueueData->queue.head].next;
-    pthread_mutex_unlock(&pqueueData->queue_mutex);
 
     glx_context_push_global(deviceData->display, pqueueData->target->drawable, pqueueData->target->glc);
 
@@ -185,6 +184,8 @@ do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
     GLenum gl_error = glGetError();
     glx_context_pop();
     pthread_mutex_unlock(&surfData->mutex);
+    pthread_mutex_unlock(&pqueueData->queue_mutex);
+
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpPresentationQueueDisplay): gl error %d\n", gl_error);
     }
@@ -380,14 +381,11 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
                                 uint32_t clip_width, uint32_t clip_height,
                                 VdpTime earliest_presentation_time)
 {
-    VdpOutputSurfaceData *surfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
-    VdpPresentationQueueData *pqData = handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
-    if (NULL == surfData || NULL == pqData)
-        return VDP_STATUS_INVALID_HANDLE;
-    if (pqData->device != surfData->device)
-        return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
 
-    pthread_mutex_lock(&surfData->mutex);
+    VdpPresentationQueueData *pqData = handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
+    if (NULL == pqData)
+        return VDP_STATUS_INVALID_HANDLE;
+
     // push work to queue
     pthread_mutex_lock(&pqData->queue_mutex);
     while (pqData->queue.used >= PRESENTATION_QUEUE_LENGTH) {
@@ -396,8 +394,17 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
         usleep(10*1000);
         pthread_mutex_lock(&pqData->queue_mutex);
     }
-    pqData->queue.used ++;
 
+    VdpOutputSurfaceData *surfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
+    if (NULL == surfData) {
+        pthread_mutex_unlock(&pqData->queue_mutex);
+        return VDP_STATUS_INVALID_HANDLE;
+    }
+    if (pqData->device != surfData->device)
+        return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+    pthread_mutex_lock(&surfData->mutex);
+
+    pqData->queue.used ++;
     int new_item = pqData->queue.firstfree;
     assert(new_item != -1);
     pqData->queue.firstfree = pqData->queue.freelist[new_item];
