@@ -205,8 +205,6 @@ presentation_thread(void *param)
         while (1) {
             int ret = pthread_cond_timedwait(&pqData->new_work_available, &pqData->queue_mutex,
                                              &target_time);
-            if (pqData->turning_off)
-                goto quit;
             if (ret != 0 && ret != ETIMEDOUT) {
                 traceError("presentation_thread: pthread_cond_timedwait failed with code %d\n", ret);
                 goto quit;
@@ -312,8 +310,7 @@ softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
     if (NULL == pqData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    pqData->turning_off = 1;
-    pthread_cond_broadcast(&pqData->new_work_available);
+    pthread_cancel(pqData->worker_thread);
 
     if (0 != pthread_join(pqData->worker_thread, NULL)) {
         traceError("VdpPresentationQueueDestroy: failed to stop worker thread");
