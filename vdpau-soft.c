@@ -564,13 +564,24 @@ static
 void
 h264_translate_iq_matrix(VAIQMatrixBufferH264 *iq_matrix, const VdpPictureInfoH264 *vdppi)
 {
-    for (int j = 0; j < 6; j ++)
-        for (int k = 0; k < 16; k ++)
-            iq_matrix->ScalingList4x4[j][k] = vdppi->scaling_lists_4x4[j][k];
+    
+    if(sizeof(iq_matrix->ScalingList4x4) == sizeof(vdppi->scaling_lists_4x4))
+        memcpy(iq_matrix->ScalingList4x4, vdppi->scaling_lists_4x4, sizeof(iq_matrix->ScalingList4x4));
+    else
+    {
+        for (int j = 0; j < 6; j ++)
+            for (int k = 0; k < 16; k ++)
+                iq_matrix->ScalingList4x4[j][k] = vdppi->scaling_lists_4x4[j][k];
+    }
 
-    for (int j = 0; j < 2; j ++)
-        for (int k = 0; k < 64; k ++)
-            iq_matrix->ScalingList8x8[j][k] = vdppi->scaling_lists_8x8[j][k];
+    if(sizeof(iq_matrix->ScalingList8x8) == sizeof(vdppi->scaling_lists_8x8))
+        memcpy(iq_matrix->ScalingList8x8, vdppi->scaling_lists_8x8, sizeof(iq_matrix->ScalingList8x8));
+    else
+    {
+        for (int j = 0; j < 2; j ++)
+            for (int k = 0; k < 64; k ++)
+                iq_matrix->ScalingList8x8[j][k] = vdppi->scaling_lists_8x8[j][k];
+    }
 }
 
 VdpStatus
