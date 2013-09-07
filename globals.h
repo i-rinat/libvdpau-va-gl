@@ -3,7 +3,7 @@
  *
  * This file is part of libvdpau-va-gl
  *
- * libvdpau-va-gl distributed under the terms of LGPLv3. See COPYING for details.
+ * libvdpau-va-gl is distributed under the terms of the LGPLv3. See COPYING for details.
  */
 
 #ifndef __GLOBALS_H
@@ -18,11 +18,13 @@ struct global_data {
 
     /** @brief tunables */
     struct {
-        int buggy_XCloseDisplay;
-        int show_watermark;
-        int log_thread_id;
-        int log_call_duration;
-        int avoid_va;
+        int buggy_XCloseDisplay;    ///< avoid calling XCloseDisplay
+        int show_watermark;         ///< show picture over output
+        int log_thread_id;          ///< include thread id into the log output
+        int log_call_duration;      ///< measure call duration
+        int log_pq_delay;           ///< measure delay between queueing and displaying presentation queue
+                                    ///< introduces
+        int avoid_va;               ///< do not use VA-API video decoding acceleration even if available
     } quirks;
 };
 

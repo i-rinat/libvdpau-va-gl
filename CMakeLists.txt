@@ -25,6 +25,7 @@ set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/vdpau" CACHE PATH 
 
 add_library (${DRIVER_NAME} SHARED
 	vdpau-soft.c
+	vdpau-presentation.c
 	vdpau-entry.c
 	vdpau-trace.c
 	vdpau-locking.c

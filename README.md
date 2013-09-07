@@ -45,6 +45,7 @@ variables that control runtime behavior of va_gl driver.
    * `ShowWatermark`	Enables displaying string "va_gl" in bottom-right corner of window
    * `LogThreadId`		Adds thread id to trace output
    * `LogCallDuration`	Adds call duration to trace output
+   * `LogPqDelay`	Adds presentation queue introduced delay to trace output
    * `AvoidVA`          Makes libvdpau-va-gl NOT use VA-API
 
 Parameters of VDPAU_QUIRKS are actually case-insensetive.

@@ -3,7 +3,7 @@
  *
  * This file is part of libvdpau-va-gl
  *
- * libvdpau-va-gl distributed under the terms of LGPLv3. See COPYING for details.
+ * libvdpau-va-gl is distributed under the terms of the LGPLv3. See COPYING for details.
  */
 
 #ifndef __VDPAU_LOCKING_H
@@ -82,5 +82,8 @@ VdpGetProcAddress lockedVdpGetProcAddress;
 
 Bool locked_glXMakeCurrent(Display *dpy, GLXDrawable drawable, GLXContext ctx);
 void locked_glXSwapBuffers(Display *dpy, GLXDrawable drawable);
+
+void acquire_global_lock(void);
+void release_global_lock(void);
 
 #endif /* __VDPAU_LOCKING_H */
