@@ -30,8 +30,9 @@ typedef uint32_t    HandleType;
     to use type casting to determine handle type and parent.
 */
 typedef struct {
-    HandleType type;        ///< handle type
-    void      *parent;      ///< link to parent
+    HandleType      type;   ///< handle type
+    void           *parent; ///< link to parent
+    pthread_mutex_t lock;
 } VdpGenericHandle;
 
 void    handle_initialize_storage(void);

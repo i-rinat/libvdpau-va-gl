@@ -6,9 +6,11 @@
  * libvdpau-va-gl is distributed under the terms of the LGPLv3. See COPYING for details.
  */
 
+#define _XOPEN_SOURCE   500
 #include "handle-storage.h"
 #include <pthread.h>
 #include <glib.h>
+#include <unistd.h>
 
 GPtrArray *vdpHandles;
 GHashTable *xdpy_copies;            //< Copies of X Display connections
@@ -44,21 +46,22 @@ static
 int
 _is_valid(int handle, HandleType type)
 {
-    // return false if index is invalid
+    VdpGenericHandle *gh;
+    // return false if index is out of range
     if (handle < 1 || handle >= (int)vdpHandles->len)
         return 0;
 
     // return false if entry was deleted
-    if (NULL == g_ptr_array_index(vdpHandles, handle))
+    gh = g_ptr_array_index(vdpHandles, handle);
+    if (!gh)
          return 0;
 
-    // otherwise return true if called want any handle
+    // return true if caller wants any handle type
     if (HANDLETYPE_ANY == type)
         return 1;
 
-    // else check handle type
-    HandleType elementType = ((VdpGenericHandle *)g_ptr_array_index(vdpHandles, handle))->type;
-    if (elementType == type)
+    // check handle type
+    if (gh->type == type)
         return 1;
 
     return 0;
@@ -69,16 +72,17 @@ handle_acquire(int handle, HandleType type)
 {
     VdpGenericHandle *res = NULL;
 
-    pthread_mutex_lock(&lock);
-    if (handle < 1 || handle >= (int)vdpHandles->len)
-        goto quit;
-    res = g_ptr_array_index(vdpHandles, handle);
-    if (!res || HANDLETYPE_ANY == type)
-        goto quit;
-    if (type != res->type)
-        res = NULL;
+    while (1) {
+        pthread_mutex_lock(&lock);
+        if (!_is_valid(handle, type))
+            break;
+        res = g_ptr_array_index(vdpHandles, handle);
+        if (pthread_mutex_trylock(&res->lock) == 0)
+            break;
+        pthread_mutex_unlock(&lock);
+        usleep(1);
+    }
 
-quit:
     pthread_mutex_unlock(&lock);
     return res;
 }
@@ -86,8 +90,13 @@ quit:
 void
 handle_release(int handle)
 {
-    (void)handle;
-    // placeholder
+    pthread_mutex_lock(&lock);
+    if (handle > 0 && handle < (int)vdpHandles->len) {
+        VdpGenericHandle *gh = g_ptr_array_index(vdpHandles, handle);
+        if (gh)
+            pthread_mutex_unlock(&gh->lock);
+    }
+    pthread_mutex_unlock(&lock);
 }
 
 void

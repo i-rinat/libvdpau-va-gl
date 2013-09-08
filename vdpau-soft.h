@@ -10,6 +10,7 @@
 #define VDPAU_SOFT_H_
 
 #include <GL/glx.h>
+#include <pthread.h>
 #include <vdpau/vdpau.h>
 #include <va/va.h>
 #include "handle-storage.h"
@@ -21,31 +22,34 @@
 
 /** @brief VdpDevice object parameters */
 typedef struct {
-    HandleType  type;               ///< common type field
-    void       *self;               ///< link to device. For VdpDeviceData this is link to itself
-    int         refcount;
-    Display    *display;            ///< own X display connection
-    Display    *display_orig;       ///< supplied X display connection
-    int         screen;             ///< X screen
-    GLXContext  root_glc;           ///< master GL context
-    Window      root;               ///< X drawable (root window) used for offscreen drawing
-    VADisplay   va_dpy;             ///< VA display
-    int         va_available;       ///< 1 if VA-API available
-    int         va_version_major;
-    int         va_version_minor;
-    GLuint      watermark_tex_id;   ///< GL texture id for watermark
+    HandleType      type;           ///< common type field
+    void           *self;           ///< link to device. For VdpDeviceData this is link to itself
+    pthread_mutex_t lock;
+    int             refcount;
+    Display        *display;        ///< own X display connection
+    Display        *display_orig;   ///< supplied X display connection
+    int             screen;         ///< X screen
+    GLXContext      root_glc;       ///< master GL context
+    Window          root;           ///< X drawable (root window) used for offscreen drawing
+    VADisplay       va_dpy;         ///< VA display
+    int             va_available;   ///< 1 if VA-API available
+    int             va_version_major;
+    int             va_version_minor;
+    GLuint          watermark_tex_id;   ///< GL texture id for watermark
 } VdpDeviceData;
 
 /** @brief VdpVideoMixer object parameters */
 typedef struct {
     HandleType      type;       ///< handle type
     VdpDeviceData  *device;     ///< link to parent
+    pthread_mutex_t lock;
 } VdpVideoMixerData;
 
 /** @brief VdpOutputSurface object parameters */
 typedef struct {
     HandleType      type;               ///< handle type
     VdpDeviceData  *device;             ///< link to parent
+    pthread_mutex_t lock;
     VdpRGBAFormat   rgba_format;        ///< RGBA format of data stored
     GLuint          tex_id;             ///< associated GL texture id
     GLuint          fbo_id;             ///< framebuffer object id
@@ -65,6 +69,7 @@ typedef struct {
 typedef struct {
     HandleType      type;           ///< handle type
     VdpDeviceData  *device;         ///< link to parent
+    pthread_mutex_t lock;
     int             refcount;
     Drawable        drawable;       ///< X drawable to output to
     GLXContext      glc;            ///< GL context used for output
@@ -74,6 +79,7 @@ typedef struct {
 typedef struct {
     HandleType                      type;       ///< handle type
     VdpDeviceData                  *device;     ///< link to parent
+    pthread_mutex_t                 lock;
     VdpPresentationQueueTargetData *target;
     VdpColor                        bg_color;   ///< background color
 
@@ -100,6 +106,7 @@ typedef struct {
 typedef struct {
     HandleType      type;           ///< handle type
     VdpDeviceData  *device;         ///< link to parent
+    pthread_mutex_t lock;
     VdpChromaType   chroma_type;    ///< video chroma type
     uint32_t        width;
     uint32_t        stride;         ///< distance between first pixels of two consecutive rows (in pixels)
@@ -116,6 +123,7 @@ typedef struct {
 typedef struct {
     HandleType      type;               ///< handle type
     VdpDeviceData  *device;             ///< link to parent
+    pthread_mutex_t lock;
     VdpRGBAFormat   rgba_format;        ///< RGBA format of data stored
     GLuint          tex_id;             ///< GL texture id
     uint32_t        width;
@@ -134,6 +142,7 @@ typedef struct {
 typedef struct {
     HandleType          type;           ///< handle type
     VdpDeviceData      *device;         ///< link to parent
+    pthread_mutex_t     lock;
     VdpDecoderProfile   profile;        ///< decoder profile
     uint32_t            width;
     uint32_t            height;
