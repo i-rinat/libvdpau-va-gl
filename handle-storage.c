@@ -104,6 +104,9 @@ handle_expunge(int handle)
 {
     pthread_mutex_lock(&lock);
     if (_is_valid(handle, HANDLETYPE_ANY)) {
+        VdpGenericHandle *gh = g_ptr_array_index(vdpHandles, handle);
+        if (gh)
+            pthread_mutex_unlock(&gh->lock);
         g_ptr_array_index(vdpHandles, handle) = NULL;
     }
     pthread_mutex_unlock(&lock);
