@@ -36,7 +36,6 @@ typedef struct {
 
 void    handle_initialize_storage(void);
 int     handle_insert(void *data);
-int     handle_is_valid(int handle, HandleType type);
 void   *handle_acquire(int handle, HandleType type);
 void    handle_release(int handle);
 void    handle_expunge(int handle);
