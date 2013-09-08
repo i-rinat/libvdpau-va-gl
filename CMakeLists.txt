@@ -37,13 +37,12 @@ add_library (${DRIVER_NAME} SHARED
 	ctx-stack.c
 )
 
-add_library (xinitthreads SHARED xinitthreads.c)
-
 target_link_libraries (${DRIVER_NAME}
 	${SOMELIBS_LIBRARIES}
 )
 
-target_link_libraries (xinitthreads -lpthread -lX11)
+# add_library (xinitthreads SHARED xinitthreads.c)
+# target_link_libraries (xinitthreads -lpthread -lX11)
 
 set_target_properties (${DRIVER_NAME}
 	PROPERTIES
