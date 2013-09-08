@@ -528,8 +528,8 @@ softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_qu
         return VDP_STATUS_ERROR;
     }
 
-    free(pqTargetData);
     deviceData->refcount --;
     handle_expunge(presentation_queue_target);
+    free(pqTargetData);
     return VDP_STATUS_OK;
 }

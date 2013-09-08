@@ -1274,9 +1274,9 @@ softVdpVideoMixerDestroy(VdpVideoMixer mixer)
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = videoMixerData->device;
 
-    free(videoMixerData);
     deviceData->refcount --;
     handle_expunge(mixer);
+    free(videoMixerData);
     return VDP_STATUS_OK;
 }
 
@@ -1590,9 +1590,9 @@ softVdpVideoSurfaceDestroy(VdpVideoSurface surface)
     }
 
     glx_context_pop();
-    free(videoSurfData);
     deviceData->refcount --;
     handle_expunge(surface);
+    free(videoSurfData);
     return VDP_STATUS_OK;
 }
 
