@@ -55,18 +55,14 @@ softVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_
         return VDP_STATUS_INVALID_HANDLE;
 
     // TODO: use locking instead of busy loop
-    pthread_mutex_lock(&surfData->mutex);
     while (surfData->status != VDP_PRESENTATION_QUEUE_STATUS_IDLE) {
-        pthread_mutex_unlock(&surfData->mutex);
         usleep(1000);
         surfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
         if (!surfData)
             return VDP_STATUS_ERROR;
-        pthread_mutex_lock(&surfData->mutex);
     }
 
     *first_presentation_time = surfData->first_presentation_time;
-    pthread_mutex_unlock(&surfData->mutex);
     return VDP_STATUS_OK;
 }
 
@@ -86,10 +82,8 @@ softVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_que
     if (NULL == status)
         return VDP_STATUS_INVALID_POINTER;
 
-    pthread_mutex_lock(&surfData->mutex);
     *status = surfData->status;
     *first_presentation_time = surfData->first_presentation_time;
-    pthread_mutex_unlock(&surfData->mutex);
 
     return VDP_STATUS_OK;
 }
@@ -107,7 +101,6 @@ do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
     const uint32_t clip_width = pqueueData->queue.item[entry].clip_width;
     const uint32_t clip_height = pqueueData->queue.item[entry].clip_height;
 
-    pthread_mutex_lock(&surfData->mutex);
     // remove first entry from queue
     pqueueData->queue.used --;
     pqueueData->queue.freelist[pqueueData->queue.head] = pqueueData->queue.firstfree;
@@ -183,7 +176,6 @@ do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
 
     GLenum gl_error = glGetError();
     glx_context_pop();
-    pthread_mutex_unlock(&surfData->mutex);
     pthread_mutex_unlock(&pqueueData->queue_mutex);
 
     if (GL_NO_ERROR != gl_error) {
@@ -398,7 +390,7 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     }
     if (pqData->device != surfData->device)
         return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
-    pthread_mutex_lock(&surfData->mutex);
+    }
 
     pqData->queue.used ++;
     int new_item = pqData->queue.firstfree;
@@ -435,7 +427,6 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
         surfData->queued_at = timespec2vdptime(now);
     }
 
-    pthread_mutex_unlock(&surfData->mutex);
     pthread_cond_broadcast(&pqData->new_work_available);
 
     return VDP_STATUS_OK;
