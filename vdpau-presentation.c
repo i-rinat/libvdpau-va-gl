@@ -49,6 +49,7 @@ softVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_
         handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
     if (NULL == pqData)
         return VDP_STATUS_INVALID_HANDLE;
+    handle_release(presentation_queue);
 
     VdpOutputSurfaceData *surfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == surfData)
@@ -56,6 +57,7 @@ softVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_
 
     // TODO: use locking instead of busy loop
     while (surfData->status != VDP_PRESENTATION_QUEUE_STATUS_IDLE) {
+        handle_release(surface);
         usleep(1000);
         surfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
         if (!surfData)
@@ -63,6 +65,7 @@ softVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_
     }
 
     *first_presentation_time = surfData->first_presentation_time;
+    handle_release(surface);
     return VDP_STATUS_OK;
 }
 
@@ -72,18 +75,23 @@ softVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_que
                                            VdpPresentationQueueStatus *status,
                                            VdpTime *first_presentation_time)
 {
+    if (NULL == status)
+        return VDP_STATUS_INVALID_POINTER;
     VdpPresentationQueueData *pqData =
         handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
     if (NULL == pqData)
         return VDP_STATUS_INVALID_HANDLE;
     VdpOutputSurfaceData *surfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
-    if (NULL == surfData)
+    if (NULL == surfData) {
+        handle_release(presentation_queue);
         return VDP_STATUS_INVALID_HANDLE;
-    if (NULL == status)
-        return VDP_STATUS_INVALID_POINTER;
+    }
 
     *status = surfData->status;
     *first_presentation_time = surfData->first_presentation_time;
+
+    handle_release(presentation_queue);
+    handle_release(surface);
 
     return VDP_STATUS_OK;
 }
@@ -187,7 +195,11 @@ static
 void *
 presentation_thread(void *param)
 {
-    VdpPresentationQueueData *pqData = param;
+    VdpPresentationQueue presentation_queue = (VdpPresentationQueue)(size_t)param;
+    VdpPresentationQueueData *pqData =
+        handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
+    if (NULL == pqData)
+        return NULL;
     while (1) {
         struct timespec now;
         clock_gettime(CLOCK_REALTIME, &now);
@@ -195,6 +207,7 @@ presentation_thread(void *param)
 
         pthread_mutex_lock(&pqData->queue_mutex);
         while (1) {
+            handle_release(presentation_queue);
             int ret = pthread_cond_timedwait(&pqData->new_work_available, &pqData->queue_mutex,
                                              &target_time);
             if (ret != 0 && ret != ETIMEDOUT) {
@@ -204,6 +217,9 @@ presentation_thread(void *param)
 
             struct timespec now;
             clock_gettime(CLOCK_REALTIME, &now);
+            pqData = handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
+            if (!pqData)
+                goto quit;
             if (pqData->queue.head != -1) {
                 struct timespec ht = vdptime2timespec(pqData->queue.item[pqData->queue.head].t);
                 if (now.tv_sec > ht.tv_sec || (now.tv_sec == ht.tv_sec && now.tv_nsec > ht.tv_nsec)) {
@@ -240,12 +256,17 @@ softVdpPresentationQueueCreate(VdpDevice device,
 
     VdpPresentationQueueTargetData *targetData =
         handle_acquire(presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET);
-    if (NULL == targetData)
+    if (NULL == targetData) {
+        handle_release(device);
         return VDP_STATUS_INVALID_HANDLE;
+    }
 
     VdpPresentationQueueData *data = calloc(1, sizeof(VdpPresentationQueueData));
-    if (NULL == data)
+    if (NULL == data) {
+        handle_release(device);
+        handle_release(presentation_queue_target);
         return VDP_STATUS_RESOURCES;
+    }
 
     data->type = HANDLETYPE_PRESENTATION_QUEUE;
     data->device = deviceData;
@@ -264,33 +285,24 @@ softVdpPresentationQueueCreate(VdpDevice device,
     data->queue.used = 0;
     for (unsigned int k = 0; k < PRESENTATION_QUEUE_LENGTH; k ++) {
         data->queue.item[k].next = -1;
-        // other fields are zero due to calloc usage
+        // other fields are zero due to calloc
     }
     for (unsigned int k = 0; k < PRESENTATION_QUEUE_LENGTH - 1; k ++)
         data->queue.freelist[k] = k + 1;
     data->queue.freelist[PRESENTATION_QUEUE_LENGTH - 1] = -1;
     data->queue.firstfree = 0;
 
-    if (0 != pthread_mutex_init(&data->queue_mutex, NULL)) {
-        traceError("VdpPresentationQueueCreate: can't create mutex");
-        goto err;
-    }
-    if (0 != pthread_cond_init(&data->new_work_available, NULL)) {
-        traceError("VdpPresentationQueueCreate: can't create condition variable");
-        goto err;
-    }
+    pthread_mutex_init(&data->queue_mutex, NULL);
+    pthread_cond_init(&data->new_work_available, NULL);
 
-    // fire up worker thread
-    if (0 != pthread_create(&data->worker_thread, NULL, presentation_thread, (void *)data)) {
-        traceError("VdpPresentationQueueCreate: failed to launch worker thread");
-        goto err;
-    }
+    // launch worker thread
+    pthread_create(&data->worker_thread, NULL, presentation_thread,
+                   (void *)(size_t)(*presentation_queue));
 
+    // TODO: wait for worker thread to start accepting broadcasts
+    handle_release(device);
+    handle_release(presentation_queue_target);
     return VDP_STATUS_OK;
-
-err:
-    free(data);
-    return VDP_STATUS_RESOURCES;
 }
 
 VdpStatus
@@ -305,6 +317,7 @@ softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 
     if (0 != pthread_join(pqData->worker_thread, NULL)) {
         traceError("VdpPresentationQueueDestroy: failed to stop worker thread");
+        handle_release(presentation_queue);
         return VDP_STATUS_ERROR;
     }
 
@@ -334,6 +347,7 @@ softVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_que
         pqData->bg_color.alpha = 0.0;
     }
 
+    handle_release(presentation_queue);
     return VDP_STATUS_OK;
 }
 
@@ -346,10 +360,13 @@ softVdpPresentationQueueGetBackgroundColor(VdpPresentationQueue presentation_que
     if (NULL == pqData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    if (NULL == background_color)
+    if (NULL == background_color) {
+        handle_release(presentation_queue);
         return VDP_STATUS_INVALID_POINTER;
+    }
     *background_color = pqData->bg_color;
 
+    handle_release(presentation_queue);
     return VDP_STATUS_OK;
 }
 
@@ -378,17 +395,24 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     pthread_mutex_lock(&pqData->queue_mutex);
     while (pqData->queue.used >= PRESENTATION_QUEUE_LENGTH) {
         // wait while queue is full
+        // TODO: check for deadlock here
+        // TODO: is there a way to drop pqData->queue_mutex, and use only pqData->lock?
         pthread_mutex_unlock(&pqData->queue_mutex);
+        handle_release(presentation_queue);
         usleep(10*1000);
+        pqData = handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
         pthread_mutex_lock(&pqData->queue_mutex);
     }
 
     VdpOutputSurfaceData *surfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == surfData) {
         pthread_mutex_unlock(&pqData->queue_mutex);
+        handle_release(presentation_queue);
         return VDP_STATUS_INVALID_HANDLE;
     }
-    if (pqData->device != surfData->device)
+    if (pqData->device != surfData->device) {
+        handle_release(surface);
+        handle_release(presentation_queue);
         return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     }
 
@@ -429,6 +453,9 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
 
     pthread_cond_broadcast(&pqData->new_work_available);
 
+    handle_release(presentation_queue);
+    handle_release(surface);
+
     return VDP_STATUS_OK;
 }
 
@@ -441,8 +468,10 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
         return VDP_STATUS_INVALID_HANDLE;
 
     VdpPresentationQueueTargetData *data = calloc(1, sizeof(VdpPresentationQueueTargetData));
-    if (NULL == data)
+    if (NULL == data) {
+        handle_release(device);
         return VDP_STATUS_RESOURCES;
+    }
 
     data->type = HANDLETYPE_PRESENTATION_QUEUE_TARGET;
     data->device = deviceData;
@@ -457,6 +486,7 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
         traceError("error (softVdpPresentationQueueTargetCreateX11): glXChooseVisual failed\n");
         free(data);
         pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
+        handle_release(device);
         return VDP_STATUS_ERROR;
     }
 
@@ -466,6 +496,7 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
     *target = handle_insert(data);
     pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
 
+    handle_release(device);
     return VDP_STATUS_OK;
 }
 
@@ -481,6 +512,7 @@ softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_qu
     if (0 != pqTargetData->refcount) {
         traceError("warning (softVdpPresentationQueueTargetDestroy): non-zero reference"
                    "count (%d)\n", pqTargetData->refcount);
+        handle_release(presentation_queue_target);
         return VDP_STATUS_ERROR;
     }
 
@@ -492,6 +524,7 @@ softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_qu
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpPresentationQueueTargetDestroy): gl error %d\n", gl_error);
+        handle_release(presentation_queue_target);
         return VDP_STATUS_ERROR;
     }
 

@@ -69,6 +69,7 @@ softVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, Vdp
                                 uint32_t *max_level, uint32_t *max_macroblocks,
                                 uint32_t *max_width, uint32_t *max_height)
 {
+    VdpStatus err_code;
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -76,7 +77,8 @@ softVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, Vdp
     if (NULL == is_supported || NULL == max_level || NULL == max_macroblocks ||
         NULL == max_width || NULL == max_height)
     {
-        return VDP_STATUS_INVALID_POINTER;
+        err_code = VDP_STATUS_INVALID_POINTER;
+        goto quit;
     }
 
     *max_level = 0;
@@ -86,18 +88,22 @@ softVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, Vdp
 
     if (! deviceData->va_available) {
         *is_supported = 0;
-        return VDP_STATUS_OK;
+        err_code = VDP_STATUS_OK;
+        goto quit;
     }
 
     VAProfile *va_profile_list = malloc(sizeof(VAProfile) * vaMaxNumProfiles(deviceData->va_dpy));
-    if (NULL == va_profile_list)
-        return VDP_STATUS_RESOURCES;
+    if (NULL == va_profile_list) {
+        err_code = VDP_STATUS_RESOURCES;
+        goto quit;
+    }
 
     int num_profiles;
     VAStatus status = vaQueryConfigProfiles(deviceData->va_dpy, va_profile_list, &num_profiles);
     if (VA_STATUS_SUCCESS != status) {
         free(va_profile_list);
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
     }
 
     struct {
@@ -210,24 +216,31 @@ softVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, Vdp
         break;
     }
 
-    return VDP_STATUS_OK;
+    err_code = VDP_STATUS_OK;
+quit:
+    handle_release(device);
+    return err_code;
 }
 
 VdpStatus
 softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width, uint32_t height,
                      uint32_t max_references, VdpDecoder *decoder)
 {
-    VdpStatus retval = VDP_STATUS_ERROR;
+    VdpStatus err_code;
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
-    if (!deviceData->va_available)
-        return VDP_STATUS_INVALID_DECODER_PROFILE;
+    if (!deviceData->va_available) {
+        err_code = VDP_STATUS_INVALID_DECODER_PROFILE;
+        goto quit;
+    }
     VADisplay va_dpy = deviceData->va_dpy;
 
     VdpDecoderData *data = calloc(1, sizeof(VdpDecoderData));
-    if (NULL == data)
-        return VDP_STATUS_RESOURCES;
+    if (NULL == data) {
+        err_code = VDP_STATUS_RESOURCES;
+        goto quit;
+    }
 
     data->type = HANDLETYPE_DECODER;
     data->device = deviceData;
@@ -265,8 +278,8 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
         default:
             traceError("error (softVdpDecoderCreate): decoder %s not implemented\n",
                        reverse_decoder_profile(profile));
-            retval = VDP_STATUS_INVALID_DECODER_PROFILE;
-            goto error;
+            err_code = VDP_STATUS_INVALID_DECODER_PROFILE;
+            goto quit_free_data;
         }
 
         status = vaCreateConfig(va_dpy, va_profile, VAEntrypointVLD, NULL, 0, &data->config_id);
@@ -274,8 +287,10 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
             break;
     }
 
-    if (VA_STATUS_SUCCESS != status)
-        goto error;
+    if (VA_STATUS_SUCCESS != status) {
+        err_code = VDP_STATUS_ERROR;
+        goto quit_free_data;
+    }
 
     // Create surfaces. All video surfaces created here, rather than in VdpVideoSurfaceCreate.
     // VAAPI requires surfaces to be bound with context on its creation time, while VDPAU allows
@@ -290,21 +305,29 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
     status = vaCreateSurfaces(va_dpy, width, height, VA_RT_FORMAT_YUV420,
         data->num_render_targets, data->render_targets);
 #endif
-    if (VA_STATUS_SUCCESS != status)
-        goto error;
+    if (VA_STATUS_SUCCESS != status) {
+        err_code = VDP_STATUS_ERROR;
+        goto quit_free_data;
+    }
 
     status = vaCreateContext(va_dpy, data->config_id, width, height, VA_PROGRESSIVE,
         data->render_targets, data->num_render_targets, &data->context_id);
-    if (VA_STATUS_SUCCESS != status)
-        goto error;
+    if (VA_STATUS_SUCCESS != status) {
+        err_code = VDP_STATUS_ERROR;
+        goto quit_free_data;
+    }
 
     deviceData->refcount ++;
     *decoder = handle_insert(data);
 
-    return VDP_STATUS_OK;
-error:
+    err_code = VDP_STATUS_OK;
+    goto quit;
+
+quit_free_data:
     free(data);
-    return retval;
+quit:
+    handle_release(device);
+    return err_code;
 }
 
 VdpStatus
@@ -332,18 +355,24 @@ VdpStatus
 softVdpDecoderGetParameters(VdpDecoder decoder, VdpDecoderProfile *profile,
                             uint32_t *width, uint32_t *height)
 {
+    VdpStatus err_code;
     VdpDecoderData *decoderData = handle_acquire(decoder, HANDLETYPE_DECODER);
     if (NULL == decoderData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    if (NULL == profile || NULL == width || NULL == height)
-        return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == profile || NULL == width || NULL == height) {
+        err_code = VDP_STATUS_INVALID_HANDLE;
+        goto quit;
+    }
 
     *profile = decoderData->profile;
     *width   = decoderData->width;
     *height  = decoderData->height;
 
-    return VDP_STATUS_OK;
+    err_code = VDP_STATUS_OK;
+quit:
+    handle_release(decoder);
+    return err_code;
 }
 
 static
@@ -416,6 +445,7 @@ h264_translate_reference_frames(VdpVideoSurfaceData *dstSurfData, VdpDecoderData
 
         va_ref->TopFieldOrderCnt    = vdp_ref->field_order_cnt[0];
         va_ref->BottomFieldOrderCnt = vdp_ref->field_order_cnt[1];
+        handle_release(vdp_ref->surface);
     }
 
     return VDP_STATUS_OK;
@@ -487,10 +517,13 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                      VdpPictureInfo const *picture_info, uint32_t bitstream_buffer_count,
                      VdpBitstreamBuffer const *bitstream_buffers)
 {
+    VdpStatus err_code;
     VdpDecoderData *decoderData = handle_acquire(decoder, HANDLETYPE_DECODER);
     VdpVideoSurfaceData *dstSurfData = handle_acquire(target, HANDLETYPE_VIDEO_SURFACE);
-    if (NULL == decoderData || NULL == dstSurfData)
-        return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == decoderData || NULL == dstSurfData) {
+        err_code = VDP_STATUS_INVALID_HANDLE;
+        goto quit;
+    }
     VdpDeviceData *deviceData = decoderData->device;
     VADisplay va_dpy = deviceData->va_dpy;
     VAStatus status;
@@ -511,18 +544,27 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
 
         status = vaCreateBuffer(va_dpy, decoderData->context_id, VAPictureParameterBufferType,
             sizeof(VAPictureParameterBufferH264), 1, NULL, &pic_param_buf);
-        if (VA_STATUS_SUCCESS != status)
-            goto error;
+        if (VA_STATUS_SUCCESS != status) {
+            err_code = VDP_STATUS_ERROR;
+            goto quit;
+        }
 
         status = vaMapBuffer(va_dpy, pic_param_buf, (void **)&pic_param);
-        if (VA_STATUS_SUCCESS != status)
-            goto error;
+        if (VA_STATUS_SUCCESS != status) {
+            err_code = VDP_STATUS_ERROR;
+            goto quit;
+        }
 
         vs = h264_translate_reference_frames(dstSurfData, decoderData, pic_param, vdppi);
-        if (VDP_STATUS_RESOURCES == vs)
-            goto error_no_surfaces_left;
-        if (VDP_STATUS_OK != vs)
-            goto error;
+        if (VDP_STATUS_RESOURCES == vs) {
+            traceError("error (softVdpDecoderRender): no surfaces left in buffer\n");
+            err_code = VDP_STATUS_RESOURCES;
+            goto quit;
+        }
+        if (VDP_STATUS_OK != vs) {
+            err_code = VDP_STATUS_ERROR;
+            goto quit;
+        }
 
         h264_translate_pic_param(pic_param, decoderData->width, decoderData->height, vdppi, level);
         vaUnmapBuffer(va_dpy, pic_param_buf);
@@ -533,26 +575,36 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
 
         status = vaCreateBuffer(va_dpy, decoderData->context_id, VAIQMatrixBufferType,
             sizeof(VAIQMatrixBufferH264), 1, NULL, &iq_matrix_buf);
-        if (VA_STATUS_SUCCESS != status)
-            goto error;
+        if (VA_STATUS_SUCCESS != status) {
+            err_code = VDP_STATUS_ERROR;
+            goto quit;
+        }
 
         status = vaMapBuffer(va_dpy, iq_matrix_buf, (void **)&iq_matrix);
-        if (VA_STATUS_SUCCESS != status)
-            goto error;
+        if (VA_STATUS_SUCCESS != status) {
+            err_code = VDP_STATUS_ERROR;
+            goto quit;
+        }
 
         h264_translate_iq_matrix(iq_matrix, vdppi);
         vaUnmapBuffer(va_dpy, iq_matrix_buf);
 
         // send data to decoding hardware
         status = vaBeginPicture(va_dpy, decoderData->context_id, dstSurfData->va_surf);
-        if (VA_STATUS_SUCCESS != status)
-            goto error;
+        if (VA_STATUS_SUCCESS != status) {
+            err_code = VDP_STATUS_ERROR;
+            goto quit;
+        }
         status = vaRenderPicture(va_dpy, decoderData->context_id, &pic_param_buf, 1);
-        if (VA_STATUS_SUCCESS != status)
-            goto error;
+        if (VA_STATUS_SUCCESS != status) {
+            err_code = VDP_STATUS_ERROR;
+            goto quit;
+        }
         status = vaRenderPicture(va_dpy, decoderData->context_id, &iq_matrix_buf, 1);
-        if (VA_STATUS_SUCCESS != status)
-            goto error;
+        if (VA_STATUS_SUCCESS != status) {
+            err_code = VDP_STATUS_ERROR;
+            goto quit;
+        }
 
         vaDestroyBuffer(va_dpy, pic_param_buf);
         vaDestroyBuffer(va_dpy, iq_matrix_buf);
@@ -563,8 +615,10 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
             total_bitstream_bytes += bitstream_buffers[k].bitstream_bytes;
 
         uint8_t *merged_bitstream = malloc(total_bitstream_bytes);
-        if (NULL == merged_bitstream)
-            goto error_resources;
+        if (NULL == merged_bitstream) {
+            err_code = VDP_STATUS_RESOURCES;
+            goto quit;
+        }
 
         do {
             unsigned char *ptr = merged_bitstream;
@@ -584,8 +638,11 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         rbsp_state_t st_g;      // reference, global state
         rbsp_attach_buffer(&st_g, merged_bitstream, total_bitstream_bytes);
         int nal_offset = rbsp_navigate_to_nal_unit(&st_g);
-        if (nal_offset < 0)
-            goto error_no_nal_header;
+        if (nal_offset < 0) {
+            traceError("error (softVdpDecoderRender): no NAL header\n");
+            err_code = VDP_STATUS_ERROR;
+            goto quit;
+        }
 
         do {
             VASliceParameterBufferH264 sp_h264;
@@ -614,21 +671,29 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
             VABufferID slice_parameters_buf;
             status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceParameterBufferType,
                 sizeof(VASliceParameterBufferH264), 1, &sp_h264, &slice_parameters_buf);
-            if (VA_STATUS_SUCCESS != status)
-                goto error;
+            if (VA_STATUS_SUCCESS != status) {
+                err_code = VDP_STATUS_ERROR;
+                goto quit;
+            }
             status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_parameters_buf, 1);
-            if (VA_STATUS_SUCCESS != status)
-                goto error;
+            if (VA_STATUS_SUCCESS != status) {
+                err_code = VDP_STATUS_ERROR;
+                goto quit;
+            }
 
             VABufferID slice_buf;
             status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceDataBufferType,
                 sp_h264.slice_data_size, 1, merged_bitstream + nal_offset, &slice_buf);
-            if (VA_STATUS_SUCCESS != status)
-                goto error;
+            if (VA_STATUS_SUCCESS != status) {
+                err_code = VDP_STATUS_ERROR;
+                goto quit;
+            }
 
             status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_buf, 1);
-            if (VA_STATUS_SUCCESS != status)
-                goto error;
+            if (VA_STATUS_SUCCESS != status) {
+                err_code = VDP_STATUS_ERROR;
+                goto quit;
+            }
 
             vaDestroyBuffer(va_dpy, slice_parameters_buf);
             vaDestroyBuffer(va_dpy, slice_buf);
@@ -639,28 +704,24 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         } while (1);
 
         status = vaEndPicture(va_dpy, decoderData->context_id);
-        if (VA_STATUS_SUCCESS != status)
-            goto error;
+        if (VA_STATUS_SUCCESS != status) {
+            err_code = VDP_STATUS_ERROR;
+            goto quit;
+        }
 
         free(merged_bitstream);
     } else {
         traceError("error (softVdpDecoderRender): no implementation for profile %s\n",
                    reverse_decoder_profile(decoderData->profile));
-        return VDP_STATUS_NO_IMPLEMENTATION;
+        err_code = VDP_STATUS_NO_IMPLEMENTATION;
+        goto quit;
     }
 
-    return VDP_STATUS_OK;
-error:
-    traceError("error (softVdpDecoderRender): something gone wrong\n");
-    return VDP_STATUS_ERROR;
-error_no_nal_header:
-    traceError("error (softVdpDecoderRender): no NAL header\n");
-    return VDP_STATUS_ERROR;
-error_resources:
-    return VDP_STATUS_RESOURCES;
-error_no_surfaces_left:
-    traceError("error (softVdpDecoderRender): no surfaces left in buffer\n");
-    return VDP_STATUS_ERROR;
+    err_code = VDP_STATUS_OK;
+quit:
+    handle_release(decoder);
+    handle_release(target);
+    return err_code;
 }
 
 VdpStatus
@@ -668,12 +729,15 @@ softVdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
                                       VdpBool *is_supported, uint32_t *max_width,
                                       uint32_t *max_height)
 {
+    VdpStatus err_code;
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    if (NULL == is_supported || NULL == max_width || NULL == max_height)
-        return VDP_STATUS_INVALID_POINTER;
+    if (NULL == is_supported || NULL == max_width || NULL == max_height) {
+        err_code = VDP_STATUS_INVALID_POINTER;
+        goto quit;
+    }
 
     switch (surface_rgba_format) {
     case VDP_RGBA_FORMAT_B8G8R8A8:
@@ -694,13 +758,17 @@ softVdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
     GLenum gl_error = glGetError();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpOutputSurfaceQueryCapabilities): gl error %d\n", gl_error);
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
     }
 
     *max_width = max_texture_size;
     *max_height = max_texture_size;
 
-    return VDP_STATUS_OK;
+    err_code = VDP_STATUS_OK;
+quit:
+    handle_release(device);
+    return err_code;
 }
 
 VdpStatus
@@ -738,17 +806,22 @@ VdpStatus
 softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
                            uint32_t height, VdpOutputSurface *surface)
 {
+    VdpStatus err_code;
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
 
     //TODO: figure out reasonable limits
-    if (width > 4096 || height > 4096)
-        return VDP_STATUS_INVALID_SIZE;
+    if (width > 4096 || height > 4096) {
+        err_code = VDP_STATUS_INVALID_SIZE;
+        goto quit;
+    }
 
     VdpOutputSurfaceData *data = calloc(1, sizeof(VdpOutputSurfaceData));
-    if (NULL == data)
-        return VDP_STATUS_RESOURCES;
+    if (NULL == data) {
+        err_code = VDP_STATUS_RESOURCES;
+        goto quit;
+    }
 
     switch (rgba_format) {
     case VDP_RGBA_FORMAT_B8G8R8A8:
@@ -785,7 +858,8 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
         traceError("error (VdpOutputSurfaceCreate): %s is not implemented\n",
                    reverse_rgba_format(rgba_format));
         free(data);
-        return VDP_STATUS_INVALID_RGBA_FORMAT;
+        err_code = VDP_STATUS_INVALID_RGBA_FORMAT;
+        goto quit;
     }
 
     data->type = HANDLETYPE_OUTPUT_SURFACE;
@@ -814,7 +888,8 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
                    "framebuffer not ready, %d, %s\n", gl_status, gluErrorString(gl_status));
         glx_context_pop();
         free(data);
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
     }
 
     glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -826,17 +901,23 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpOutputSurfaceCreate): gl error %d\n", gl_error);
         free(data);
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
     }
 
     deviceData->refcount ++;
     *surface = handle_insert(data);
-    return VDP_STATUS_OK;
+
+    err_code = VDP_STATUS_OK;
+quit:
+    handle_release(device);
+    return err_code;
 }
 
 VdpStatus
 softVdpOutputSurfaceDestroy(VdpOutputSurface surface)
 {
+    VdpStatus err_code;
     VdpOutputSurfaceData *data = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
@@ -850,32 +931,43 @@ softVdpOutputSurfaceDestroy(VdpOutputSurface surface)
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpOutputSurfaceDestroy): gl error %d\n", gl_error);
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
     }
 
     handle_expunge(surface);
     deviceData->refcount --;
     free(data);
     return VDP_STATUS_OK;
+
+quit:
+    handle_release(surface);
+    return err_code;
 }
 
 VdpStatus
 softVdpOutputSurfaceGetParameters(VdpOutputSurface surface, VdpRGBAFormat *rgba_format,
                                   uint32_t *width, uint32_t *height)
 {
+    VdpStatus err_code;
     VdpOutputSurfaceData *surfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == surfData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    if (NULL == rgba_format || NULL == width || NULL == height)
-        return VDP_STATUS_INVALID_POINTER;
+    if (NULL == rgba_format || NULL == width || NULL == height) {
+        err_code = VDP_STATUS_INVALID_POINTER;
+        goto quit;
+    }
 
     // TODO: check surfData validity again
     *rgba_format = surfData->rgba_format;
     *width       = surfData->width;
     *height      = surfData->height;
 
-    return VDP_STATUS_OK;
+    err_code = VDP_STATUS_OK;
+quit:
+    handle_release(surface);
+    return err_code;
 }
 
 VdpStatus
@@ -883,6 +975,7 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
                                   void *const *destination_data,
                                   uint32_t const *destination_pitches)
 {
+    VdpStatus err_code;
     VdpOutputSurfaceData *srcSurfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == srcSurfData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -909,16 +1002,21 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpOutputSurfaceGetBitsNative): gl error %d\n", gl_error);
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
     }
 
-    return VDP_STATUS_OK;
+    err_code = VDP_STATUS_OK;
+quit:
+    handle_release(surface);
+    return err_code;
 }
 
 VdpStatus
 softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *source_data,
                                   uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
+    VdpStatus err_code;
     VdpOutputSurfaceData *dstSurfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == dstSurfData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -946,10 +1044,14 @@ softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *s
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpOutputSurfacePutBitsNative): gl error %d\n", gl_error);
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
     }
 
-    return VDP_STATUS_OK;
+    err_code = VDP_STATUS_OK;
+quit:
+    handle_release(surface);
+    return err_code;
 }
 
 VdpStatus
@@ -958,6 +1060,7 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
                                    VdpRect const *destination_rect,
                                    VdpColorTableFormat color_table_format, void const *color_table)
 {
+    VdpStatus err_code;
     VdpOutputSurfaceData *surfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == surfData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -969,7 +1072,8 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
 
     // there is no other formats anyway
     if (VDP_COLOR_TABLE_FORMAT_B8G8R8X8 != color_table_format) {
-        return VDP_STATUS_INVALID_COLOR_TABLE_FORMAT;
+        err_code = VDP_STATUS_INVALID_COLOR_TABLE_FORMAT;
+        goto quit;
     }
     const uint32_t *color_table32 = color_table;
 
@@ -982,8 +1086,10 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
             const uint32_t dstRectWidth = dstRect.x1 - dstRect.x0;
             const uint32_t dstRectHeight = dstRect.y1 - dstRect.y0;
             uint32_t *unpacked_buf = malloc(4 * dstRectWidth * dstRectHeight);
-            if (NULL == unpacked_buf)
-                return VDP_STATUS_RESOURCES;
+            if (NULL == unpacked_buf) {
+                err_code = VDP_STATUS_RESOURCES;
+                goto quit;
+            }
 
             for (unsigned int y = 0; y < dstRectHeight; y ++) {
                 const uint8_t *src_ptr = source_data[0];
@@ -1007,17 +1113,24 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
             glx_context_pop();
             if (GL_NO_ERROR != gl_error) {
                 traceError("error (VdpOutputSurfacePutBitsIndexed): gl error %d\n", gl_error);
-                return VDP_STATUS_ERROR;
+                err_code = VDP_STATUS_ERROR;
+                goto quit;
             }
 
-            return VDP_STATUS_OK;
+            err_code = VDP_STATUS_OK;
+            goto quit;
         } while (0);
         break;
     default:
         traceError("error (VdpOutputSurfacePutBitsIndexed): unsupported indexed format %s\n",
                    reverse_indexed_format(source_indexed_format));
-        return VDP_STATUS_INVALID_INDEXED_FORMAT;
+        err_code = VDP_STATUS_INVALID_INDEXED_FORMAT;
+        goto quit;
     }
+
+quit:
+    handle_release(surface);
+    return err_code;
 }
 
 VdpStatus
@@ -1076,6 +1189,7 @@ softVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
                         VdpVideoMixerParameter const *parameters,
                         void const *const *parameter_values, VdpVideoMixer *mixer)
 {
+    VdpStatus err_code;
     (void)feature_count; (void)features;    // TODO: mixer features
     (void)parameter_count; (void)parameters; (void)parameter_values;    // TODO: mixer parameters
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);
@@ -1083,15 +1197,21 @@ softVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
         return VDP_STATUS_INVALID_HANDLE;
 
     VdpVideoMixerData *data = calloc(1, sizeof(VdpVideoMixerData));
-    if (NULL == data)
-        return VDP_STATUS_RESOURCES;
+    if (NULL == data) {
+        err_code = VDP_STATUS_RESOURCES;
+        goto quit;
+    }
 
     data->type = HANDLETYPE_VIDEO_MIXER;
     data->device = deviceData;
 
     deviceData->refcount ++;
     *mixer = handle_insert(data);
-    return VDP_STATUS_OK;
+
+    err_code = VDP_STATUS_OK;
+quit:
+    handle_release(device);
+    return err_code;
 }
 
 VdpStatus
@@ -1172,6 +1292,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
                         VdpRect const *destination_rect, VdpRect const *destination_video_rect,
                         uint32_t layer_count, VdpLayer const *layers)
 {
+    VdpStatus err_code;
     (void)mixer;    // TODO: mixer should be used to get mixing parameters
     // TODO: current implementation ignores previous and future surfaces, using only current.
     // Is that acceptable for interlaced video? Will VAAPI handle deinterlacing?
@@ -1187,10 +1308,14 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         handle_acquire(video_surface_current, HANDLETYPE_VIDEO_SURFACE);
     VdpOutputSurfaceData *dstSurfData =
         handle_acquire(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
-    if (NULL == srcSurfData || NULL == dstSurfData)
-        return VDP_STATUS_INVALID_HANDLE;
-    if (srcSurfData->device != dstSurfData->device)
-        return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+    if (NULL == srcSurfData || NULL == dstSurfData) {
+        err_code = VDP_STATUS_INVALID_HANDLE;
+        goto quit;
+    }
+    if (srcSurfData->device != dstSurfData->device) {
+        err_code = VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+        goto quit;
+    }
     VdpDeviceData *deviceData = srcSurfData->device;
 
     VdpRect srcVideoRect = {0, 0, srcSurfData->width, srcSurfData->height};
@@ -1216,11 +1341,13 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
                                         &srcSurfData->va_glx);
             if (VA_STATUS_SUCCESS != status) {
                 glx_context_pop();
-                return VDP_STATUS_ERROR;
+                err_code = VDP_STATUS_ERROR;
+                goto quit;
             }
         }
 
         status = vaCopySurfaceGLX(deviceData->va_dpy, srcSurfData->va_glx, srcSurfData->va_surf, 0);
+        // TODO: check result of previous call
 
         glBindFramebuffer(GL_FRAMEBUFFER, dstSurfData->fbo_id);
         glMatrixMode(GL_PROJECTION);
@@ -1274,7 +1401,10 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         const uint32_t dstVideoStride = (dstVideoWidth & 3) ? (dstVideoWidth & ~3u) + 4
                                                             : dstVideoWidth;
         uint8_t *img_buf = malloc(dstVideoStride * dstVideoHeight * 4);
-        if (NULL == img_buf) return VDP_STATUS_RESOURCES;
+        if (NULL == img_buf) {
+            err_code = VDP_STATUS_RESOURCES;
+            goto quit;
+        }
 
         struct SwsContext *sws_ctx =
             sws_getContext(srcSurfData->width, srcSurfData->height, PIX_FMT_YUV420P,
@@ -1294,7 +1424,8 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         if (res != (int)dstVideoHeight) {
             traceError("error (softVdpVideoMixerRender): libswscale scaling failed\n");
             glx_context_pop();
-            return VDP_STATUS_ERROR;
+            err_code = VDP_STATUS_ERROR;
+            goto quit;
         }
 
         // copy converted image to texture
@@ -1313,10 +1444,15 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpVideoMixerRender): gl error %d\n", gl_error);
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
     }
 
-    return VDP_STATUS_OK;
+    err_code = VDP_STATUS_OK;
+quit:
+    handle_release(video_surface_current);
+    handle_release(destination_surface);
+    return err_code;
 }
 
 VdpStatus
@@ -1340,6 +1476,7 @@ softVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(VdpDevice device,
                                                     VdpBool *is_supported)
 {
     (void)device; (void)surface_chroma_type; (void)bits_ycbcr_format;
+    // TODO: implement
     *is_supported = 1;
     return VDP_STATUS_OK;
 }
@@ -1348,13 +1485,16 @@ VdpStatus
 softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t width,
                           uint32_t height, VdpVideoSurface *surface)
 {
+    VdpStatus err_code;
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
 
     VdpVideoSurfaceData *data = calloc(1, sizeof(VdpVideoSurfaceData));
-    if (NULL == data)
-        return VDP_STATUS_RESOURCES;
+    if (NULL == data) {
+        err_code = VDP_STATUS_RESOURCES;
+        goto quit;
+    }
 
     uint32_t const stride = (width % 4 == 0) ? width : (width & ~0x3UL) + 4;
     data->type = HANDLETYPE_VIDEO_SURFACE;
@@ -1383,7 +1523,8 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpVideoSurfaceCreate): gl error %d\n", gl_error);
         free(data);
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
     }
 
     if (deviceData->va_available) {
@@ -1402,14 +1543,18 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
             if (data->v_plane) free(data->v_plane);
             if (data->u_plane) free(data->u_plane);
             free(data);
-            return VDP_STATUS_RESOURCES;
+            err_code = VDP_STATUS_RESOURCES;
+            goto quit;
         }
     }
 
     deviceData->refcount ++;
     *surface = handle_insert(data);
 
-    return VDP_STATUS_OK;
+    err_code = VDP_STATUS_OK;
+quit:
+    handle_release(device);
+    return err_code;
 }
 
 VdpStatus
@@ -1428,6 +1573,7 @@ softVdpVideoSurfaceDestroy(VdpVideoSurface surface)
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpVideoSurfaceDestroy): gl error %d\n", gl_error);
         glx_context_pop();
+        handle_release(surface);
         return VDP_STATUS_ERROR;
     }
 
@@ -1458,13 +1604,16 @@ softVdpVideoSurfaceGetParameters(VdpVideoSurface surface, VdpChromaType *chroma_
     if (NULL == videoSurf)
         return VDP_STATUS_INVALID_HANDLE;
 
-    if (NULL == chroma_type || NULL == width || NULL == height)
+    if (NULL == chroma_type || NULL == width || NULL == height) {
+        handle_release(surface);
         return VDP_STATUS_INVALID_POINTER;
+    }
 
     *chroma_type = videoSurf->chroma_type;
     *width       = videoSurf->width;
     *height      = videoSurf->height;
 
+    handle_release(surface);
     return VDP_STATUS_OK;
 }
 
@@ -1472,8 +1621,10 @@ VdpStatus
 softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destination_ycbcr_format,
                                 void *const *destination_data, uint32_t const *destination_pitches)
 {
+    VdpStatus err_code;
     VdpVideoSurfaceData *srcSurfData = handle_acquire(surface, HANDLETYPE_VIDEO_SURFACE);
-    if (NULL == srcSurfData) return VDP_STATUS_INVALID_HANDLE;
+    if (NULL == srcSurfData)
+        return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = srcSurfData->device;
     VADisplay va_dpy = deviceData->va_dpy;
 
@@ -1545,28 +1696,35 @@ softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destinat
                        "VA FOURCC %c%c%c%c -> %s\n", *c, *(c+1), *(c+2), *(c+3),
                        reverse_ycbcr_format(destination_ycbcr_format));
             vaDestroyImage(va_dpy, q.image_id);
-            return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
+            err_code = VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
+            goto quit;
         }
         vaDestroyImage(va_dpy, q.image_id);
     } else {
         // software fallback
         traceError("error (softVdpVideoSurfaceGetBitsYCbCr): not implemented software fallback\n");
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
     }
 
     GLenum gl_error = glGetError();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpVideoSurfaceGetBitsYCbCr): gl error %d\n", gl_error);
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
     }
 
-    return VDP_STATUS_OK;
+    err_code = VDP_STATUS_OK;
+quit:
+    handle_release(surface);
+    return err_code;
 }
 
 VdpStatus
 softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_ycbcr_format,
                                 void const *const *source_data, uint32_t const *source_pitches)
 {
+    VdpStatus err_code;
     //TODO: figure out what to do with other formats
 
     VdpVideoSurfaceData *dstSurfData = handle_acquire(surface, HANDLETYPE_VIDEO_SURFACE);
@@ -1580,13 +1738,15 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
         if (VDP_YCBCR_FORMAT_YV12 != source_ycbcr_format) {
             traceError("error (softVdpVideoSurfacePutBitsYCbCr): not supported source_ycbcr_format "
                        "%s\n", reverse_ycbcr_format(source_ycbcr_format));
-            return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
+            err_code = VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
+            goto quit;
         }
 
         void *bgra_buf = malloc(dstSurfData->width * dstSurfData->height * 4);
         if (NULL == bgra_buf) {
             traceError("error (softVdpVideoSurfacePutBitsYCbCr): can not allocate memory\n");
-            return VDP_STATUS_RESOURCES;
+            err_code = VDP_STATUS_RESOURCES;
+            goto quit;
         }
 
         // TODO: other source formats
@@ -1597,7 +1757,8 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
         if (NULL == sws_ctx) {
             traceError("error (softVdpVideoSurfacePutBitsYCbCr): can not create SwsContext\n");
             free(bgra_buf);
-            return VDP_STATUS_RESOURCES;
+            err_code = VDP_STATUS_RESOURCES;
+            goto quit;
         }
 
         const uint8_t * const srcSlice[] = { source_data[0], source_data[2], source_data[1], NULL };
@@ -1610,7 +1771,8 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
                        "%d expected\n", res, dstSurfData->height);
             free(bgra_buf);
             sws_freeContext(sws_ctx);
-            return VDP_STATUS_ERROR;
+            err_code = VDP_STATUS_ERROR;
+            goto quit;
         }
         sws_freeContext(sws_ctx);
 
@@ -1622,7 +1784,8 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
         if (VDP_YCBCR_FORMAT_YV12 != source_ycbcr_format) {
             traceError("error (softVdpVideoSurfacePutBitsYCbCr): not supported source_ycbcr_format "
                        "%s\n", reverse_ycbcr_format(source_ycbcr_format));
-            return VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
+            err_code = VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
+            goto quit;
         }
 
         uint8_t const *src;
@@ -1653,10 +1816,14 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpVideoSurfacePutBitsYCbCr): gl error %d\n", gl_error);
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
     }
 
-    return VDP_STATUS_OK;
+    err_code = VDP_STATUS_OK;
+quit:
+    handle_release(surface);
+    return err_code;
 }
 
 VdpStatus
@@ -1664,12 +1831,15 @@ softVdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
                                       VdpBool *is_supported, uint32_t *max_width,
                                       uint32_t *max_height)
 {
+    VdpStatus err_code;
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    if (NULL == is_supported || NULL == max_width || NULL == max_height)
-        return VDP_STATUS_INVALID_POINTER;
+    if (NULL == is_supported || NULL == max_width || NULL == max_height) {
+        err_code = VDP_STATUS_INVALID_POINTER;
+        goto quit;
+    }
 
     switch (surface_rgba_format) {
     case VDP_RGBA_FORMAT_B8G8R8A8:
@@ -1684,32 +1854,41 @@ softVdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
         break;
     }
 
+    glx_context_push_thread_local(deviceData);
     GLint max_texture_size;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
 
     GLenum gl_error = glGetError();
+    glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpBitmapSurfaceQueryCapabilities): gl error %d\n", gl_error);
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
     }
 
     *max_width = max_texture_size;
     *max_height = max_texture_size;
 
-    return VDP_STATUS_OK;
+    err_code = VDP_STATUS_OK;
+quit:
+    handle_release(device);
+    return err_code;
 }
 
 VdpStatus
 softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
                            uint32_t height, VdpBool frequently_accessed, VdpBitmapSurface *surface)
 {
+    VdpStatus err_code;
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
 
     VdpBitmapSurfaceData *data = calloc(1, sizeof(VdpBitmapSurfaceData));
-    if (NULL == data)
-        return VDP_STATUS_RESOURCES;
+    if (NULL == data) {
+        err_code = VDP_STATUS_RESOURCES;
+        goto quit;
+    }
 
     switch (rgba_format) {
     case VDP_RGBA_FORMAT_B8G8R8A8:
@@ -1746,7 +1925,8 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
         traceError("error (VdpBitmapSurfaceCreate): %s not implemented\n",
                    reverse_rgba_format(rgba_format));
         free(data);
-        return VDP_STATUS_INVALID_RGBA_FORMAT;
+        err_code = VDP_STATUS_INVALID_RGBA_FORMAT;
+        goto quit;
     }
 
     data->type = HANDLETYPE_BITMAP_SURFACE;
@@ -1763,7 +1943,8 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
         if (NULL == data->bitmap_data) {
             traceError("error (VdpBitmapSurfaceCreate): calloc returned NULL\n");
             free(data);
-            return VDP_STATUS_RESOURCES;
+            err_code = VDP_STATUS_RESOURCES;
+            goto quit;
         }
     } else {
         data->bitmap_data = NULL;
@@ -1786,7 +1967,8 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
                    gluErrorString(gl_error));
         free(data);
         glx_context_pop();
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
     }
     if (VDP_RGBA_FORMAT_A8 == rgba_format) {
         // map red channel to alpha
@@ -1799,12 +1981,17 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     if (GL_NO_ERROR != gl_error) {
         free(data);
         traceError("error (VdpBitmapSurfaceCreate): gl error %d\n", gl_error);
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
     }
 
     deviceData->refcount ++;
     *surface = handle_insert(data);
-    return VDP_STATUS_OK;
+
+    err_code = VDP_STATUS_OK;
+quit:
+    handle_release(device);
+    return err_code;
 }
 
 VdpStatus
@@ -1827,6 +2014,7 @@ softVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpBitmapSurfaceDestroy): gl error %d\n", gl_error);
+        handle_release(surface);
         return VDP_STATUS_ERROR;
     }
 
@@ -1844,14 +2032,17 @@ softVdpBitmapSurfaceGetParameters(VdpBitmapSurface surface, VdpRGBAFormat *rgba_
     if (NULL == srcSurfData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    if (NULL == rgba_format || NULL == width || NULL == height || NULL == frequently_accessed)
+    if (NULL == rgba_format || NULL == width || NULL == height || NULL == frequently_accessed) {
+        handle_release(surface);
         return VDP_STATUS_INVALID_POINTER;
+    }
 
     *rgba_format = srcSurfData->rgba_format;
     *width = srcSurfData->width;
     *height = srcSurfData->height;
     *frequently_accessed = srcSurfData->frequently_accessed;
 
+    handle_release(surface);
     return VDP_STATUS_OK;
 }
 
@@ -1859,6 +2050,7 @@ VdpStatus
 softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *source_data,
                                   uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
+    VdpStatus err_code;
     VdpBitmapSurfaceData *dstSurfData = handle_acquire(surface, HANDLETYPE_BITMAP_SURFACE);
     if (NULL == dstSurfData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -1905,11 +2097,15 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
         glx_context_pop();
         if (GL_NO_ERROR != gl_error) {
             traceError("error (VdpBitmapSurfacePutBitsNative): gl error %d\n", gl_error);
-            return VDP_STATUS_ERROR;
+            err_code = VDP_STATUS_ERROR;
+            goto quit;
         }
     }
 
-    return VDP_STATUS_OK;
+    err_code = VDP_STATUS_OK;
+quit:
+    handle_release(surface);
+    return err_code;
 }
 
 void
@@ -1975,6 +2171,7 @@ destroy_child_objects(int handle, void *item, void *p)
 VdpStatus
 softVdpDeviceDestroy(VdpDevice device)
 {
+    VdpStatus err_code;
     VdpDeviceData *data = handle_acquire(device, HANDLETYPE_DEVICE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
@@ -2001,7 +2198,8 @@ softVdpDeviceDestroy(VdpDevice device)
         handle_execute_for_all(print_handle_type, &state);
         traceError("Objects leaked: %d\n", state.cnt);
         traceError("Objects visited during scan: %d\n", state.total_cnt);
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
     }
 
     // cleaup libva
@@ -2019,17 +2217,23 @@ softVdpDeviceDestroy(VdpDevice device)
 
     glx_context_unref_glc_hash_table(data->display);
 
-    handle_expunge(device);
     handle_xdpy_unref(data->display_orig);
+    handle_expunge(device);
+    free(data);
 
     GLenum gl_error = glGetError();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpDeviceDestroy): gl error %d\n", gl_error);
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit_skip_release;
     }
 
-    free(data);
     return VDP_STATUS_OK;
+
+quit:
+    handle_release(device);
+quit_skip_release:
+    return err_code;
 }
 
 VdpStatus
@@ -2187,23 +2391,28 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
                                         VdpOutputSurfaceRenderBlendState const *blend_state,
                                         uint32_t flags)
 {
+    VdpStatus err_code;
     (void)flags;    // TODO: handle flags
 
-    if (blend_state)
-        if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version)
-            return VDP_STATUS_INVALID_VALUE;
+    if (blend_state) {
+        if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version) {
+            err_code = VDP_STATUS_INVALID_VALUE;
+            goto quit_skip_release;
+        }
+    }
 
     VdpOutputSurfaceData *dstSurfData =
         handle_acquire(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
-    if (NULL == dstSurfData)
-        return VDP_STATUS_INVALID_HANDLE;
+    VdpOutputSurfaceData *srcSurfData = handle_acquire(source_surface, HANDLETYPE_OUTPUT_SURFACE);
 
-    VdpOutputSurfaceData *srcSurfData =
-        handle_acquire(source_surface, HANDLETYPE_OUTPUT_SURFACE);
-    if (NULL == srcSurfData)
-        return VDP_STATUS_INVALID_HANDLE;
-    if (srcSurfData->device != dstSurfData->device)
-        return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+    if (NULL == srcSurfData || NULL == dstSurfData) {
+        err_code = VDP_STATUS_INVALID_HANDLE;
+        goto quit;
+    }
+    if (srcSurfData->device != dstSurfData->device) {
+        err_code = VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+        goto quit;
+    }
     VdpDeviceData *deviceData = srcSurfData->device;
 
     const int dstWidth = dstSurfData->width;
@@ -2213,16 +2422,20 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     VdpRect s_rect = {0, 0, srcWidth, srcHeight};
     VdpRect d_rect = {0, 0, dstWidth, dstHeight};
 
-    if (source_rect) s_rect = *source_rect;
-    if (destination_rect) d_rect = *destination_rect;
+    if (source_rect)
+        s_rect = *source_rect;
+    if (destination_rect)
+        d_rect = *destination_rect;
 
     // select blend functions
     struct blend_state_struct bs = vdpBlendStateToGLBlendState(blend_state);
     if (bs.invalid_func) {
-        return VDP_STATUS_INVALID_BLEND_FACTOR;
+        err_code = VDP_STATUS_INVALID_BLEND_FACTOR;
+        goto quit;
     }
     if (bs.invalid_eq) {
-        return VDP_STATUS_INVALID_BLEND_EQUATION;
+        err_code = VDP_STATUS_INVALID_BLEND_EQUATION;
+        goto quit;
     }
 
     glx_context_push_thread_local(deviceData);
@@ -2268,10 +2481,16 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpOutputSurfaceRenderOutputSurface): gl error %d\n", gl_error);
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
     }
 
-    return VDP_STATUS_OK;
+    err_code = VDP_STATUS_OK;
+quit:
+    handle_release(source_surface);
+    handle_release(destination_surface);
+quit_skip_release:
+    return err_code;
 }
 
 VdpStatus
@@ -2282,20 +2501,27 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
                                         VdpOutputSurfaceRenderBlendState const *blend_state,
                                         uint32_t flags)
 {
+    VdpStatus err_code;
     (void)flags;    // TODO: handle flags
 
-    if (blend_state)
-        if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version)
-            return VDP_STATUS_INVALID_VALUE;
+    if (blend_state) {
+        if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version) {
+            err_code = VDP_STATUS_INVALID_VALUE;
+            goto quit_skip_release;
+        }
+    }
 
     VdpOutputSurfaceData *dstSurfData =
         handle_acquire(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
-    VdpBitmapSurfaceData *srcSurfData =
-        handle_acquire(source_surface, HANDLETYPE_BITMAP_SURFACE);
-    if (NULL == dstSurfData || NULL == srcSurfData)
-        return VDP_STATUS_INVALID_HANDLE;
-    if (srcSurfData->device != dstSurfData->device)
-        return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+    VdpBitmapSurfaceData *srcSurfData = handle_acquire(source_surface, HANDLETYPE_BITMAP_SURFACE);
+    if (NULL == dstSurfData || NULL == srcSurfData) {
+        err_code = VDP_STATUS_INVALID_HANDLE;
+        goto quit;
+    }
+    if (srcSurfData->device != dstSurfData->device) {
+        err_code = VDP_STATUS_HANDLE_DEVICE_MISMATCH;
+        goto quit;
+    }
     VdpDeviceData *deviceData = srcSurfData->device;
 
     VdpRect srcRect = {0, 0, srcSurfData->width, srcSurfData->height};
@@ -2308,10 +2534,12 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     // select blend functions
     struct blend_state_struct bs = vdpBlendStateToGLBlendState(blend_state);
     if (bs.invalid_func) {
-        return VDP_STATUS_INVALID_BLEND_FACTOR;
+        err_code = VDP_STATUS_INVALID_BLEND_FACTOR;
+        goto quit;
     }
     if (bs.invalid_eq) {
-        return VDP_STATUS_INVALID_BLEND_EQUATION;
+        err_code = VDP_STATUS_INVALID_BLEND_EQUATION;
+        goto quit;
     }
 
     glx_context_push_thread_local(deviceData);
@@ -2366,10 +2594,16 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpOutputSurfaceRenderBitmapSurface): gl error %d\n", gl_error);
-        return VDP_STATUS_ERROR;
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
     }
 
-    return VDP_STATUS_OK;
+    err_code = VDP_STATUS_OK;
+quit:
+    handle_release(source_surface);
+    handle_release(destination_surface);
+quit_skip_release:
+    return err_code;
 }
 
 VdpStatus
