@@ -746,7 +746,7 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     if (width > 4096 || height > 4096)
         return VDP_STATUS_INVALID_SIZE;
 
-    VdpOutputSurfaceData *data = (VdpOutputSurfaceData *)calloc(1, sizeof(VdpOutputSurfaceData));
+    VdpOutputSurfaceData *data = calloc(1, sizeof(VdpOutputSurfaceData));
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
 
@@ -1095,7 +1095,7 @@ softVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    VdpVideoMixerData *data = (VdpVideoMixerData *)calloc(1, sizeof(VdpVideoMixerData));
+    VdpVideoMixerData *data = calloc(1, sizeof(VdpVideoMixerData));
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
 
@@ -1365,7 +1365,7 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    VdpVideoSurfaceData *data = (VdpVideoSurfaceData *)calloc(1, sizeof(VdpVideoSurfaceData));
+    VdpVideoSurfaceData *data = calloc(1, sizeof(VdpVideoSurfaceData));
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
 
@@ -1720,7 +1720,7 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    VdpBitmapSurfaceData *data = (VdpBitmapSurfaceData *)calloc(1, sizeof(VdpBitmapSurfaceData));
+    VdpBitmapSurfaceData *data = calloc(1, sizeof(VdpBitmapSurfaceData));
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
 
@@ -1772,7 +1772,7 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     // Frequently accessed bitmaps reside in system memory rather that in GPU texture.
     data->dirty = 0;
     if (frequently_accessed) {
-        data->bitmap_data = (char *)calloc(width * height, data->bytes_per_pixel);
+        data->bitmap_data = calloc(width * height, data->bytes_per_pixel);
         if (NULL == data->bitmap_data) {
             traceError("error (VdpBitmapSurfaceCreate): calloc returned NULL\n");
             free(data);
@@ -2627,7 +2627,7 @@ softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
         handle_xdpy_ref(display_orig);
     }
 
-    VdpDeviceData *data = (VdpDeviceData *)calloc(1, sizeof(VdpDeviceData));
+    VdpDeviceData *data = calloc(1, sizeof(VdpDeviceData));
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
 

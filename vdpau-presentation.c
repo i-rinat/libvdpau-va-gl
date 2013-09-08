@@ -251,8 +251,7 @@ softVdpPresentationQueueCreate(VdpDevice device,
     if (NULL == targetData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    VdpPresentationQueueData *data =
-        (VdpPresentationQueueData *)calloc(1, sizeof(VdpPresentationQueueData));
+    VdpPresentationQueueData *data = calloc(1, sizeof(VdpPresentationQueueData));
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
 
@@ -450,8 +449,7 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    VdpPresentationQueueTargetData *data =
-        (VdpPresentationQueueTargetData *)calloc(1, sizeof(VdpPresentationQueueTargetData));
+    VdpPresentationQueueTargetData *data = calloc(1, sizeof(VdpPresentationQueueTargetData));
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
 
