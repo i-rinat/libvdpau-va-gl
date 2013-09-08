@@ -12,7 +12,6 @@
 
 #include <vdpau/vdpau_x11.h>
 #include <glib.h>
-#include <X11/extensions/XShm.h>
 
 typedef uint32_t    HandleType;
 #define HANDLETYPE_ANY                         (HandleType)0
@@ -35,14 +34,15 @@ typedef struct {
     void      *parent;      ///< link to parent
 } VdpGenericHandle;
 
-void handlestorage_initialize(void);
-int handlestorage_add(void *data);
-int handlestorage_valid(int handle, HandleType type);
-void * handlestorage_get(int handle, HandleType type);
-void handlestorage_expunge(int handle);
-void handlestorage_destory(void);
-void handlestorage_execute_for_all(void (*callback)(int idx, void *entry, void *p), void *param);
-void *handlestorage_xdpy_copy_ref(void *dpy_orig);
-void handlestorage_xdpy_copy_unref(void *dpy_orig);
+void    handle_initialize_storage(void);
+int     handle_insert(void *data);
+int     handle_is_valid(int handle, HandleType type);
+void   *handle_acquire(int handle, HandleType type);
+void    handle_release(int handle);
+void    handle_expunge(int handle);
+void    handle_destory_storage(void);
+void    handle_execute_for_all(void (*callback)(int idx, void *entry, void *p), void *param);
+void   *handle_xdpy_ref(void *dpy_orig);
+void    handle_xdpy_unref(void *dpy_orig);
 
 #endif /* HANDLE_STORAGE_H_ */

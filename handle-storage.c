@@ -13,7 +13,7 @@ GPtrArray *vdpHandles;
 GHashTable *xdpy_copies;            //< Copies of X Display connections
 GHashTable *xdpy_copies_refcount;   //< Reference count of X Display connection copy
 void
-handlestorage_initialize(void)
+handle_initialize_storage(void)
 {
     vdpHandles = g_ptr_array_new();
     // adding dummy element to ensure all handles start from 1
@@ -24,14 +24,14 @@ handlestorage_initialize(void)
 }
 
 int
-handlestorage_add(void *data)
+handle_insert(void *data)
 {
     g_ptr_array_add(vdpHandles, data);
     return vdpHandles->len - 1;
 }
 
 int
-handlestorage_valid(int handle, HandleType type)
+handle_is_valid(int handle, HandleType type)
 {
     // return false if index is invalid
     if (handle < 1 || handle >= (int)vdpHandles->len) return 0;
@@ -51,9 +51,8 @@ handlestorage_valid(int handle, HandleType type)
 }
 
 void *
-handlestorage_get(int handle, HandleType type)
+handle_acquire(int handle, HandleType type)
 {
-
     if (handle < 1 || handle >= (int)vdpHandles->len) return NULL;
     void *result = g_ptr_array_index(vdpHandles, handle);
     if (!result) return NULL;
@@ -63,15 +62,22 @@ handlestorage_get(int handle, HandleType type)
 }
 
 void
-handlestorage_expunge(int handle)
+handle_release(int handle)
 {
-    if (handlestorage_valid(handle, HANDLETYPE_ANY)) {
+    (void)handle;
+    // placeholder
+}
+
+void
+handle_expunge(int handle)
+{
+    if (handle_is_valid(handle, HANDLETYPE_ANY)) {
         g_ptr_array_index(vdpHandles, handle) = NULL;
     }
 }
 
 void
-handlestorage_destory(void)
+handle_destory_storage(void)
 {
     g_ptr_array_unref(vdpHandles);
     g_hash_table_unref(xdpy_copies);
@@ -79,7 +85,7 @@ handlestorage_destory(void)
 }
 
 void
-handlestorage_execute_for_all(void (*callback)(int idx, void *entry, void *p), void *param)
+handle_execute_for_all(void (*callback)(int idx, void *entry, void *p), void *param)
 {
     for (unsigned int k = 0; k < vdpHandles->len; k ++) {
         void *item = g_ptr_array_index(vdpHandles, k);
@@ -89,7 +95,7 @@ handlestorage_execute_for_all(void (*callback)(int idx, void *entry, void *p), v
 }
 
 void *
-handlestorage_xdpy_copy_ref(void *dpy_orig)
+handle_xdpy_ref(void *dpy_orig)
 {
     Display *dpy = g_hash_table_lookup(xdpy_copies, dpy_orig);
     if (NULL == dpy) {
@@ -106,7 +112,7 @@ handlestorage_xdpy_copy_ref(void *dpy_orig)
 }
 
 void
-handlestorage_xdpy_copy_unref(void *dpy_orig)
+handle_xdpy_unref(void *dpy_orig)
 {
     int refcount = GPOINTER_TO_INT(g_hash_table_lookup(xdpy_copies_refcount, dpy_orig));
     refcount = refcount - 1;

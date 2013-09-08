@@ -124,7 +124,7 @@ static
 void
 library_constructor(void)
 {
-    handlestorage_initialize();
+    handle_initialize_storage();
 
     // Initialize global data
     pthread_mutex_init(&global.glx_ctx_stack_mutex, NULL);
@@ -163,7 +163,7 @@ static
 void
 library_destructor(void)
 {
-    handlestorage_destory();
+    handle_destory_storage();
 }
 
 
