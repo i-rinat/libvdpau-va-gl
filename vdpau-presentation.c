@@ -98,29 +98,29 @@ softVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_que
 
 static
 void
-do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
+do_presentation_queue_display(VdpPresentationQueueData *pqData)
 {
-    pthread_mutex_lock(&pqueueData->queue_mutex);
-    assert(pqueueData->queue.used > 0);
+    pthread_mutex_lock(&pqData->queue_mutex);
+    assert(pqData->queue.used > 0);
 
-    const int entry = pqueueData->queue.head;
-    VdpDeviceData *deviceData = pqueueData->device;
-    VdpOutputSurface surface = pqueueData->queue.item[entry].surface;
-    const uint32_t clip_width = pqueueData->queue.item[entry].clip_width;
-    const uint32_t clip_height = pqueueData->queue.item[entry].clip_height;
+    const int entry = pqData->queue.head;
+    VdpDeviceData *deviceData = pqData->device;
+    VdpOutputSurface surface = pqData->queue.item[entry].surface;
+    const uint32_t clip_width = pqData->queue.item[entry].clip_width;
+    const uint32_t clip_height = pqData->queue.item[entry].clip_height;
 
     // remove first entry from queue
-    pqueueData->queue.used --;
-    pqueueData->queue.freelist[pqueueData->queue.head] = pqueueData->queue.firstfree;
-    pqueueData->queue.firstfree = pqueueData->queue.head;
-    pqueueData->queue.head = pqueueData->queue.item[pqueueData->queue.head].next;
-    pthread_mutex_unlock(&pqueueData->queue_mutex);
+    pqData->queue.used --;
+    pqData->queue.freelist[pqData->queue.head] = pqData->queue.firstfree;
+    pqData->queue.firstfree = pqData->queue.head;
+    pqData->queue.head = pqData->queue.item[pqData->queue.head].next;
+    pthread_mutex_unlock(&pqData->queue_mutex);
 
     VdpOutputSurfaceData *surfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (surfData == NULL)
         return;
 
-    glx_context_push_global(deviceData->display, pqueueData->target->drawable, pqueueData->target->glc);
+    glx_context_push_global(deviceData->display, pqData->target->drawable, pqData->target->glc);
 
     const uint32_t target_width  = (clip_width > 0)  ? clip_width  : surfData->width;
     const uint32_t target_height = (clip_height > 0) ? clip_height : surfData->height;
@@ -173,7 +173,7 @@ do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
         glEnd();
     }
 
-    glXSwapBuffers(deviceData->display, pqueueData->target->drawable);
+    glXSwapBuffers(deviceData->display, pqData->target->drawable);
 
     struct timespec now;
     clock_gettime(CLOCK_REALTIME, &now);
