@@ -200,6 +200,7 @@ static
 void *
 presentation_thread(void *param)
 {
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
     VdpPresentationQueue presentation_queue = (VdpPresentationQueue)(size_t)param;
     VdpPresentationQueueData *pqData =
         handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
@@ -213,8 +214,10 @@ presentation_thread(void *param)
         pthread_mutex_lock(&pqData->queue_mutex);
         while (1) {
             handle_release(presentation_queue);
+            pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
             int ret = pthread_cond_timedwait(&pqData->new_work_available, &pqData->queue_mutex,
                                              &target_time);
+            pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
             if (ret != 0 && ret != ETIMEDOUT) {
                 traceError("presentation_thread: pthread_cond_timedwait failed with code %d\n", ret);
                 goto quit;
