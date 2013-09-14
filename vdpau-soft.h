@@ -88,11 +88,11 @@ typedef struct {
         int firstfree;
         int freelist[PRESENTATION_QUEUE_LENGTH];
         struct {
-            VdpTime                 t;      ///< earliest_presentation_time
-            int                     next;
-            uint32_t                clip_width;
-            uint32_t                clip_height;
-            VdpOutputSurfaceData   *surfData;
+            VdpTime             t;      ///< earliest_presentation_time
+            int                 next;
+            uint32_t            clip_width;
+            uint32_t            clip_height;
+            VdpOutputSurface    surface;
         } item[PRESENTATION_QUEUE_LENGTH];
     } queue;
 

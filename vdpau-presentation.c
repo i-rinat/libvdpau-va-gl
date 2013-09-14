@@ -102,10 +102,10 @@ do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
 {
     pthread_mutex_lock(&pqueueData->queue_mutex);
     assert(pqueueData->queue.used > 0);
-    const int entry = pqueueData->queue.head;
 
+    const int entry = pqueueData->queue.head;
     VdpDeviceData *deviceData = pqueueData->device;
-    VdpOutputSurfaceData *surfData = pqueueData->queue.item[entry].surfData;
+    VdpOutputSurface surface = pqueueData->queue.item[entry].surface;
     const uint32_t clip_width = pqueueData->queue.item[entry].clip_width;
     const uint32_t clip_height = pqueueData->queue.item[entry].clip_height;
 
@@ -114,6 +114,11 @@ do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
     pqueueData->queue.freelist[pqueueData->queue.head] = pqueueData->queue.firstfree;
     pqueueData->queue.firstfree = pqueueData->queue.head;
     pqueueData->queue.head = pqueueData->queue.item[pqueueData->queue.head].next;
+    pthread_mutex_unlock(&pqueueData->queue_mutex);
+
+    VdpOutputSurfaceData *surfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
+    if (surfData == NULL)
+        return;
 
     glx_context_push_global(deviceData->display, pqueueData->target->drawable, pqueueData->target->glc);
 
@@ -184,7 +189,7 @@ do_presentation_queue_display(VdpPresentationQueueData *pqueueData)
 
     GLenum gl_error = glGetError();
     glx_context_pop();
-    pthread_mutex_unlock(&pqueueData->queue_mutex);
+    handle_release(surface);
 
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpPresentationQueueDisplay): gl error %d\n", gl_error);
@@ -424,7 +429,7 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     pqData->queue.item[new_item].t = earliest_presentation_time;
     pqData->queue.item[new_item].clip_width = clip_width;
     pqData->queue.item[new_item].clip_height = clip_height;
-    pqData->queue.item[new_item].surfData = surfData;
+    pqData->queue.item[new_item].surface = surface;
     surfData->first_presentation_time = 0;
     surfData->status = VDP_PRESENTATION_QUEUE_STATUS_QUEUED;
 
