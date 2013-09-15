@@ -3,7 +3,7 @@
  *
  * This file is part of libvdpau-va-gl
  *
- * libvdpau-va-gl distributed under the terms of LGPLv3. See COPYING for details.
+ * libvdpau-va-gl is distributed under the terms of the LGPLv3. See COPYING for details.
  */
 
 #define _XOPEN_SOURCE
@@ -32,101 +32,11 @@
 #include "watermark.h"
 #include "globals.h"
 
-#define MAX_RENDER_TARGETS          21
-#define NUM_RENDER_TARGETS_H264     21
-
 
 #define DESCRIBE(xparam, format)    fprintf(stderr, #xparam " = %" #format "\n", xparam)
 
 static char const *
 implemetation_description_string = "OpenGL/VAAPI/libswscale backend for VDPAU";
-
-/** @brief VdpPresentationQueueTarget object parameters */
-typedef struct {
-    HandleType      type;           ///< handle type
-    VdpDeviceData  *device;         ///< link to parent
-    int             refcount;
-    Drawable        drawable;       ///< X drawable to output to
-    GLXContext      glc;            ///< GL context used for output
-} VdpPresentationQueueTargetData;
-
-/** @brief VdpPresentationQueue object parameters */
-typedef struct {
-    HandleType                      type;       ///< handle type
-    VdpDeviceData                  *device;     ///< link to parent
-    VdpPresentationQueueTargetData *target;
-    VdpColor                        bg_color;   ///< background color
-} VdpPresentationQueueData;
-
-/** @brief VdpVideoMixer object parameters */
-typedef struct {
-    HandleType      type;       ///< handle type
-    VdpDeviceData  *device;     ///< link to parent
-} VdpVideoMixerData;
-
-/** @brief VdpOutputSurface object parameters */
-typedef struct {
-    HandleType      type;               ///< handle type
-    VdpDeviceData  *device;             ///< link to parent
-    VdpRGBAFormat   rgba_format;        ///< RGBA format of data stored
-    GLuint          tex_id;             ///< associated GL texture id
-    GLuint          fbo_id;             ///< framebuffer object id
-    uint32_t        width;
-    uint32_t        height;
-    GLuint          gl_internal_format; ///< GL texture format: internal format
-    GLuint          gl_format;          ///< GL texture format: preferred external format
-    GLuint          gl_type;            ///< GL texture format: pixel type
-    unsigned int    bytes_per_pixel;    ///< number of bytes per pixel
-} VdpOutputSurfaceData;
-
-/** @brief VdpVideoSurface object parameters */
-typedef struct {
-    HandleType      type;           ///< handle type
-    VdpDeviceData  *device;         ///< link to parent
-    VdpChromaType   chroma_type;    ///< video chroma type
-    uint32_t        width;
-    uint32_t        stride;         ///< distance between first pixels of two consecutive rows (in pixels)
-    uint32_t        height;
-    void           *y_plane;        ///< luma data (software)
-    void           *v_plane;        ///< chroma data (software)
-    void           *u_plane;        ///< chroma data (software)
-    VASurfaceID     va_surf;        ///< VA-API surface
-    void           *va_glx;         ///< handle for VA-API/GLX interaction
-    GLuint          tex_id;         ///< GL texture id (RGBA)
-} VdpVideoSurfaceData;
-
-/** @brief VdpBitmapSurface object parameters */
-typedef struct {
-    HandleType      type;               ///< handle type
-    VdpDeviceData  *device;             ///< link to parent
-    VdpRGBAFormat   rgba_format;        ///< RGBA format of data stored
-    GLuint          tex_id;             ///< GL texture id
-    uint32_t        width;
-    uint32_t        height;
-    VdpBool         frequently_accessed;///< 1 if surface should be optimized for frequent access
-    unsigned int    bytes_per_pixel;    ///< number of bytes per bitmap pixel
-    GLuint          gl_internal_format; ///< GL texture format: internal format
-    GLuint          gl_format;          ///< GL texture format: preferred external format
-    GLuint          gl_type;            ///< GL texture format: pixel type
-    char           *bitmap_data;        ///< system-memory buffer for frequently accessed bitmaps
-    int             dirty;              ///< dirty flag. True if system-memory buffer contains data
-                                        ///< newer than GPU texture contents
-} VdpBitmapSurfaceData;
-
-/** @brief VdpDecoder object parameters */
-typedef struct {
-    HandleType          type;           ///< handle type
-    VdpDeviceData      *device;         ///< link to parent
-    VdpDecoderProfile   profile;        ///< decoder profile
-    uint32_t            width;
-    uint32_t            height;
-    uint32_t            max_references; ///< maximum count of reference frames
-    VAConfigID          config_id;      ///< VA-API config id
-    VASurfaceID         render_targets[MAX_RENDER_TARGETS]; ///< spare VA surfaces
-    uint32_t            num_render_targets;
-    uint32_t            next_surface_idx;   ///< next free surface in render_targets
-    VAContextID         context_id;     ///< VA-API context id
-} VdpDecoderData;
 
 
 static
@@ -564,13 +474,24 @@ static
 void
 h264_translate_iq_matrix(VAIQMatrixBufferH264 *iq_matrix, const VdpPictureInfoH264 *vdppi)
 {
-    for (int j = 0; j < 6; j ++)
-        for (int k = 0; k < 16; k ++)
-            iq_matrix->ScalingList4x4[j][k] = vdppi->scaling_lists_4x4[j][k];
+    
+    if(sizeof(iq_matrix->ScalingList4x4) == sizeof(vdppi->scaling_lists_4x4))
+        memcpy(iq_matrix->ScalingList4x4, vdppi->scaling_lists_4x4, sizeof(iq_matrix->ScalingList4x4));
+    else
+    {
+        for (int j = 0; j < 6; j ++)
+            for (int k = 0; k < 16; k ++)
+                iq_matrix->ScalingList4x4[j][k] = vdppi->scaling_lists_4x4[j][k];
+    }
 
-    for (int j = 0; j < 2; j ++)
-        for (int k = 0; k < 64; k ++)
-            iq_matrix->ScalingList8x8[j][k] = vdppi->scaling_lists_8x8[j][k];
+    if(sizeof(iq_matrix->ScalingList8x8) == sizeof(vdppi->scaling_lists_8x8))
+        memcpy(iq_matrix->ScalingList8x8, vdppi->scaling_lists_8x8, sizeof(iq_matrix->ScalingList8x8));
+    else
+    {
+        for (int j = 0; j < 2; j ++)
+            for (int k = 0; k < 64; k ++)
+                iq_matrix->ScalingList8x8[j][k] = vdppi->scaling_lists_8x8[j][k];
+    }
 }
 
 VdpStatus
@@ -910,6 +831,7 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
 
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glClear(GL_COLOR_BUFFER_BIT);
+    glFinish();
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -992,6 +914,7 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     if (4 != srcSurfData->bytes_per_pixel)
         glPixelStorei(GL_PACK_ALIGNMENT, 4);
+    glFinish();
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -1028,6 +951,7 @@ softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *s
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     if (4 != dstSurfData->bytes_per_pixel)
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    glFinish();
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -1086,6 +1010,7 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
             glTexSubImage2D(GL_TEXTURE_2D, 0, dstRect.x0, dstRect.y0,
                             dstRect.x1 - dstRect.x0, dstRect.y1 - dstRect.y0,
                             GL_BGRA, GL_UNSIGNED_BYTE, unpacked_buf);
+            glFinish();
             free(unpacked_buf);
 
             GLenum gl_error = glGetError();
@@ -1393,6 +1318,7 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         free(img_buf);
     }
+    glFinish();
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -1401,245 +1327,6 @@ softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface
         return VDP_STATUS_ERROR;
     }
 
-    return VDP_STATUS_OK;
-}
-
-VdpStatus
-softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_target)
-{
-    VdpPresentationQueueTargetData *pqTargetData =
-        handlestorage_get(presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET);
-    if (NULL == pqTargetData)
-        return VDP_STATUS_INVALID_HANDLE;
-    VdpDeviceData *deviceData = pqTargetData->device;
-
-    if (0 != pqTargetData->refcount) {
-        traceError("warning (softVdpPresentationQueueTargetDestroy): non-zero reference"
-                   "count (%d)\n", pqTargetData->refcount);
-        return VDP_STATUS_ERROR;
-    }
-
-    // drawable may be destroyed already, so one should activate global context
-    glx_context_push_thread_local(deviceData);
-    glXDestroyContext(deviceData->display, pqTargetData->glc);
-
-    GLenum gl_error = glGetError();
-    glx_context_pop();
-    if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpPresentationQueueTargetDestroy): gl error %d\n", gl_error);
-        return VDP_STATUS_ERROR;
-    }
-
-    free(pqTargetData);
-    deviceData->refcount --;
-    handlestorage_expunge(presentation_queue_target);
-    return VDP_STATUS_OK;
-}
-
-VdpStatus
-softVdpPresentationQueueCreate(VdpDevice device,
-                               VdpPresentationQueueTarget presentation_queue_target,
-                               VdpPresentationQueue *presentation_queue)
-{
-    VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
-    if (NULL == deviceData)
-        return VDP_STATUS_INVALID_HANDLE;
-
-    VdpPresentationQueueTargetData *targetData =
-        handlestorage_get(presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET);
-    if (NULL == targetData)
-        return VDP_STATUS_INVALID_HANDLE;
-
-    VdpPresentationQueueData *data =
-        (VdpPresentationQueueData *)calloc(1, sizeof(VdpPresentationQueueData));
-    if (NULL == data)
-        return VDP_STATUS_RESOURCES;
-
-    data->type = HANDLETYPE_PRESENTATION_QUEUE;
-    data->device = deviceData;
-    data->target = targetData;
-    data->bg_color.red = 0.0;
-    data->bg_color.green = 0.0;
-    data->bg_color.blue = 0.0;
-    data->bg_color.alpha = 0.0;
-
-    deviceData->refcount ++;
-    targetData->refcount ++;
-    *presentation_queue = handlestorage_add(data);
-    return VDP_STATUS_OK;
-}
-
-VdpStatus
-softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
-{
-    VdpPresentationQueueData *data =
-        handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
-    if (NULL == data)
-        return VDP_STATUS_INVALID_HANDLE;
-
-    handlestorage_expunge(presentation_queue);
-    data->device->refcount --;
-    data->target->refcount --;
-
-    free(data);
-    return VDP_STATUS_OK;
-}
-
-VdpStatus
-softVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_queue,
-                                           VdpColor *const background_color)
-{
-    VdpPresentationQueueData *pqData =
-        handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
-    if (NULL == pqData)
-        return VDP_STATUS_INVALID_HANDLE;
-
-    if (background_color) {
-        pqData->bg_color = *background_color;
-    } else {
-        pqData->bg_color.red = 0.0;
-        pqData->bg_color.green = 0.0;
-        pqData->bg_color.blue = 0.0;
-        pqData->bg_color.alpha = 0.0;
-    }
-
-    return VDP_STATUS_OK;
-}
-
-VdpStatus
-softVdpPresentationQueueGetBackgroundColor(VdpPresentationQueue presentation_queue,
-                                           VdpColor *background_color)
-{
-    VdpPresentationQueueData *pqData =
-        handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
-    if (NULL == pqData)
-        return VDP_STATUS_INVALID_HANDLE;
-
-    if (NULL == background_color)
-        return VDP_STATUS_INVALID_POINTER;
-    *background_color = pqData->bg_color;
-
-    return VDP_STATUS_OK;
-}
-
-VdpStatus
-softVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue,
-                                VdpTime *current_time)
-{
-    (void)presentation_queue;
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    *current_time = (uint64_t)tv.tv_sec * 1000000000LL + (uint64_t)tv.tv_usec * 1000LL;
-    return VDP_STATUS_OK;
-}
-
-VdpStatus
-softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSurface surface,
-                                uint32_t clip_width, uint32_t clip_height,
-                                VdpTime earliest_presentation_time)
-{
-    (void)earliest_presentation_time;   // TODO: take into accound earliest_presentation_time
-    VdpOutputSurfaceData *surfData = handlestorage_get(surface, HANDLETYPE_OUTPUT_SURFACE);
-    VdpPresentationQueueData *pqueueData =
-        handlestorage_get(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
-    if (NULL == surfData || NULL == pqueueData)
-        return VDP_STATUS_INVALID_HANDLE;
-    if (pqueueData->device != surfData->device)
-        return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
-    VdpDeviceData *deviceData = surfData->device;
-
-    glx_context_push_global(deviceData->display, pqueueData->target->drawable, pqueueData->target->glc);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    const uint32_t target_width  = (clip_width > 0)  ? clip_width  : surfData->width;
-    const uint32_t target_height = (clip_height > 0) ? clip_height : surfData->height;
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, target_width, target_height, 0, -1.0, 1.0);
-    glViewport(0, 0, target_width, target_height);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    glMatrixMode(GL_TEXTURE);
-    glLoadIdentity();
-    glScalef(1.0f/surfData->width, 1.0f/surfData->height, 1.0f);
-
-    glEnable(GL_TEXTURE_2D);
-    glDisable(GL_BLEND);
-    glBindTexture(GL_TEXTURE_2D, surfData->tex_id);
-    glColor4f(1, 1, 1, 1);
-    glBegin(GL_QUADS);
-        glTexCoord2i(0, 0);                        glVertex2i(0, 0);
-        glTexCoord2i(target_width, 0);             glVertex2i(target_width, 0);
-        glTexCoord2i(target_width, target_height); glVertex2i(target_width, target_height);
-        glTexCoord2i(0, target_height);            glVertex2i(0, target_height);
-    glEnd();
-
-    if (global.quirks.show_watermark) {
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glBlendEquation(GL_FUNC_ADD);
-        glBindTexture(GL_TEXTURE_2D, deviceData->watermark_tex_id);
-
-        glMatrixMode(GL_TEXTURE);
-        glLoadIdentity();
-
-        glColor3f(0.8, 0.08, 0.35);
-        glBegin(GL_QUADS);
-            glTexCoord2i(0, 0);
-            glVertex2i(target_width - watermark_width, target_height - watermark_height);
-
-            glTexCoord2i(1, 0);
-            glVertex2i(target_width, target_height - watermark_height);
-
-            glTexCoord2i(1, 1);
-            glVertex2i(target_width, target_height);
-
-            glTexCoord2i(0, 1);
-            glVertex2i(target_width - watermark_width, target_height);
-        glEnd();
-    }
-
-    locked_glXSwapBuffers(deviceData->display, pqueueData->target->drawable);
-
-    GLenum gl_error = glGetError();
-    glx_context_pop();
-    if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpPresentationQueueDisplay): gl error %d\n", gl_error);
-        return VDP_STATUS_ERROR;
-    }
-
-    return VDP_STATUS_OK;
-}
-
-VdpStatus
-softVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_queue,
-                                              VdpOutputSurface surface,
-                                              VdpTime *first_presentation_time)
-
-{
-    if (! handlestorage_valid(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE))
-        return VDP_STATUS_INVALID_HANDLE;
-
-    if (! handlestorage_valid(surface, HANDLETYPE_OUTPUT_SURFACE))
-        return VDP_STATUS_INVALID_HANDLE;
-
-    // use current time as presentation time
-    softVdpPresentationQueueGetTime(presentation_queue, first_presentation_time);
-
-    return VDP_STATUS_OK;
-}
-
-VdpStatus
-softVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_queue,
-                                           VdpOutputSurface surface,
-                                           VdpPresentationQueueStatus *status,
-                                           VdpTime *first_presentation_time)
-{
-    (void)presentation_queue; (void)surface; (void)first_presentation_time;
-    *status = VDP_PRESENTATION_QUEUE_STATUS_VISIBLE;
     return VDP_STATUS_OK;
 }
 
@@ -1700,6 +1387,7 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data->width, data->height, 0,
                  GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+    glFinish();
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -2101,6 +1789,7 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, data->gl_internal_format, width, height, 0,
                  data->gl_format, data->gl_type, NULL);
+    glFinish();
     GLuint gl_error = glGetError();
     if (GL_NO_ERROR != gl_error) {
         // Requested RGBA format was wrong
@@ -2221,6 +1910,7 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         if (4 != dstSurfData->bytes_per_pixel)
             glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        glFinish();
 
         GLenum gl_error = glGetError();
         glx_context_pop();
@@ -2583,6 +2273,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     glEnd();
 
     glColor4f(1, 1, 1, 1);
+    glFinish();
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -2678,6 +2369,7 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     glEnd();
 
     glColor4f(1, 1, 1, 1);
+    glFinish();
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -2696,43 +2388,6 @@ softVdpPreemptionCallbackRegister(VdpDevice device, VdpPreemptionCallback callba
     return VDP_STATUS_OK;
 }
 
-VdpStatus
-softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
-                                        VdpPresentationQueueTarget *target)
-{
-    VdpDeviceData *deviceData = handlestorage_get(device, HANDLETYPE_DEVICE);
-    if (NULL == deviceData)
-        return VDP_STATUS_INVALID_HANDLE;
-
-    VdpPresentationQueueTargetData *data =
-        (VdpPresentationQueueTargetData *)calloc(1, sizeof(VdpPresentationQueueTargetData));
-    if (NULL == data)
-        return VDP_STATUS_RESOURCES;
-
-    data->type = HANDLETYPE_PRESENTATION_QUEUE_TARGET;
-    data->device = deviceData;
-    data->drawable = drawable;
-    data->refcount = 0;
-
-    GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
-    XVisualInfo *vi;
-    vi = glXChooseVisual(deviceData->display, deviceData->screen, att);
-    if (NULL == vi) {
-        traceError("error (softVdpPresentationQueueTargetCreateX11): glXChooseVisual failed\n");
-        free(data);
-        return VDP_STATUS_ERROR;
-    }
-
-    // create context for dislaying result (can share display lists with deviceData->glc
-    XLockDisplay(deviceData->display);
-    data->glc = glXCreateContext(deviceData->display, vi, deviceData->root_glc, GL_TRUE);
-    XUnlockDisplay(deviceData->display);
-
-    deviceData->refcount ++;
-    *target = handlestorage_add(data);
-
-    return VDP_STATUS_OK;
-}
 
 // =========================
 VdpStatus
@@ -3019,6 +2674,7 @@ softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, watermark_width, watermark_height, 0, GL_RED,
                  GL_UNSIGNED_BYTE, watermark_data);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    glFinish();
 
     *device = handlestorage_add(data);
     *get_proc_address = &softVdpGetProcAddress;

@@ -3,7 +3,7 @@
  *
  * This file is part of libvdpau-va-gl
  *
- * libvdpau-va-gl distributed under the terms of LGPLv3. See COPYING for details.
+ * libvdpau-va-gl is distributed under the terms of the LGPLv3. See COPYING for details.
  */
 
 #ifndef __CTX_STACK_H

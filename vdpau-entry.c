@@ -3,7 +3,7 @@
  *
  * This file is part of libvdpau-va-gl
  *
- * libvdpau-va-gl distributed under the terms of LGPLv3. See COPYING for details.
+ * libvdpau-va-gl is distributed under the terms of the LGPLv3. See COPYING for details.
  */
 
 #define _XOPEN_SOURCE   500
@@ -58,6 +58,7 @@ initialize_quirks(void)
     global.quirks.show_watermark = 0;
     global.quirks.log_thread_id = 0;
     global.quirks.log_call_duration = 0;
+    global.quirks.log_pq_delay = 0;
     global.quirks.avoid_va = 0;
 
     const char *value = getenv("VDPAU_QUIRKS");
@@ -91,6 +92,9 @@ initialize_quirks(void)
             } else
             if (!strcmp("logcallduration", item_start)) {
                 global.quirks.log_call_duration = 1;
+            } else
+            if (!strcmp("logpqdelay", item_start)) {
+                global.quirks.log_pq_delay = 1;
             } else
             if (!strcmp("avoidva", item_start)) {
                 global.quirks.avoid_va = 1;
