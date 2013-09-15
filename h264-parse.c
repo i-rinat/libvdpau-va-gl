@@ -339,7 +339,8 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
         SLICE_TYPE_B == sp.slice_type)
     {
         sp.num_ref_idx_l0_active_minus1 = p_num_ref_idx_l0_active_minus1;
-        sp.num_ref_idx_l1_active_minus1 = p_num_ref_idx_l1_active_minus1;
+        if (SLICE_TYPE_P != sp.slice_type)
+                sp.num_ref_idx_l1_active_minus1 = p_num_ref_idx_l1_active_minus1;
 
         sp.num_ref_idx_active_override_flag = rbsp_get_u(st, 1);
         if (sp.num_ref_idx_active_override_flag) {
