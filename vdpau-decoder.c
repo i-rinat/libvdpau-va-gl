@@ -461,6 +461,198 @@ h264_translate_iq_matrix(VAIQMatrixBufferH264 *iq_matrix, const VdpPictureInfoH2
             iq_matrix->ScalingList8x8[j][k] = vdppi->scaling_lists_8x8[j][k];
 }
 
+static
+VdpStatus
+softVdpDecoderRender_h264(VdpDecoderData *decoderData, VdpVideoSurfaceData *dstSurfData,
+                          VdpPictureInfo const *picture_info, uint32_t bitstream_buffer_count,
+                          VdpBitstreamBuffer const *bitstream_buffers)
+{
+    VdpDeviceData *deviceData = decoderData->device;
+    VADisplay va_dpy = deviceData->va_dpy;
+    VAStatus status;
+    VdpStatus vs, err_code;
+    VdpPictureInfoH264 const *vdppi = (void *)picture_info;
+
+    // TODO: figure out where to get level
+    uint32_t level = 41;
+
+    // preparing picture parameters
+    VABufferID pic_param_buf;
+    VAPictureParameterBufferH264 *pic_param;
+
+    status = vaCreateBuffer(va_dpy, decoderData->context_id, VAPictureParameterBufferType,
+        sizeof(VAPictureParameterBufferH264), 1, NULL, &pic_param_buf);
+    if (VA_STATUS_SUCCESS != status) {
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
+    }
+
+    status = vaMapBuffer(va_dpy, pic_param_buf, (void **)&pic_param);
+    if (VA_STATUS_SUCCESS != status) {
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
+    }
+
+    vs = h264_translate_reference_frames(dstSurfData, decoderData, pic_param, vdppi);
+    if (VDP_STATUS_RESOURCES == vs) {
+        traceError("error (softVdpDecoderRender): no surfaces left in buffer\n");
+        err_code = VDP_STATUS_RESOURCES;
+        goto quit;
+    }
+    if (VDP_STATUS_OK != vs) {
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
+    }
+
+    h264_translate_pic_param(pic_param, decoderData->width, decoderData->height, vdppi, level);
+    vaUnmapBuffer(va_dpy, pic_param_buf);
+
+    //  IQ Matrix
+    VABufferID iq_matrix_buf;
+    VAIQMatrixBufferH264 *iq_matrix;
+
+    status = vaCreateBuffer(va_dpy, decoderData->context_id, VAIQMatrixBufferType,
+        sizeof(VAIQMatrixBufferH264), 1, NULL, &iq_matrix_buf);
+    if (VA_STATUS_SUCCESS != status) {
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
+    }
+
+    status = vaMapBuffer(va_dpy, iq_matrix_buf, (void **)&iq_matrix);
+    if (VA_STATUS_SUCCESS != status) {
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
+    }
+
+    h264_translate_iq_matrix(iq_matrix, vdppi);
+    vaUnmapBuffer(va_dpy, iq_matrix_buf);
+
+    // send data to decoding hardware
+    status = vaBeginPicture(va_dpy, decoderData->context_id, dstSurfData->va_surf);
+    if (VA_STATUS_SUCCESS != status) {
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
+    }
+    status = vaRenderPicture(va_dpy, decoderData->context_id, &pic_param_buf, 1);
+    if (VA_STATUS_SUCCESS != status) {
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
+    }
+    status = vaRenderPicture(va_dpy, decoderData->context_id, &iq_matrix_buf, 1);
+    if (VA_STATUS_SUCCESS != status) {
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
+    }
+
+    vaDestroyBuffer(va_dpy, pic_param_buf);
+    vaDestroyBuffer(va_dpy, iq_matrix_buf);
+
+    // merge bitstream buffers
+    int total_bitstream_bytes = 0;
+    for (unsigned int k = 0; k < bitstream_buffer_count; k ++)
+        total_bitstream_bytes += bitstream_buffers[k].bitstream_bytes;
+
+    uint8_t *merged_bitstream = malloc(total_bitstream_bytes);
+    if (NULL == merged_bitstream) {
+        err_code = VDP_STATUS_RESOURCES;
+        goto quit;
+    }
+
+    do {
+        unsigned char *ptr = merged_bitstream;
+        for (unsigned int k = 0; k < bitstream_buffer_count; k ++) {
+            memcpy(ptr, bitstream_buffers[k].bitstream, bitstream_buffers[k].bitstream_bytes);
+            ptr += bitstream_buffers[k].bitstream_bytes;
+        }
+    } while(0);
+
+    // Slice parameters
+
+    // All slice data have been merged into one continuous buffer. But we must supply
+    // slices one by one to the hardware decoder, so we need to delimit them. VDPAU
+    // requires bitstream buffers to include slice start code (0x00 0x00 0x01). Those
+    // will be used to calculate offsets and sizes of slice data in code below.
+
+    rbsp_state_t st_g;      // reference, global state
+    rbsp_attach_buffer(&st_g, merged_bitstream, total_bitstream_bytes);
+    int nal_offset = rbsp_navigate_to_nal_unit(&st_g);
+    if (nal_offset < 0) {
+        traceError("error (softVdpDecoderRender): no NAL header\n");
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
+    }
+
+    do {
+        VASliceParameterBufferH264 sp_h264;
+        memset(&sp_h264, 0, sizeof(VASliceParameterBufferH264));
+
+        // make a copy of global rbsp state for using in slice header parser
+        rbsp_state_t st = rbsp_copy_state(&st_g);
+        rbsp_reset_bit_counter(&st);
+        int nal_offset_next = rbsp_navigate_to_nal_unit(&st_g);
+
+        // calculate end of current slice. Note (-3). It's slice start code length.
+        const unsigned int end_pos = (nal_offset_next > 0) ? (nal_offset_next - 3)
+                                                           : total_bitstream_bytes;
+        sp_h264.slice_data_size     = end_pos - nal_offset;
+        sp_h264.slice_data_offset   = 0;
+        sp_h264.slice_data_flag     = VA_SLICE_DATA_FLAG_ALL;
+
+        // TODO: this may be not entirely true for YUV444
+        // but if we limiting to YUV420, that's ok
+        int ChromaArrayType = pic_param->seq_fields.bits.chroma_format_idc;
+
+        // parse slice header and use its data to fill slice parameter buffer
+        parse_slice_header(&st, pic_param, ChromaArrayType, vdppi->num_ref_idx_l0_active_minus1,
+                           vdppi->num_ref_idx_l1_active_minus1, &sp_h264);
+
+        VABufferID slice_parameters_buf;
+        status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceParameterBufferType,
+            sizeof(VASliceParameterBufferH264), 1, &sp_h264, &slice_parameters_buf);
+        if (VA_STATUS_SUCCESS != status) {
+            err_code = VDP_STATUS_ERROR;
+            goto quit;
+        }
+        status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_parameters_buf, 1);
+        if (VA_STATUS_SUCCESS != status) {
+            err_code = VDP_STATUS_ERROR;
+            goto quit;
+        }
+
+        VABufferID slice_buf;
+        status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceDataBufferType,
+            sp_h264.slice_data_size, 1, merged_bitstream + nal_offset, &slice_buf);
+        if (VA_STATUS_SUCCESS != status) {
+            err_code = VDP_STATUS_ERROR;
+            goto quit;
+        }
+
+        status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_buf, 1);
+        if (VA_STATUS_SUCCESS != status) {
+            err_code = VDP_STATUS_ERROR;
+            goto quit;
+        }
+
+        vaDestroyBuffer(va_dpy, slice_parameters_buf);
+        vaDestroyBuffer(va_dpy, slice_buf);
+
+        if (nal_offset_next < 0)        // nal_offset_next equals -1 when there is no slice
+            break;                      // start code found. Thus that was the final slice.
+        nal_offset = nal_offset_next;
+    } while (1);
+
+    status = vaEndPicture(va_dpy, decoderData->context_id);
+    if (VA_STATUS_SUCCESS != status) {
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
+    }
+
+    free(merged_bitstream);
+    err_code = VDP_STATUS_OK;
+quit:
+    return err_code;
+}
+
 VdpStatus
 softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                      VdpPictureInfo const *picture_info, uint32_t bitstream_buffer_count,
@@ -473,192 +665,14 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         err_code = VDP_STATUS_INVALID_HANDLE;
         goto quit;
     }
-    VdpDeviceData *deviceData = decoderData->device;
-    VADisplay va_dpy = deviceData->va_dpy;
-    VAStatus status;
-    VdpStatus vs;
 
     if (VDP_DECODER_PROFILE_H264_BASELINE == decoderData->profile ||
         VDP_DECODER_PROFILE_H264_MAIN ==     decoderData->profile ||
         VDP_DECODER_PROFILE_H264_HIGH ==     decoderData->profile)
     {
-        VdpPictureInfoH264 const *vdppi = (void *)picture_info;
-
-        // TODO: figure out where to get level
-        uint32_t level = 41;
-
-        // preparing picture parameters
-        VABufferID pic_param_buf;
-        VAPictureParameterBufferH264 *pic_param;
-
-        status = vaCreateBuffer(va_dpy, decoderData->context_id, VAPictureParameterBufferType,
-            sizeof(VAPictureParameterBufferH264), 1, NULL, &pic_param_buf);
-        if (VA_STATUS_SUCCESS != status) {
-            err_code = VDP_STATUS_ERROR;
-            goto quit;
-        }
-
-        status = vaMapBuffer(va_dpy, pic_param_buf, (void **)&pic_param);
-        if (VA_STATUS_SUCCESS != status) {
-            err_code = VDP_STATUS_ERROR;
-            goto quit;
-        }
-
-        vs = h264_translate_reference_frames(dstSurfData, decoderData, pic_param, vdppi);
-        if (VDP_STATUS_RESOURCES == vs) {
-            traceError("error (softVdpDecoderRender): no surfaces left in buffer\n");
-            err_code = VDP_STATUS_RESOURCES;
-            goto quit;
-        }
-        if (VDP_STATUS_OK != vs) {
-            err_code = VDP_STATUS_ERROR;
-            goto quit;
-        }
-
-        h264_translate_pic_param(pic_param, decoderData->width, decoderData->height, vdppi, level);
-        vaUnmapBuffer(va_dpy, pic_param_buf);
-
-        //  IQ Matrix
-        VABufferID iq_matrix_buf;
-        VAIQMatrixBufferH264 *iq_matrix;
-
-        status = vaCreateBuffer(va_dpy, decoderData->context_id, VAIQMatrixBufferType,
-            sizeof(VAIQMatrixBufferH264), 1, NULL, &iq_matrix_buf);
-        if (VA_STATUS_SUCCESS != status) {
-            err_code = VDP_STATUS_ERROR;
-            goto quit;
-        }
-
-        status = vaMapBuffer(va_dpy, iq_matrix_buf, (void **)&iq_matrix);
-        if (VA_STATUS_SUCCESS != status) {
-            err_code = VDP_STATUS_ERROR;
-            goto quit;
-        }
-
-        h264_translate_iq_matrix(iq_matrix, vdppi);
-        vaUnmapBuffer(va_dpy, iq_matrix_buf);
-
-        // send data to decoding hardware
-        status = vaBeginPicture(va_dpy, decoderData->context_id, dstSurfData->va_surf);
-        if (VA_STATUS_SUCCESS != status) {
-            err_code = VDP_STATUS_ERROR;
-            goto quit;
-        }
-        status = vaRenderPicture(va_dpy, decoderData->context_id, &pic_param_buf, 1);
-        if (VA_STATUS_SUCCESS != status) {
-            err_code = VDP_STATUS_ERROR;
-            goto quit;
-        }
-        status = vaRenderPicture(va_dpy, decoderData->context_id, &iq_matrix_buf, 1);
-        if (VA_STATUS_SUCCESS != status) {
-            err_code = VDP_STATUS_ERROR;
-            goto quit;
-        }
-
-        vaDestroyBuffer(va_dpy, pic_param_buf);
-        vaDestroyBuffer(va_dpy, iq_matrix_buf);
-
-        // merge bitstream buffers
-        int total_bitstream_bytes = 0;
-        for (unsigned int k = 0; k < bitstream_buffer_count; k ++)
-            total_bitstream_bytes += bitstream_buffers[k].bitstream_bytes;
-
-        uint8_t *merged_bitstream = malloc(total_bitstream_bytes);
-        if (NULL == merged_bitstream) {
-            err_code = VDP_STATUS_RESOURCES;
-            goto quit;
-        }
-
-        do {
-            unsigned char *ptr = merged_bitstream;
-            for (unsigned int k = 0; k < bitstream_buffer_count; k ++) {
-                memcpy(ptr, bitstream_buffers[k].bitstream, bitstream_buffers[k].bitstream_bytes);
-                ptr += bitstream_buffers[k].bitstream_bytes;
-            }
-        } while(0);
-
-        // Slice parameters
-
-        // All slice data have been merged into one continuous buffer. But we must supply
-        // slices one by one to the hardware decoder, so we need to delimit them. VDPAU
-        // requires bitstream buffers to include slice start code (0x00 0x00 0x01). Those
-        // will be used to calculate offsets and sizes of slice data in code below.
-
-        rbsp_state_t st_g;      // reference, global state
-        rbsp_attach_buffer(&st_g, merged_bitstream, total_bitstream_bytes);
-        int nal_offset = rbsp_navigate_to_nal_unit(&st_g);
-        if (nal_offset < 0) {
-            traceError("error (softVdpDecoderRender): no NAL header\n");
-            err_code = VDP_STATUS_ERROR;
-            goto quit;
-        }
-
-        do {
-            VASliceParameterBufferH264 sp_h264;
-            memset(&sp_h264, 0, sizeof(VASliceParameterBufferH264));
-
-            // make a copy of global rbsp state for using in slice header parser
-            rbsp_state_t st = rbsp_copy_state(&st_g);
-            rbsp_reset_bit_counter(&st);
-            int nal_offset_next = rbsp_navigate_to_nal_unit(&st_g);
-
-            // calculate end of current slice. Note (-3). It's slice start code length.
-            const unsigned int end_pos = (nal_offset_next > 0) ? (nal_offset_next - 3)
-                                                               : total_bitstream_bytes;
-            sp_h264.slice_data_size     = end_pos - nal_offset;
-            sp_h264.slice_data_offset   = 0;
-            sp_h264.slice_data_flag     = VA_SLICE_DATA_FLAG_ALL;
-
-            // TODO: this may be not entirely true for YUV444
-            // but if we limiting to YUV420, that's ok
-            int ChromaArrayType = pic_param->seq_fields.bits.chroma_format_idc;
-
-            // parse slice header and use its data to fill slice parameter buffer
-            parse_slice_header(&st, pic_param, ChromaArrayType, vdppi->num_ref_idx_l0_active_minus1,
-                               vdppi->num_ref_idx_l1_active_minus1, &sp_h264);
-
-            VABufferID slice_parameters_buf;
-            status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceParameterBufferType,
-                sizeof(VASliceParameterBufferH264), 1, &sp_h264, &slice_parameters_buf);
-            if (VA_STATUS_SUCCESS != status) {
-                err_code = VDP_STATUS_ERROR;
-                goto quit;
-            }
-            status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_parameters_buf, 1);
-            if (VA_STATUS_SUCCESS != status) {
-                err_code = VDP_STATUS_ERROR;
-                goto quit;
-            }
-
-            VABufferID slice_buf;
-            status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceDataBufferType,
-                sp_h264.slice_data_size, 1, merged_bitstream + nal_offset, &slice_buf);
-            if (VA_STATUS_SUCCESS != status) {
-                err_code = VDP_STATUS_ERROR;
-                goto quit;
-            }
-
-            status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_buf, 1);
-            if (VA_STATUS_SUCCESS != status) {
-                err_code = VDP_STATUS_ERROR;
-                goto quit;
-            }
-
-            vaDestroyBuffer(va_dpy, slice_parameters_buf);
-            vaDestroyBuffer(va_dpy, slice_buf);
-
-            if (nal_offset_next < 0)        // nal_offset_next equals -1 when there is no slice
-                break;                      // start code found. Thus that was the final slice.
-            nal_offset = nal_offset_next;
-        } while (1);
-
-        status = vaEndPicture(va_dpy, decoderData->context_id);
-        if (VA_STATUS_SUCCESS != status) {
-            err_code = VDP_STATUS_ERROR;
-            goto quit;
-        }
-
-        free(merged_bitstream);
+        // TODO: check exit code
+        softVdpDecoderRender_h264(decoderData, dstSurfData, picture_info, bitstream_buffer_count,
+                                  bitstream_buffers);
     } else {
         traceError("error (softVdpDecoderRender): no implementation for profile %s\n",
                    reverse_decoder_profile(decoderData->profile));
