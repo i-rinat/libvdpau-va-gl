@@ -24,6 +24,7 @@ set(LIB_SUFFIX "" CACHE STRING "library path suffix (if needed)")
 set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/vdpau" CACHE PATH "library installation path")
 
 add_library (${DRIVER_NAME} SHARED
+	vdpau-decoder.c
 	vdpau-soft.c
 	vdpau-presentation.c
 	vdpau-entry.c
