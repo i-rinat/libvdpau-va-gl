@@ -217,7 +217,6 @@ presentation_thread(void *param)
             pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
             int ret = pthread_cond_timedwait(&pqData->new_work_available, &pqData->queue_mutex,
                                              &target_time);
-            pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
             if (ret != 0 && ret != ETIMEDOUT) {
                 traceError("presentation_thread: pthread_cond_timedwait failed with code %d\n", ret);
                 goto quit;
@@ -228,6 +227,7 @@ presentation_thread(void *param)
             pqData = handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
             if (!pqData)
                 goto quit;
+            pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
             if (pqData->queue.head != -1) {
                 struct timespec ht = vdptime2timespec(pqData->queue.item[pqData->queue.head].t);
                 if (now.tv_sec > ht.tv_sec || (now.tv_sec == ht.tv_sec && now.tv_nsec > ht.tv_nsec)) {
