@@ -94,6 +94,18 @@ glx_context_pop()
 }
 
 void
+glx_context_lock(void)
+{
+    pthread_mutex_lock(&global.glx_ctx_stack_mutex);
+}
+
+void
+glx_context_unlock(void)
+{
+    pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
+}
+
+void
 glx_context_ref_glc_hash_table(Display *dpy, int screen)
 {
     pthread_mutex_lock(&global.glx_ctx_stack_mutex);

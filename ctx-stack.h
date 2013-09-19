@@ -17,4 +17,8 @@ void glx_context_pop(void);
 void glx_context_ref_glc_hash_table(Display *dpy, int screen);
 void glx_context_unref_glc_hash_table(Display *dpy);
 GLXContext  glx_context_get_root_context(void);
+
+void glx_context_lock(void);
+void glx_context_unlock(void);
+
 #endif /* __CTX_STACK_H */
