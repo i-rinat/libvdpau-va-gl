@@ -476,56 +476,38 @@ softVdpDecoderRender_h264(VdpDecoderData *decoderData, VdpVideoSurfaceData *dstS
     // TODO: figure out where to get level
     uint32_t level = 41;
 
-    // preparing picture parameters
-    VABufferID pic_param_buf;
-    VAPictureParameterBufferH264 *pic_param;
+    // preparing picture parameters and IQ matrix
+    VABufferID pic_param_buf, iq_matrix_buf;
+    VAPictureParameterBufferH264 pic_param;
+    VAIQMatrixBufferH264 iq_matrix;
+
+    vs = h264_translate_reference_frames(dstSurfData, decoderData, &pic_param, vdppi);
+    if (VDP_STATUS_OK != vs) {
+        if (VDP_STATUS_RESOURCES == vs) {
+            traceError("error (softVdpDecoderRender): no surfaces left in buffer\n");
+            err_code = VDP_STATUS_RESOURCES;
+        } else {
+            err_code = VDP_STATUS_ERROR;
+        }
+        goto quit;
+    }
+
+    h264_translate_pic_param(&pic_param, decoderData->width, decoderData->height, vdppi, level);
+    h264_translate_iq_matrix(&iq_matrix, vdppi);
 
     status = vaCreateBuffer(va_dpy, decoderData->context_id, VAPictureParameterBufferType,
-        sizeof(VAPictureParameterBufferH264), 1, NULL, &pic_param_buf);
+        sizeof(VAPictureParameterBufferH264), 1, &pic_param, &pic_param_buf);
     if (VA_STATUS_SUCCESS != status) {
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
-
-    status = vaMapBuffer(va_dpy, pic_param_buf, (void **)&pic_param);
-    if (VA_STATUS_SUCCESS != status) {
-        err_code = VDP_STATUS_ERROR;
-        goto quit;
-    }
-
-    vs = h264_translate_reference_frames(dstSurfData, decoderData, pic_param, vdppi);
-    if (VDP_STATUS_RESOURCES == vs) {
-        traceError("error (softVdpDecoderRender): no surfaces left in buffer\n");
-        err_code = VDP_STATUS_RESOURCES;
-        goto quit;
-    }
-    if (VDP_STATUS_OK != vs) {
-        err_code = VDP_STATUS_ERROR;
-        goto quit;
-    }
-
-    h264_translate_pic_param(pic_param, decoderData->width, decoderData->height, vdppi, level);
-    vaUnmapBuffer(va_dpy, pic_param_buf);
-
-    //  IQ Matrix
-    VABufferID iq_matrix_buf;
-    VAIQMatrixBufferH264 *iq_matrix;
 
     status = vaCreateBuffer(va_dpy, decoderData->context_id, VAIQMatrixBufferType,
-        sizeof(VAIQMatrixBufferH264), 1, NULL, &iq_matrix_buf);
+        sizeof(VAIQMatrixBufferH264), 1, &iq_matrix, &iq_matrix_buf);
     if (VA_STATUS_SUCCESS != status) {
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
-
-    status = vaMapBuffer(va_dpy, iq_matrix_buf, (void **)&iq_matrix);
-    if (VA_STATUS_SUCCESS != status) {
-        err_code = VDP_STATUS_ERROR;
-        goto quit;
-    }
-
-    h264_translate_iq_matrix(iq_matrix, vdppi);
-    vaUnmapBuffer(va_dpy, iq_matrix_buf);
 
     // send data to decoding hardware
     status = vaBeginPicture(va_dpy, decoderData->context_id, dstSurfData->va_surf);
@@ -600,10 +582,10 @@ softVdpDecoderRender_h264(VdpDecoderData *decoderData, VdpVideoSurfaceData *dstS
 
         // TODO: this may be not entirely true for YUV444
         // but if we limiting to YUV420, that's ok
-        int ChromaArrayType = pic_param->seq_fields.bits.chroma_format_idc;
+        int ChromaArrayType = pic_param.seq_fields.bits.chroma_format_idc;
 
         // parse slice header and use its data to fill slice parameter buffer
-        parse_slice_header(&st, pic_param, ChromaArrayType, vdppi->num_ref_idx_l0_active_minus1,
+        parse_slice_header(&st, &pic_param, ChromaArrayType, vdppi->num_ref_idx_l0_active_minus1,
                            vdppi->num_ref_idx_l1_active_minus1, &sp_h264);
 
         VABufferID slice_parameters_buf;
