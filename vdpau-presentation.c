@@ -200,7 +200,6 @@ static
 void *
 presentation_thread(void *param)
 {
-    int first_time = 1;
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
     VdpPresentationQueue presentation_queue = (VdpPresentationQueue)(size_t)param;
     VdpPresentationQueueData *pqData =
@@ -215,12 +214,6 @@ presentation_thread(void *param)
         pthread_mutex_lock(&pqData->queue_mutex);
         while (1) {
             handle_release(presentation_queue);
-            if (first_time) {
-                pthread_mutex_lock(&pqData->pq_operational_lock);
-                pthread_cond_signal(&pqData->pq_operational);
-                pthread_mutex_unlock(&pqData->pq_operational_lock);
-                first_time = 0;
-            }
             pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
             int ret = pthread_cond_timedwait(&pqData->new_work_available, &pqData->queue_mutex,
                                              &target_time);
@@ -309,17 +302,10 @@ softVdpPresentationQueueCreate(VdpDevice device,
 
     pthread_mutex_init(&data->queue_mutex, NULL);
     pthread_cond_init(&data->new_work_available, NULL);
-    pthread_mutex_init(&data->pq_operational_lock, NULL);
-    pthread_cond_init(&data->pq_operational, NULL);
 
     // launch worker thread
     pthread_create(&data->worker_thread, NULL, presentation_thread,
                    (void *)(size_t)(*presentation_queue));
-
-    // wait for worker thread to start accepting broadcasts
-    pthread_mutex_lock(&data->pq_operational_lock);
-    pthread_cond_wait(&data->pq_operational, &data->pq_operational_lock);
-    pthread_mutex_unlock(&data->pq_operational_lock);
 
     handle_release(device);
     handle_release(presentation_queue_target);
