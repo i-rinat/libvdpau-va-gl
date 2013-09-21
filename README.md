@@ -14,8 +14,8 @@ lower.
 VDPAU is not vendor-locked technology. Even official documentation mentions
 possibility of other drivers. They should be named as `libvdpau_drivername.so.1` and
 placed where linker could find them. `/usr/lib` usually works fine.
-Which driver to use determined by X server default settings or `VDPAU_DRIVER`
-environment variable.
+Which driver to use is determined by asking X server about current driver name or by
+using `VDPAU_DRIVER` environment variable.
 
 Here is one. Named libvdpau_va_gl.so.1, it uses OpenGL under the hood to
 accelerate drawing and scaling and VA-API (if available) to accelerate video
@@ -26,11 +26,16 @@ OpenGL is available, you know, on systems with OpenGL available.
 
 Install
 =======
-   1. `sudo apt-get install libvdpau-dev libva-dev libglib2.0-dev libswscale-dev libgl1-mesa-dev libglu1-mesa-dev`
+   1. `sudo apt-get install cmake libvdpau-dev libva-dev libglib2.0-dev libswscale-dev libgl1-mesa-dev libglu1-mesa-dev`
    2. `mkdir build; cd build`
    3. `cmake -DCMAKE_BUILD_TYPE=Release ..`
    4. `sudo make install`
    5. Add `VDPAU_DRIVER=va_gl` to your environment
+
+Commands above should work for any Debian-based distro. Fedora names packages in a
+different way, so package installation step will look like:
+`sudo yum install cmake libvdpau-devel libva-devel glib2-devel ffmpeg-devel mesa-libGL-devel mesa-libGLU-devel`.
+Note you need to add rpmfusion repo to get `ffmpeg-devel`.
 
 Run time configuration
 ======================
