@@ -1,3 +1,9 @@
+2013-09-21  Rinat Ibragimov  <ibragimovrinat@mail.ru>
+
+	* core: start splitting vdpau-soft.c into smaller pieces
+	* core: use separate thread for presentation queue
+	* core: drop global locking, try to use fine grained locking instead
+
 2013-07-06  Rinat Ibragimov  <ibragimovrinat@mail.ru>
 
 	* tag: v0.1.0
