@@ -9,6 +9,7 @@
 #define _XOPEN_SOURCE
 #define GL_GLEXT_PROTOTYPES
 #include <assert.h>
+#include <malloc.h>
 #include <libswscale/swscale.h>
 #include <va/va.h>
 #include <va/va_glx.h>
@@ -1077,7 +1078,9 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
             goto quit;
         }
 
-        void *bgra_buf = malloc(dstSurfData->width * dstSurfData->height * 4);
+        // libswscale likes aligned data
+        int stride = (dstSurfData->width + 7) & ~0x7;
+        void *bgra_buf = memalign(16, stride * dstSurfData->height * 4);
         if (NULL == bgra_buf) {
             traceError("error (softVdpVideoSurfacePutBitsYCbCr): can not allocate memory\n");
             err_code = VDP_STATUS_RESOURCES;
@@ -1088,7 +1091,7 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
         struct SwsContext *sws_ctx =
             sws_getContext(dstSurfData->width, dstSurfData->height, PIX_FMT_YUV420P,
                            dstSurfData->width, dstSurfData->height, PIX_FMT_BGRA,
-                           SWS_FAST_BILINEAR, NULL, NULL, NULL);
+                           SWS_POINT, NULL, NULL, NULL);
         if (NULL == sws_ctx) {
             traceError("error (softVdpVideoSurfacePutBitsYCbCr): can not create SwsContext\n");
             free(bgra_buf);
@@ -1099,7 +1102,7 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
         const uint8_t * const srcSlice[] = { source_data[0], source_data[2], source_data[1], NULL };
         const int srcStride[] = { source_pitches[0], source_pitches[2], source_pitches[1], 0 };
         uint8_t * const dst[] = { bgra_buf, NULL, NULL, NULL };
-        const int dstStride[] = { dstSurfData->width * 4, 0, 0, 0 };
+        const int dstStride[] = { stride * 4, 0, 0, 0 };
         int res = sws_scale(sws_ctx, srcSlice, srcStride, 0, dstSurfData->height, dst, dstStride);
         if (res != (int)dstSurfData->height) {
             traceError("error (softVdpVideoSurfacePutBitsYCbCr): sws_scale returned %d while "
@@ -1112,8 +1115,10 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
         sws_freeContext(sws_ctx);
 
         glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, stride);
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, dstSurfData->width, dstSurfData->height,
                         GL_BGRA, GL_UNSIGNED_BYTE, bgra_buf);
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         free(bgra_buf);
     } else {
         if (VDP_YCBCR_FORMAT_YV12 != source_ycbcr_format) {
