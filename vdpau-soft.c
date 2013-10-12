@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <malloc.h>
 #include <libswscale/swscale.h>
+#include <string.h>
 #include <va/va.h>
 #include <va/va_glx.h>
 #include <vdpau/vdpau.h>
