@@ -441,7 +441,8 @@ h264_translate_pic_param(VAPictureParameterBufferH264 *pic_param, uint32_t width
         PIC_FIELDS(field_pic_flag)                      = vdppi->field_pic_flag;
         PIC_FIELDS(constrained_intra_pred_flag)         = vdppi->constrained_intra_pred_flag;
         PIC_FIELDS(pic_order_present_flag)              = vdppi->pic_order_present_flag;
-        PIC_FIELDS(deblocking_filter_control_present_flag) = vdppi->deblocking_filter_control_present_flag;
+        PIC_FIELDS(deblocking_filter_control_present_flag) =
+                                                    vdppi->deblocking_filter_control_present_flag;
         PIC_FIELDS(redundant_pic_cnt_present_flag)      = vdppi->redundant_pic_cnt_present_flag;
         PIC_FIELDS(reference_pic_flag)                  = vdppi->is_reference;
         pic_param->frame_num                            = vdppi->frame_num;

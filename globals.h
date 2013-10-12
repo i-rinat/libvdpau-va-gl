@@ -24,7 +24,8 @@ struct global_data {
         int log_pq_delay;           ///< measure delay between queueing and displaying presentation
                                     ///< queue introduces
         int log_timestamp;          ///< display timestamps
-        int avoid_va;               ///< do not use VA-API video decoding acceleration even if available
+        int avoid_va;               ///< do not use VA-API video decoding acceleration even if
+                                    ///< available
     } quirks;
 };
 

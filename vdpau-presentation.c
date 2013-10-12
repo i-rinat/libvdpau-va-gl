@@ -220,7 +220,7 @@ presentation_thread(void *param)
             pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
             ret = pthread_cond_timedwait(&pqData->new_work_available, &cond_mutex, &target_time);
             if (ret != 0 && ret != ETIMEDOUT) {
-                traceError("presentation_thread: pthread_cond_timedwait failed with code %d\n", ret);
+                traceError("%s: pthread_cond_timedwait failed with code %d\n", __func__, ret);
                 goto quit;
             }
 
@@ -233,7 +233,9 @@ presentation_thread(void *param)
             pthread_mutex_lock(&pqData->queue_mutex);
             if (pqData->queue.head != -1) {
                 struct timespec ht = vdptime2timespec(pqData->queue.item[pqData->queue.head].t);
-                if (now.tv_sec > ht.tv_sec || (now.tv_sec == ht.tv_sec && now.tv_nsec > ht.tv_nsec)) {
+                if (now.tv_sec > ht.tv_sec ||
+                    (now.tv_sec == ht.tv_sec && now.tv_nsec > ht.tv_nsec))
+                {
                     // break loop and process event
                     pthread_mutex_unlock(&pqData->queue_mutex);
                     break;
@@ -398,8 +400,8 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
                                 uint32_t clip_width, uint32_t clip_height,
                                 VdpTime earliest_presentation_time)
 {
-
-    VdpPresentationQueueData *pqData = handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
+    VdpPresentationQueueData *pqData =
+        handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
     if (NULL == pqData)
         return VDP_STATUS_INVALID_HANDLE;
 
@@ -441,7 +443,9 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
     surfData->status = VDP_PRESENTATION_QUEUE_STATUS_QUEUED;
 
     // keep queue sorted
-    if (pqData->queue.head == -1 || earliest_presentation_time < pqData->queue.item[pqData->queue.head].t) {
+    if (pqData->queue.head == -1 ||
+        earliest_presentation_time < pqData->queue.item[pqData->queue.head].t)
+    {
         pqData->queue.item[new_item].next = pqData->queue.head;
         pqData->queue.head = new_item;
     } else {

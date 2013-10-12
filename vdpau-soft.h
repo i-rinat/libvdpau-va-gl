@@ -108,7 +108,8 @@ typedef struct {
     pthread_mutex_t lock;
     VdpChromaType   chroma_type;    ///< video chroma type
     uint32_t        width;
-    uint32_t        stride;         ///< distance between first pixels of two consecutive rows (in pixels)
+    uint32_t        stride;         ///< distance between first pixels of two consecutive rows
+                                    ///< in pixels
     uint32_t        height;
     void           *y_plane;        ///< luma data (software)
     void           *v_plane;        ///< chroma data (software)
