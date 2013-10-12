@@ -200,23 +200,25 @@ static
 void *
 presentation_thread(void *param)
 {
+    pthread_mutex_t cond_mutex = PTHREAD_MUTEX_INITIALIZER;
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
     VdpPresentationQueue presentation_queue = (VdpPresentationQueue)(size_t)param;
     VdpPresentationQueueData *pqData =
         handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
     if (NULL == pqData)
         return NULL;
+
+    pthread_mutex_lock(&cond_mutex);
     while (1) {
         struct timespec now;
         clock_gettime(CLOCK_REALTIME, &now);
         struct timespec target_time = now;
 
-        pthread_mutex_lock(&pqData->queue_mutex);
         while (1) {
+            int ret;
             handle_release(presentation_queue);
             pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-            int ret = pthread_cond_timedwait(&pqData->new_work_available, &pqData->queue_mutex,
-                                             &target_time);
+            ret = pthread_cond_timedwait(&pqData->new_work_available, &cond_mutex, &target_time);
             if (ret != 0 && ret != ETIMEDOUT) {
                 traceError("presentation_thread: pthread_cond_timedwait failed with code %d\n", ret);
                 goto quit;
@@ -228,10 +230,12 @@ presentation_thread(void *param)
             if (!pqData)
                 goto quit;
             pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+            pthread_mutex_lock(&pqData->queue_mutex);
             if (pqData->queue.head != -1) {
                 struct timespec ht = vdptime2timespec(pqData->queue.item[pqData->queue.head].t);
                 if (now.tv_sec > ht.tv_sec || (now.tv_sec == ht.tv_sec && now.tv_nsec > ht.tv_nsec)) {
                     // break loop and process event
+                    pthread_mutex_unlock(&pqData->queue_mutex);
                     break;
                 } else {
                     // sleep until next event
@@ -242,6 +246,7 @@ presentation_thread(void *param)
                 target_time = now;
                 target_time.tv_sec += 1;
             }
+            pthread_mutex_unlock(&pqData->queue_mutex);
         }
 
         // do event processing
