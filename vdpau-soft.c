@@ -1741,6 +1741,83 @@ vdpBlendStateToGLBlendState(VdpOutputSurfaceRenderBlendState const *blend_state)
     return bs;
 }
 
+static
+void
+compose_surfaces(struct blend_state_struct bs, VdpRect srcRect, VdpRect dstRect,
+                 VdpColor const *colors, int flags, int has_src_surf)
+{
+    glBlendFuncSeparate(bs.srcFuncRGB, bs.dstFuncRGB, bs.srcFuncAlpha, bs.dstFuncAlpha);
+    glBlendEquationSeparate(bs.modeRGB, bs.modeAlpha);
+
+    glColor4f(1, 1, 1, 1);
+    glBegin(GL_QUADS);
+        if (has_src_surf) {
+            switch (flags & 3) {
+            case VDP_OUTPUT_SURFACE_RENDER_ROTATE_0:
+                glTexCoord2i(srcRect.x0, srcRect.y0); break;
+            case VDP_OUTPUT_SURFACE_RENDER_ROTATE_90:
+                glTexCoord2i(srcRect.x0, srcRect.y1); break;
+            case VDP_OUTPUT_SURFACE_RENDER_ROTATE_180:
+                glTexCoord2i(srcRect.x1, srcRect.y1); break;
+            case VDP_OUTPUT_SURFACE_RENDER_ROTATE_270:
+                glTexCoord2i(srcRect.x1, srcRect.y0); break;
+            }
+        }
+        if (colors)
+            glColor4f(colors[0].red, colors[0].green, colors[0].blue, colors[0].alpha);
+        glVertex2f(dstRect.x0, dstRect.y0);
+
+        if (has_src_surf) {
+            switch (flags & 3) {
+            case VDP_OUTPUT_SURFACE_RENDER_ROTATE_0:
+                glTexCoord2i(srcRect.x1, srcRect.y0); break;
+            case VDP_OUTPUT_SURFACE_RENDER_ROTATE_90:
+                glTexCoord2i(srcRect.x0, srcRect.y0); break;
+            case VDP_OUTPUT_SURFACE_RENDER_ROTATE_180:
+                glTexCoord2i(srcRect.x0, srcRect.y1); break;
+            case VDP_OUTPUT_SURFACE_RENDER_ROTATE_270:
+                glTexCoord2i(srcRect.x1, srcRect.y1); break;
+            }
+        }
+        if (colors && (flags & VDP_OUTPUT_SURFACE_RENDER_COLOR_PER_VERTEX))
+            glColor4f(colors[1].red, colors[1].green, colors[1].blue, colors[1].alpha);
+        glVertex2f(dstRect.x1, dstRect.y0);
+
+        if (has_src_surf) {
+            switch (flags & 3) {
+            case VDP_OUTPUT_SURFACE_RENDER_ROTATE_0:
+                glTexCoord2i(srcRect.x1, srcRect.y1); break;
+            case VDP_OUTPUT_SURFACE_RENDER_ROTATE_90:
+                glTexCoord2i(srcRect.x1, srcRect.y0); break;
+            case VDP_OUTPUT_SURFACE_RENDER_ROTATE_180:
+                glTexCoord2i(srcRect.x0, srcRect.y0); break;
+            case VDP_OUTPUT_SURFACE_RENDER_ROTATE_270:
+                glTexCoord2i(srcRect.x0, srcRect.y1); break;
+            }
+        }
+        if (colors && (flags & VDP_OUTPUT_SURFACE_RENDER_COLOR_PER_VERTEX))
+            glColor4f(colors[2].red, colors[2].green, colors[2].blue, colors[2].alpha);
+        glVertex2f(dstRect.x1, dstRect.y1);
+
+        if (has_src_surf) {
+            switch (flags & 3) {
+            case VDP_OUTPUT_SURFACE_RENDER_ROTATE_0:
+                glTexCoord2i(srcRect.x0, srcRect.y1); break;
+            case VDP_OUTPUT_SURFACE_RENDER_ROTATE_90:
+                glTexCoord2i(srcRect.x1, srcRect.y1); break;
+            case VDP_OUTPUT_SURFACE_RENDER_ROTATE_180:
+                glTexCoord2i(srcRect.x1, srcRect.y0); break;
+            case VDP_OUTPUT_SURFACE_RENDER_ROTATE_270:
+                glTexCoord2i(srcRect.x0, srcRect.y0); break;
+            }
+        }
+        if (colors && (flags & VDP_OUTPUT_SURFACE_RENDER_COLOR_PER_VERTEX))
+            glColor4f(colors[3].red, colors[3].green, colors[3].blue, colors[3].alpha);
+        glVertex2f(dstRect.x0, dstRect.y1);
+    glEnd();
+    glColor4f(1, 1, 1, 1);
+}
+
 VdpStatus
 softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
                                         VdpRect const *destination_rect,
@@ -1750,7 +1827,6 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
                                         uint32_t flags)
 {
     VdpStatus err_code;
-    (void)flags;    // TODO: handle flags
 
     if (blend_state) {
         if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version) {
@@ -1763,15 +1839,15 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
         handle_acquire(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
     VdpOutputSurfaceData *srcSurfData = handle_acquire(source_surface, HANDLETYPE_OUTPUT_SURFACE);
 
-    if (NULL == srcSurfData || NULL == dstSurfData) {
+    if (NULL == dstSurfData) {
         err_code = VDP_STATUS_INVALID_HANDLE;
         goto quit;
     }
-    if (srcSurfData->device != dstSurfData->device) {
+    if (srcSurfData && srcSurfData->device != dstSurfData->device) {
         err_code = VDP_STATUS_HANDLE_DEVICE_MISMATCH;
         goto quit;
     }
-    VdpDeviceData *deviceData = srcSurfData->device;
+    VdpDeviceData *deviceData = dstSurfData->device;
 
     const int dstWidth = dstSurfData->width;
     const int dstHeight = dstSurfData->height;
@@ -1808,31 +1884,15 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    // paint source surface over
-    glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
+    if (srcSurfData) {
+        glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
 
-    glMatrixMode(GL_TEXTURE);
-    glLoadIdentity();
-    glScalef(1.0f/srcWidth, 1.0f/srcHeight, 1.0f);
+        glMatrixMode(GL_TEXTURE);
+        glLoadIdentity();
+        glScalef(1.0f/srcWidth, 1.0f/srcHeight, 1.0f);
+    }
 
-    // blend
-    glBlendFuncSeparate(bs.srcFuncRGB, bs.dstFuncRGB, bs.srcFuncAlpha, bs.dstFuncAlpha);
-    glBlendEquationSeparate(bs.modeRGB, bs.modeAlpha);
-
-    // TODO: handle colors for every corner
-    // TODO: handle rotation (flags)
-    glColor4f(1, 1, 1, 1);
-    if (colors)
-        glColor4f(colors[0].red, colors[0].green, colors[0].blue, colors[0].alpha);
-
-    glBegin(GL_QUADS);
-    glTexCoord2i(s_rect.x0, s_rect.y0); glVertex2f(d_rect.x0, d_rect.y0);
-    glTexCoord2i(s_rect.x1, s_rect.y0); glVertex2f(d_rect.x1, d_rect.y0);
-    glTexCoord2i(s_rect.x1, s_rect.y1); glVertex2f(d_rect.x1, d_rect.y1);
-    glTexCoord2i(s_rect.x0, s_rect.y1); glVertex2f(d_rect.x0, d_rect.y1);
-    glEnd();
-
-    glColor4f(1, 1, 1, 1);
+    compose_surfaces(bs, s_rect, d_rect, colors, flags, !!srcSurfData);
     glFinish();
 
     GLenum gl_error = glGetError();
@@ -1860,7 +1920,6 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
                                         uint32_t flags)
 {
     VdpStatus err_code;
-    (void)flags;    // TODO: handle flags
 
     if (blend_state) {
         if (VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION != blend_state->struct_version) {
@@ -1872,22 +1931,22 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     VdpOutputSurfaceData *dstSurfData =
         handle_acquire(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
     VdpBitmapSurfaceData *srcSurfData = handle_acquire(source_surface, HANDLETYPE_BITMAP_SURFACE);
-    if (NULL == dstSurfData || NULL == srcSurfData) {
+    if (NULL == dstSurfData) {
         err_code = VDP_STATUS_INVALID_HANDLE;
         goto quit;
     }
-    if (srcSurfData->device != dstSurfData->device) {
+    if (srcSurfData && srcSurfData->device != dstSurfData->device) {
         err_code = VDP_STATUS_HANDLE_DEVICE_MISMATCH;
         goto quit;
     }
-    VdpDeviceData *deviceData = srcSurfData->device;
+    VdpDeviceData *deviceData = dstSurfData->device;
 
-    VdpRect srcRect = {0, 0, srcSurfData->width, srcSurfData->height};
-    VdpRect dstRect = {0, 0, dstSurfData->width, dstSurfData->height};
+    VdpRect s_rect = {0, 0, srcSurfData->width, srcSurfData->height};
+    VdpRect d_rect = {0, 0, dstSurfData->width, dstSurfData->height};
     if (source_rect)
-        srcRect = *source_rect;
+        s_rect = *source_rect;
     if (destination_rect)
-        dstRect = *destination_rect;
+        d_rect = *destination_rect;
 
     // select blend functions
     struct blend_state_struct bs = vdpBlendStateToGLBlendState(blend_state);
@@ -1912,40 +1971,24 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    // paint source surface over
-    glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
-    if (srcSurfData->dirty) {
-        if (4 != srcSurfData->bytes_per_pixel)
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, srcSurfData->width, srcSurfData->height,
-                        srcSurfData->gl_format, srcSurfData->gl_type, srcSurfData->bitmap_data);
-        if (4 != srcSurfData->bytes_per_pixel)
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-        srcSurfData->dirty = 0;
+    if (srcSurfData) {
+        glBindTexture(GL_TEXTURE_2D, srcSurfData->tex_id);
+        if (srcSurfData->dirty) {
+            if (4 != srcSurfData->bytes_per_pixel)
+                glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, srcSurfData->width, srcSurfData->height,
+                            srcSurfData->gl_format, srcSurfData->gl_type, srcSurfData->bitmap_data);
+            if (4 != srcSurfData->bytes_per_pixel)
+                glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+            srcSurfData->dirty = 0;
+        }
+
+        glMatrixMode(GL_TEXTURE);
+        glLoadIdentity();
+        glScalef(1.0f/srcSurfData->width, 1.0f/srcSurfData->height, 1.0f);
     }
 
-    glMatrixMode(GL_TEXTURE);
-    glLoadIdentity();
-    glScalef(1.0f/srcSurfData->width, 1.0f/srcSurfData->height, 1.0f);
-
-    // blend
-    glBlendFuncSeparate(bs.srcFuncRGB, bs.dstFuncRGB, bs.srcFuncAlpha, bs.dstFuncAlpha);
-    glBlendEquationSeparate(bs.modeRGB, bs.modeAlpha);
-
-    // TODO: handle colors for every corner
-    // TODO: handle rotation (flags)
-    glColor4f(1, 1, 1, 1);
-    if (colors)
-        glColor4f(colors[0].red, colors[0].green, colors[0].blue, colors[0].alpha);
-
-    glBegin(GL_QUADS);
-    glTexCoord2i(srcRect.x0, srcRect.y0);   glVertex2f(dstRect.x0, dstRect.y0);
-    glTexCoord2i(srcRect.x1, srcRect.y0);   glVertex2f(dstRect.x1, dstRect.y0);
-    glTexCoord2i(srcRect.x1, srcRect.y1);   glVertex2f(dstRect.x1, dstRect.y1);
-    glTexCoord2i(srcRect.x0, srcRect.y1);   glVertex2f(dstRect.x0, dstRect.y1);
-    glEnd();
-
-    glColor4f(1, 1, 1, 1);
+    compose_surfaces(bs, s_rect, d_rect, colors, flags, !!srcSurfData);
     glFinish();
 
     GLenum gl_error = glGetError();
