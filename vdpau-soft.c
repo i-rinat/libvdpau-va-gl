@@ -57,6 +57,8 @@ softVdpGetErrorString(VdpStatus status)
 VdpStatus
 softVdpGetApiVersion(uint32_t *api_version)
 {
+    if (!api_version)
+        return VDP_STATUS_INVALID_POINTER;
     *api_version = VDPAU_VERSION;
     return VDP_STATUS_OK;
 }
@@ -67,14 +69,11 @@ softVdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rg
                                       uint32_t *max_height)
 {
     VdpStatus err_code;
+    if (!is_supported || !max_width || !max_height)
+        return VDP_STATUS_INVALID_POINTER;
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
-
-    if (NULL == is_supported || NULL == max_width || NULL == max_height) {
-        err_code = VDP_STATUS_INVALID_POINTER;
-        goto quit;
-    }
 
     switch (surface_rgba_format) {
     case VDP_RGBA_FORMAT_B8G8R8A8:
@@ -144,6 +143,8 @@ softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
                            uint32_t height, VdpOutputSurface *surface)
 {
     VdpStatus err_code;
+    if (!surface)
+        return VDP_STATUS_INVALID_POINTER;
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -286,25 +287,19 @@ VdpStatus
 softVdpOutputSurfaceGetParameters(VdpOutputSurface surface, VdpRGBAFormat *rgba_format,
                                   uint32_t *width, uint32_t *height)
 {
-    VdpStatus err_code;
+    if (!rgba_format || !width || !height)
+        return VDP_STATUS_INVALID_POINTER;
     VdpOutputSurfaceData *surfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == surfData)
         return VDP_STATUS_INVALID_HANDLE;
-
-    if (NULL == rgba_format || NULL == width || NULL == height) {
-        err_code = VDP_STATUS_INVALID_POINTER;
-        goto quit;
-    }
 
     // TODO: check surfData validity again
     *rgba_format = surfData->rgba_format;
     *width       = surfData->width;
     *height      = surfData->height;
 
-    err_code = VDP_STATUS_OK;
-quit:
     handle_release(surface);
-    return err_code;
+    return VDP_STATUS_OK;
 }
 
 VdpStatus
@@ -313,6 +308,8 @@ softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *sourc
                                   uint32_t const *destination_pitches)
 {
     VdpStatus err_code;
+    if (!destination_data || !destination_pitches)
+        return VDP_STATUS_INVALID_POINTER;
     VdpOutputSurfaceData *srcSurfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == srcSurfData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -354,6 +351,8 @@ softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *s
                                   uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
     VdpStatus err_code;
+    if (!source_data || !source_pitches)
+        return VDP_STATUS_INVALID_POINTER;
     VdpOutputSurfaceData *dstSurfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == dstSurfData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -398,6 +397,8 @@ softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat so
                                    VdpColorTableFormat color_table_format, void const *color_table)
 {
     VdpStatus err_code;
+    if (!source_data || !source_pitch || !color_table)
+        return VDP_STATUS_INVALID_POINTER;
     VdpOutputSurfaceData *surfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == surfData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -527,6 +528,8 @@ softVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
                         void const *const *parameter_values, VdpVideoMixer *mixer)
 {
     VdpStatus err_code;
+    if (!mixer)
+        return VDP_STATUS_INVALID_POINTER;
     (void)feature_count; (void)features;    // TODO: mixer features
     (void)parameter_count; (void)parameters; (void)parameter_values;    // TODO: mixer parameters
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);
@@ -797,6 +800,8 @@ softVdpVideoSurfaceQueryCapabilities(VdpDevice device, VdpChromaType surface_chr
                                      VdpBool *is_supported, uint32_t *max_width,
                                      uint32_t *max_height)
 {
+    if (!is_supported || !max_width || !max_height)
+        return VDP_STATUS_INVALID_POINTER;
     (void)device; (void)surface_chroma_type;
     // TODO: implement
     *is_supported = 1;
@@ -812,6 +817,8 @@ softVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(VdpDevice device,
                                                     VdpYCbCrFormat bits_ycbcr_format,
                                                     VdpBool *is_supported)
 {
+    if (!is_supported)
+        return VDP_STATUS_INVALID_POINTER;
     (void)device; (void)surface_chroma_type; (void)bits_ycbcr_format;
     // TODO: implement
     *is_supported = 1;
@@ -823,6 +830,8 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
                           uint32_t height, VdpVideoSurface *surface)
 {
     VdpStatus err_code;
+    if (!surface)
+        return VDP_STATUS_INVALID_POINTER;
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -937,14 +946,11 @@ VdpStatus
 softVdpVideoSurfaceGetParameters(VdpVideoSurface surface, VdpChromaType *chroma_type,
                                  uint32_t *width, uint32_t *height)
 {
+    if (!chroma_type || !width || !height)
+        return VDP_STATUS_INVALID_POINTER;
     VdpVideoSurfaceData *videoSurf = handle_acquire(surface, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == videoSurf)
         return VDP_STATUS_INVALID_HANDLE;
-
-    if (NULL == chroma_type || NULL == width || NULL == height) {
-        handle_release(surface);
-        return VDP_STATUS_INVALID_POINTER;
-    }
 
     *chroma_type = videoSurf->chroma_type;
     *width       = videoSurf->width;
@@ -959,6 +965,8 @@ softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destinat
                                 void *const *destination_data, uint32_t const *destination_pitches)
 {
     VdpStatus err_code;
+    if (!destination_data || !destination_pitches)
+        return VDP_STATUS_INVALID_POINTER;
     VdpVideoSurfaceData *srcSurfData = handle_acquire(surface, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == srcSurfData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -1062,6 +1070,8 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
                                 void const *const *source_data, uint32_t const *source_pitches)
 {
     VdpStatus err_code;
+    if (!source_data || !source_pitches)
+        return VDP_STATUS_INVALID_POINTER;
     //TODO: figure out what to do with other formats
 
     VdpVideoSurfaceData *dstSurfData = handle_acquire(surface, HANDLETYPE_VIDEO_SURFACE);
@@ -1221,6 +1231,8 @@ softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t
                            uint32_t height, VdpBool frequently_accessed, VdpBitmapSurface *surface)
 {
     VdpStatus err_code;
+    if (!surface)
+        return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -1392,6 +1404,8 @@ softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *s
                                   uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
     VdpStatus err_code;
+    if (!source_data || !source_pitches)
+        return VDP_STATUS_INVALID_POINTER;
     VdpBitmapSurfaceData *dstSurfData = handle_acquire(surface, HANDLETYPE_BITMAP_SURFACE);
     if (NULL == dstSurfData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -1580,6 +1594,8 @@ quit_skip_release:
 VdpStatus
 softVdpGetInformationString(char const **information_string)
 {
+    if (!information_string)
+        return VDP_STATUS_INVALID_POINTER;
     *information_string = implemetation_description_string;
     return VDP_STATUS_OK;
 }
@@ -1587,9 +1603,9 @@ softVdpGetInformationString(char const **information_string)
 VdpStatus
 softVdpGenerateCSCMatrix(VdpProcamp *procamp, VdpColorStandard standard, VdpCSCMatrix *csc_matrix)
 {
-    if (NULL == procamp || NULL == csc_matrix)
+    if (!csc_matrix)
         return VDP_STATUS_INVALID_POINTER;
-    if (VDP_PROCAMP_VERSION != procamp->struct_version)
+    if (procamp && VDP_PROCAMP_VERSION != procamp->struct_version)
         return VDP_STATUS_INVALID_VALUE;
 
     // TODO: do correct matricies calculation
@@ -1961,6 +1977,8 @@ VdpStatus
 softVdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_pointer)
 {
     (void)device;   // there is no difference between various devices. All have same procedures
+    if (!function_pointer)
+        return VDP_STATUS_INVALID_POINTER;
     switch (function_id) {
     case VDP_FUNC_ID_GET_ERROR_STRING:
         *function_pointer = &softVdpGetErrorString;
@@ -2163,7 +2181,7 @@ VdpStatus
 softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
                        VdpGetProcAddress **get_proc_address)
 {
-    if (NULL == display_orig)
+    if (!display_orig || !device || !get_proc_address)
         return VDP_STATUS_INVALID_POINTER;
 
     // Let's get own connection to the X server

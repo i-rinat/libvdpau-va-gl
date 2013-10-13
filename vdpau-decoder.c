@@ -19,6 +19,8 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
                      uint32_t max_references, VdpDecoder *decoder)
 {
     VdpStatus err_code;
+    if (!decoder)
+        return VDP_STATUS_INVALID_POINTER;
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -147,24 +149,18 @@ VdpStatus
 softVdpDecoderGetParameters(VdpDecoder decoder, VdpDecoderProfile *profile,
                             uint32_t *width, uint32_t *height)
 {
-    VdpStatus err_code;
-    VdpDecoderData *decoderData = handle_acquire(decoder, HANDLETYPE_DECODER);
-    if (NULL == decoderData)
+    if (!profile || !width || !height)
         return VDP_STATUS_INVALID_HANDLE;
-
-    if (NULL == profile || NULL == width || NULL == height) {
-        err_code = VDP_STATUS_INVALID_HANDLE;
-        goto quit;
-    }
+    VdpDecoderData *decoderData = handle_acquire(decoder, HANDLETYPE_DECODER);
+    if (!decoderData)
+        return VDP_STATUS_INVALID_HANDLE;
 
     *profile = decoderData->profile;
     *width   = decoderData->width;
     *height  = decoderData->height;
 
-    err_code = VDP_STATUS_OK;
-quit:
     handle_release(decoder);
-    return err_code;
+    return VDP_STATUS_OK;
 }
 
 static
@@ -249,23 +245,18 @@ softVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, Vdp
                                 uint32_t *max_width, uint32_t *max_height)
 {
     VdpStatus err_code;
+    if (!is_supported || !max_level || !max_macroblocks || !max_width || !max_height)
+        return VDP_STATUS_INVALID_POINTER;
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
-
-    if (NULL == is_supported || NULL == max_level || NULL == max_macroblocks ||
-        NULL == max_width || NULL == max_height)
-    {
-        err_code = VDP_STATUS_INVALID_POINTER;
-        goto quit;
-    }
 
     *max_level = 0;
     *max_macroblocks = 0;
     *max_width = 0;
     *max_height = 0;
 
-    if (! deviceData->va_available) {
+    if (!deviceData->va_available) {
         *is_supported = 0;
         err_code = VDP_STATUS_OK;
         goto quit;
@@ -658,6 +649,8 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
                      VdpBitstreamBuffer const *bitstream_buffers)
 {
     VdpStatus err_code;
+    if (!picture_info || !bitstream_buffers)
+        return VDP_STATUS_INVALID_POINTER;
     VdpDecoderData *decoderData = handle_acquire(decoder, HANDLETYPE_DECODER);
     VdpVideoSurfaceData *dstSurfData = handle_acquire(target, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == decoderData || NULL == dstSurfData) {

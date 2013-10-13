@@ -45,6 +45,8 @@ softVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_
                                               VdpTime *first_presentation_time)
 
 {
+    if (!first_presentation_time)
+        return VDP_STATUS_INVALID_POINTER;
     VdpPresentationQueueData *pqData =
         handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
     if (NULL == pqData)
@@ -75,7 +77,7 @@ softVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_que
                                            VdpPresentationQueueStatus *status,
                                            VdpTime *first_presentation_time)
 {
-    if (NULL == status)
+    if (!status || !first_presentation_time)
         return VDP_STATUS_INVALID_POINTER;
     VdpPresentationQueueData *pqData =
         handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
@@ -265,6 +267,8 @@ softVdpPresentationQueueCreate(VdpDevice device,
                                VdpPresentationQueueTarget presentation_queue_target,
                                VdpPresentationQueue *presentation_queue)
 {
+    if (!presentation_queue)
+        return VDP_STATUS_INVALID_POINTER;
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -369,15 +373,13 @@ VdpStatus
 softVdpPresentationQueueGetBackgroundColor(VdpPresentationQueue presentation_queue,
                                            VdpColor *background_color)
 {
+    if (!background_color)
+        return VDP_STATUS_INVALID_POINTER;
     VdpPresentationQueueData *pqData =
         handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
     if (NULL == pqData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    if (NULL == background_color) {
-        handle_release(presentation_queue);
-        return VDP_STATUS_INVALID_POINTER;
-    }
     *background_color = pqData->bg_color;
 
     handle_release(presentation_queue);
@@ -388,6 +390,8 @@ VdpStatus
 softVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue,
                                 VdpTime *current_time)
 {
+    if (!current_time)
+        return VDP_STATUS_INVALID_POINTER;
     (void)presentation_queue;
     struct timespec now;
     clock_gettime(CLOCK_REALTIME, &now);
@@ -479,6 +483,8 @@ VdpStatus
 softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
                                         VdpPresentationQueueTarget *target)
 {
+    if (!target)
+        return VDP_STATUS_INVALID_POINTER;
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;

@@ -794,9 +794,13 @@ traceVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_qu
         goto skip;
     traceCallHook(VDP_FUNC_ID_PRESENTATION_QUEUE_SET_BACKGROUND_COLOR, 0, NULL);
     fprintf(tlog, "%s%s VdpPresentationQueueSetBackgroundColor presentation_queue=%d, "
-        "background_color=(%.2f,%.2f,%.2f,%.2f)\n",
-        trace_header, impl_state, presentation_queue, background_color->red,
-        background_color->green, background_color->blue, background_color->alpha);
+            "background_color=", trace_header, impl_state, presentation_queue);
+    if (background_color) {
+        fprintf(tlog, "(%.2f,%.2f,%.2f,%.2f)\n", background_color->red,
+                background_color->green, background_color->blue, background_color->alpha);
+    } else {
+        fprintf(tlog, "NULL\n");
+    }
 skip:;
     VdpStatus ret = softVdpPresentationQueueSetBackgroundColor(presentation_queue,
                                                                background_color);
@@ -1298,8 +1302,8 @@ skip:;
 }
 
 VdpStatus
-traceVdpPresentationQueueTargetCreateX11(VdpDevice device,
-                                         Drawable drawable, VdpPresentationQueueTarget *target)
+traceVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
+                                         VdpPresentationQueueTarget *target)
 {
     const char *impl_state = "{full}";
     if (!trace_enabled)
