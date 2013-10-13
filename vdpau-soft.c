@@ -1849,12 +1849,10 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     }
     VdpDeviceData *deviceData = dstSurfData->device;
 
-    const int dstWidth = dstSurfData->width;
-    const int dstHeight = dstSurfData->height;
-    const int srcWidth = srcSurfData->width;
-    const int srcHeight = srcSurfData->height;
-    VdpRect s_rect = {0, 0, srcWidth, srcHeight};
-    VdpRect d_rect = {0, 0, dstWidth, dstHeight};
+    VdpRect s_rect = {0, 0, 0, 0};
+    VdpRect d_rect = {0, 0, dstSurfData->width, dstSurfData->height};
+    s_rect.x1 = srcSurfData ? srcSurfData->width : 1;
+    s_rect.y1 = srcSurfData ? srcSurfData->height : 1;
 
     if (source_rect)
         s_rect = *source_rect;
@@ -1876,8 +1874,8 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     glBindFramebuffer(GL_FRAMEBUFFER, dstSurfData->fbo_id);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, dstWidth, 0, dstHeight, -1.0f, 1.0f);
-    glViewport(0, 0, dstWidth, dstHeight);
+    glOrtho(0, dstSurfData->width, 0, dstSurfData->height, -1.0f, 1.0f);
+    glViewport(0, 0, dstSurfData->width, dstSurfData->height);
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
 
@@ -1889,7 +1887,7 @@ softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
 
         glMatrixMode(GL_TEXTURE);
         glLoadIdentity();
-        glScalef(1.0f/srcWidth, 1.0f/srcHeight, 1.0f);
+        glScalef(1.0f/srcSurfData->width, 1.0f/srcSurfData->height, 1.0f);
     }
 
     compose_surfaces(bs, s_rect, d_rect, colors, flags, !!srcSurfData);
@@ -1941,8 +1939,11 @@ softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     }
     VdpDeviceData *deviceData = dstSurfData->device;
 
-    VdpRect s_rect = {0, 0, srcSurfData->width, srcSurfData->height};
+    VdpRect s_rect = {0, 0, 0, 0};
     VdpRect d_rect = {0, 0, dstSurfData->width, dstSurfData->height};
+    s_rect.x1 = srcSurfData ? srcSurfData->width : 1;
+    s_rect.y1 = srcSurfData ? srcSurfData->height : 1;
+
     if (source_rect)
         s_rect = *source_rect;
     if (destination_rect)

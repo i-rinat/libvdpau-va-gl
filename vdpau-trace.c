@@ -1228,7 +1228,7 @@ traceVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
                                          VdpOutputSurfaceRenderBlendState const *blend_state,
                                          uint32_t flags)
 {
-    const char *impl_state = "{part}";
+    const char *impl_state = "{full}";
     if (!trace_enabled)
         goto skip;
     traceCallHook(VDP_FUNC_ID_OUTPUT_SURFACE_RENDER_BITMAP_SURFACE, 0, NULL);
