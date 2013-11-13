@@ -42,7 +42,12 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
     data->width = width;
     data->height = height;
     data->max_references = max_references;
-    data->next_surface_idx = 0;
+
+    // initialize free_list. Initially they all free
+    data->free_list_head = -1;
+    for (int k = 0; k < MAX_RENDER_TARGETS; k ++) {
+        free_list_push(data->free_list, &data->free_list_head, k);
+    }
 
     VAProfile va_profile;
     VAStatus status;
@@ -165,16 +170,18 @@ softVdpDecoderGetParameters(VdpDecoder decoder, VdpDecoderProfile *profile,
 
 static
 VdpStatus
-h264_translate_reference_frames(VdpVideoSurfaceData *dstSurfData, VdpDecoderData *decoderData,
+h264_translate_reference_frames(VdpVideoSurfaceData *dstSurfData, VdpDecoder decoder,
+                                VdpDecoderData *decoderData,
                                 VAPictureParameterBufferH264 *pic_param,
                                 const VdpPictureInfoH264 *vdppi)
 {
     // take new VA surface from buffer if needed
     if (VA_INVALID_SURFACE == dstSurfData->va_surf) {
-        if (decoderData->next_surface_idx >= decoderData->num_render_targets)
+        int idx = free_list_pop(decoderData->free_list, &decoderData->free_list_head);
+        if (-1 == idx)
             return VDP_STATUS_RESOURCES;
-        dstSurfData->va_surf = decoderData->render_targets[decoderData->next_surface_idx];
-        decoderData->next_surface_idx ++;
+        dstSurfData->decoder = decoder;
+        dstSurfData->va_surf = decoderData->render_targets[idx];
     }
 
     // current frame
@@ -211,10 +218,11 @@ h264_translate_reference_frames(VdpVideoSurfaceData *dstSurfData, VdpDecoderData
 
         // take new VA surface from buffer if needed
         if (VA_INVALID_SURFACE == vdpSurfData->va_surf) {
-            if (decoderData->next_surface_idx >= decoderData->num_render_targets)
+            int idx = free_list_pop(decoderData->free_list, &decoderData->free_list_head);
+            if (-1 == idx)
                 return VDP_STATUS_RESOURCES;
-            vdpSurfData->va_surf = decoderData->render_targets[decoderData->next_surface_idx];
-            decoderData->next_surface_idx ++;
+            dstSurfData->decoder = decoder;
+            dstSurfData->va_surf = decoderData->render_targets[idx];
         }
 
         va_ref->picture_id = vdpSurfData->va_surf;
@@ -456,8 +464,9 @@ h264_translate_iq_matrix(VAIQMatrixBufferH264 *iq_matrix, const VdpPictureInfoH2
 
 static
 VdpStatus
-softVdpDecoderRender_h264(VdpDecoderData *decoderData, VdpVideoSurfaceData *dstSurfData,
-                          VdpPictureInfo const *picture_info, uint32_t bitstream_buffer_count,
+softVdpDecoderRender_h264(VdpDecoder decoder, VdpDecoderData *decoderData,
+                          VdpVideoSurfaceData *dstSurfData, VdpPictureInfo const *picture_info,
+                          uint32_t bitstream_buffer_count,
                           VdpBitstreamBuffer const *bitstream_buffers)
 {
     VdpDeviceData *deviceData = decoderData->device;
@@ -474,7 +483,7 @@ softVdpDecoderRender_h264(VdpDecoderData *decoderData, VdpVideoSurfaceData *dstS
     VAPictureParameterBufferH264 pic_param;
     VAIQMatrixBufferH264 iq_matrix;
 
-    vs = h264_translate_reference_frames(dstSurfData, decoderData, &pic_param, vdppi);
+    vs = h264_translate_reference_frames(dstSurfData, decoder, decoderData, &pic_param, vdppi);
     if (VDP_STATUS_OK != vs) {
         if (VDP_STATUS_RESOURCES == vs) {
             traceError("error (softVdpDecoderRender): no surfaces left in buffer\n");
@@ -663,8 +672,8 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         VDP_DECODER_PROFILE_H264_HIGH ==     decoderData->profile)
     {
         // TODO: check exit code
-        softVdpDecoderRender_h264(decoderData, dstSurfData, picture_info, bitstream_buffer_count,
-                                  bitstream_buffers);
+        softVdpDecoderRender_h264(decoder, decoderData, dstSurfData, picture_info,
+                                  bitstream_buffer_count, bitstream_buffers);
     } else {
         traceError("error (softVdpDecoderRender): no implementation for profile %s\n",
                    reverse_decoder_profile(decoderData->profile));

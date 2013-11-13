@@ -852,6 +852,7 @@ softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t 
     data->va_surf = VA_INVALID_SURFACE;
     data->va_glx = NULL;
     data->tex_id = 0;
+    data->decoder = VDP_INVALID_HANDLE;
 
     glx_context_push_thread_local(deviceData);
     glGenTextures(1, &data->tex_id);
@@ -928,6 +929,14 @@ softVdpVideoSurfaceDestroy(VdpVideoSurface surface)
     }
 
     if (deviceData->va_available) {
+        // return VA surface to the free list
+        if (videoSurfData->decoder != VDP_INVALID_HANDLE) {
+            VdpDecoderData *dd = handle_acquire(videoSurfData->decoder, HANDLETYPE_DECODER);
+            if (NULL != dd) {
+                free_list_push(dd->free_list, &dd->free_list_head, videoSurfData->rt_idx);
+                handle_release(videoSurfData->decoder);
+            }
+        }
         // .va_surf will be freed in VdpDecoderDestroy
     } else {
         free(videoSurfData->y_plane);

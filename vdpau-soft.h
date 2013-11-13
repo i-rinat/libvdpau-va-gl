@@ -117,6 +117,8 @@ typedef struct {
     VASurfaceID     va_surf;        ///< VA-API surface
     void           *va_glx;         ///< handle for VA-API/GLX interaction
     GLuint          tex_id;         ///< GL texture id (RGBA)
+    VdpDecoder      decoder;        ///< associated VdpDecoder
+    int32_t         rt_idx;         ///< index in VdpDecoder's render_targets
 } VdpVideoSurfaceData;
 
 /** @brief VdpBitmapSurface object parameters */
@@ -149,8 +151,9 @@ typedef struct {
     uint32_t            max_references; ///< maximum count of reference frames
     VAConfigID          config_id;      ///< VA-API config id
     VASurfaceID         render_targets[MAX_RENDER_TARGETS]; ///< spare VA surfaces
+    int32_t             free_list_head;
+    int32_t             free_list[MAX_RENDER_TARGETS];
     uint32_t            num_render_targets;
-    uint32_t            next_surface_idx;   ///< next free surface in render_targets
     VAContextID         context_id;     ///< VA-API context id
 } VdpDecoderData;
 
