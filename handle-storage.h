@@ -45,4 +45,22 @@ void    handle_execute_for_all(void (*callback)(int idx, void *entry, void *p), 
 void   *handle_xdpy_ref(void *dpy_orig);
 void    handle_xdpy_unref(void *dpy_orig);
 
+static inline
+void
+free_list_push(int32_t *free_list, int32_t *free_list_head, int32_t value)
+{
+    free_list[value] = *free_list_head;
+    *free_list_head = value;
+}
+
+static inline
+int32_t
+free_list_pop(int32_t *free_list, int32_t *free_list_head)
+{
+    int32_t value = *free_list_head;
+    if (value >= 0)
+        *free_list_head = free_list[value];
+    return value;
+}
+
 #endif /* HANDLE_STORAGE_H_ */
