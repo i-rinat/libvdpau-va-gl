@@ -12,9 +12,11 @@
 #include <glib.h>
 #include <unistd.h>
 
-GPtrArray *vdpHandles;
-GHashTable *xdpy_copies;            //< Copies of X Display connections
-GHashTable *xdpy_copies_refcount;   //< Reference count of X Display connection copy
+static GHashTable *vdp_handles;
+static GHashTable *xdpy_copies;            //< Copies of X Display connections
+static GHashTable *xdpy_copies_refcount;   //< Reference count of X Display connection copy
+
+static uint32_t next_handle_id;
 
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -22,9 +24,8 @@ void
 handle_initialize_storage(void)
 {
     pthread_mutex_lock(&lock);
-    vdpHandles = g_ptr_array_new();
-    // adding dummy element to ensure all handles start from 1
-    g_ptr_array_add(vdpHandles, NULL);
+    vdp_handles = g_hash_table_new(g_direct_hash, g_direct_equal);
+    next_handle_id = 1;
 
     xdpy_copies = g_hash_table_new(g_direct_hash, g_direct_equal);
     xdpy_copies_refcount = g_hash_table_new(g_direct_hash, g_direct_equal);
@@ -34,9 +35,15 @@ handle_initialize_storage(void)
 int
 handle_insert(void *data)
 {
+    int id;
+
     pthread_mutex_lock(&lock);
-    g_ptr_array_add(vdpHandles, data);
-    int id = vdpHandles->len - 1;
+    while (g_hash_table_lookup(vdp_handles, GINT_TO_POINTER(next_handle_id)))
+        next_handle_id ++;
+
+    id = next_handle_id ++;
+    g_hash_table_insert(vdp_handles, GINT_TO_POINTER(id), data);
+
     pthread_mutex_unlock(&lock);
     return id;
 }
@@ -47,12 +54,8 @@ int
 _is_valid(int handle, HandleType type)
 {
     VdpGenericHandle *gh;
-    // return false if index is out of range
-    if (handle < 1 || handle >= (int)vdpHandles->len)
-        return 0;
 
-    // return false if entry was deleted
-    gh = g_ptr_array_index(vdpHandles, handle);
+    gh = g_hash_table_lookup(vdp_handles, GINT_TO_POINTER(handle));
     if (!gh)
          return 0;
 
@@ -76,7 +79,7 @@ handle_acquire(int handle, HandleType type)
         pthread_mutex_lock(&lock);
         if (!_is_valid(handle, type))
             break;
-        res = g_ptr_array_index(vdpHandles, handle);
+        res = g_hash_table_lookup(vdp_handles, GINT_TO_POINTER(handle));
         if (pthread_mutex_trylock(&res->lock) == 0)
             break;
         pthread_mutex_unlock(&lock);
@@ -91,11 +94,9 @@ void
 handle_release(int handle)
 {
     pthread_mutex_lock(&lock);
-    if (handle > 0 && handle < (int)vdpHandles->len) {
-        VdpGenericHandle *gh = g_ptr_array_index(vdpHandles, handle);
-        if (gh)
-            pthread_mutex_unlock(&gh->lock);
-    }
+    VdpGenericHandle *gh = g_hash_table_lookup(vdp_handles, GINT_TO_POINTER(handle));
+    if (gh)
+        pthread_mutex_unlock(&gh->lock);
     pthread_mutex_unlock(&lock);
 }
 
@@ -104,10 +105,10 @@ handle_expunge(int handle)
 {
     pthread_mutex_lock(&lock);
     if (_is_valid(handle, HANDLETYPE_ANY)) {
-        VdpGenericHandle *gh = g_ptr_array_index(vdpHandles, handle);
+        VdpGenericHandle *gh = g_hash_table_lookup(vdp_handles, GINT_TO_POINTER(handle));
         if (gh)
             pthread_mutex_unlock(&gh->lock);
-        g_ptr_array_index(vdpHandles, handle) = NULL;
+        g_hash_table_remove(vdp_handles, GINT_TO_POINTER(handle));
     }
     pthread_mutex_unlock(&lock);
 }
@@ -116,30 +117,32 @@ void
 handle_destory_storage(void)
 {
     pthread_mutex_lock(&lock);
-    g_ptr_array_unref(vdpHandles);
-    g_hash_table_unref(xdpy_copies);
-    g_hash_table_unref(xdpy_copies_refcount);
-    vdpHandles = NULL;
-    xdpy_copies = NULL;
-    xdpy_copies_refcount = NULL;
+    g_hash_table_unref(vdp_handles);            vdp_handles = NULL;
+    g_hash_table_unref(xdpy_copies);            xdpy_copies = NULL;
+    g_hash_table_unref(xdpy_copies_refcount);   xdpy_copies_refcount = NULL;
     pthread_mutex_unlock(&lock);
 }
 
 void
 handle_execute_for_all(void (*callback)(int idx, void *entry, void *p), void *param)
 {
-    unsigned int k = 0;
-
     pthread_mutex_lock(&lock);
-    while (k < vdpHandles->len) {
-        void *item = g_ptr_array_index(vdpHandles, k);
+    GList *tmp = g_hash_table_get_keys(vdp_handles);
+    GList *keys = g_list_copy(tmp);
+    g_list_free(tmp);
+
+    GList *ptr = g_list_first(keys);
+    while (ptr) {
+        HandleType handle = GPOINTER_TO_INT(ptr->data);
+
+        void *item = g_hash_table_lookup(vdp_handles, GINT_TO_POINTER(handle));
         if (item) {
             pthread_mutex_unlock(&lock);
             // TODO: race condition. Supply integer handle instead of pointer to fix.
-            callback(k, item, param);
+            callback(handle, item, param);
             pthread_mutex_lock(&lock);
         }
-        k ++;
+        ptr = g_list_next(ptr);
     }
     pthread_mutex_unlock(&lock);
 }
