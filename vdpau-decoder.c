@@ -182,6 +182,7 @@ h264_translate_reference_frames(VdpVideoSurfaceData *dstSurfData, VdpDecoder dec
             return VDP_STATUS_RESOURCES;
         dstSurfData->decoder = decoder;
         dstSurfData->va_surf = decoderData->render_targets[idx];
+        dstSurfData->rt_idx  = idx;
     }
 
     // current frame
@@ -223,6 +224,7 @@ h264_translate_reference_frames(VdpVideoSurfaceData *dstSurfData, VdpDecoder dec
                 return VDP_STATUS_RESOURCES;
             dstSurfData->decoder = decoder;
             dstSurfData->va_surf = decoderData->render_targets[idx];
+            dstSurfData->rt_idx  = idx;
         }
 
         va_ref->picture_id = vdpSurfData->va_surf;
