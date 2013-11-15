@@ -1,3 +1,11 @@
+2013-11-15  Rinat Ibragimov  <ibragimovrinat@mail.ru>
+
+	* tag: v0.2.1
+	* core: fix some NULL dereferences, memcpy warning, deadlock in
+	presentation thread
+	* core: implement rotation and coloring in surface rendering functions
+	* core: reuse render_target entries (VdpDecoder)
+
 2013-09-21  Rinat Ibragimov  <ibragimovrinat@mail.ru>
 
 	* core: start splitting vdpau-soft.c into smaller pieces
