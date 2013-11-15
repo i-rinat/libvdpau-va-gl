@@ -144,6 +144,7 @@ handle_execute_for_all(void (*callback)(int idx, void *entry, void *p), void *pa
         }
         ptr = g_list_next(ptr);
     }
+    g_list_free(keys);
     pthread_mutex_unlock(&lock);
 }
 
