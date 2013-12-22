@@ -24,3 +24,9 @@ foreach(_test ${_all_tests})
 	add_test(${_test} ${CMAKE_CURRENT_BINARY_DIR}/${_test})
 	add_dependencies(build-tests ${_test})
 endforeach(_test)
+
+# tmp for testing
+
+include_directories(${GLIB20_INCLUDE_DIRS})
+add_executable(conv-speed conv-speed.c)
+target_link_libraries(conv-speed ${DRIVER_NAME}_static)
