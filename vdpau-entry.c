@@ -120,9 +120,8 @@ initialize_quirks(void)
 }
 
 __attribute__((constructor))
-static
 void
-library_constructor(void)
+va_gl_library_constructor(void)
 {
     handle_initialize_storage();
 
@@ -159,9 +158,8 @@ library_constructor(void)
 }
 
 __attribute__((destructor))
-static
 void
-library_destructor(void)
+va_gl_library_destructor(void)
 {
     handle_destory_storage();
 }
