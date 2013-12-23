@@ -108,15 +108,12 @@ typedef struct {
     pthread_mutex_t lock;
     VdpChromaType   chroma_type;    ///< video chroma type
     uint32_t        width;
-    uint32_t        stride;         ///< distance between first pixels of two consecutive rows
-                                    ///< in pixels
     uint32_t        height;
-    void           *y_plane;        ///< luma data (software)
-    void           *v_plane;        ///< chroma data (software)
-    void           *u_plane;        ///< chroma data (software)
     VASurfaceID     va_surf;        ///< VA-API surface
     void           *va_glx;         ///< handle for VA-API/GLX interaction
+    int             sync_va_to_glx; ///< whenever VA-API surface should be converted to GL texture
     GLuint          tex_id;         ///< GL texture id (RGBA)
+    GLuint          fbo_id;         ///< framebuffer object id
     VdpDecoder      decoder;        ///< associated VdpDecoder
     int32_t         rt_idx;         ///< index in VdpDecoder's render_targets
 } VdpVideoSurfaceData;
