@@ -1014,41 +1014,92 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
     VdpStatus err_code;
     if (!source_data || !source_pitches)
         return VDP_STATUS_INVALID_POINTER;
-    //TODO: figure out what to do with other formats
+    // TODO: implement VDP_YCBCR_FORMAT_UYVY
+    // TODO: implement VDP_YCBCR_FORMAT_YUYV
+    // TODO: implement VDP_YCBCR_FORMAT_Y8U8V8A8
+    // TODO: implement VDP_YCBCR_FORMAT_V8U8Y8A8
 
     VdpVideoSurfaceData *dstSurfData = handle_acquire(surface, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == dstSurfData)
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = dstSurfData->device;
 
-    glx_context_push_thread_local(deviceData);
+    switch (source_ycbcr_format) {
+    case VDP_YCBCR_FORMAT_NV12:
+    case VDP_YCBCR_FORMAT_YV12:
+        /* do nothing */
+        break;
+    case VDP_YCBCR_FORMAT_UYVY:
+    case VDP_YCBCR_FORMAT_YUYV:
+    case VDP_YCBCR_FORMAT_Y8U8V8A8:
+    case VDP_YCBCR_FORMAT_V8U8Y8A8:
+    default:
+        traceError("error (%s): not implemented source YCbCr format '%s'\n", __func__,
+                   reverse_ycbcr_format(source_ycbcr_format));
+        err_code = VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
+        goto err;
+    }
 
+    glx_context_push_thread_local(deviceData);
     glBindFramebuffer(GL_FRAMEBUFFER, dstSurfData->fbo_id);
+
     GLuint tex_id[2];
     glGenTextures(2, tex_id);
-
     glEnable(GL_TEXTURE_2D);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, tex_id[1]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dstSurfData->width/2, dstSurfData->height, 0, GL_RED,
-                 GL_UNSIGNED_BYTE, NULL);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[2]);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, dstSurfData->width/2, dstSurfData->height/2, GL_RED,
-                    GL_UNSIGNED_BYTE, source_data[2]);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[1]);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, dstSurfData->height/2, dstSurfData->width/2,
-                    dstSurfData->height/2, GL_RED, GL_UNSIGNED_BYTE, source_data[1]);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, tex_id[0]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dstSurfData->width, dstSurfData->height, 0, GL_RED,
-                 GL_UNSIGNED_BYTE, source_data[0]);
+    switch (source_ycbcr_format) {
+    case VDP_YCBCR_FORMAT_NV12:
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, tex_id[1]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        // UV plane
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[1]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dstSurfData->width/2, dstSurfData->height/2, 0,
+                     GL_RG, GL_UNSIGNED_BYTE, source_data[1]);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex_id[0]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        // Y plane
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dstSurfData->width, dstSurfData->height, 0, GL_RED,
+                     GL_UNSIGNED_BYTE, source_data[0]);
+        break;
+    case VDP_YCBCR_FORMAT_YV12:
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, tex_id[1]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dstSurfData->width/2, dstSurfData->height, 0,
+                     GL_RED, GL_UNSIGNED_BYTE, NULL);
+        // U plane
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[2]);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, dstSurfData->width/2, dstSurfData->height/2, GL_RED,
+                        GL_UNSIGNED_BYTE, source_data[2]);
+        // V plane
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[1]);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, dstSurfData->height/2, dstSurfData->width/2,
+                        dstSurfData->height/2, GL_RED, GL_UNSIGNED_BYTE, source_data[1]);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex_id[0]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        // Y plane
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dstSurfData->width, dstSurfData->height, 0, GL_RED,
+                     GL_UNSIGNED_BYTE, source_data[0]);
+        break;
+    case VDP_YCBCR_FORMAT_UYVY:
+    case VDP_YCBCR_FORMAT_YUYV:
+    case VDP_YCBCR_FORMAT_Y8U8V8A8:
+    case VDP_YCBCR_FORMAT_V8U8Y8A8:
+    default:
+        /* never reached */
+        break;
+    }
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 
     glMatrixMode(GL_PROJECTION);
@@ -1062,10 +1113,25 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
     glMatrixMode(GL_TEXTURE);
     glLoadIdentity();
 
-    glUseProgram(glsl_shaders[glsl_YV12_RGBA].program);
-
-    glUniform1i(glsl_shaders[glsl_YV12_RGBA].uniform.tex_0, 0);
-    glUniform1i(glsl_shaders[glsl_YV12_RGBA].uniform.tex_1, 1);
+    switch (source_ycbcr_format) {
+    case VDP_YCBCR_FORMAT_NV12:
+        glUseProgram(glsl_shaders[glsl_NV12_RGBA].program);
+        glUniform1i(glsl_shaders[glsl_NV12_RGBA].uniform.tex_0, 0);
+        glUniform1i(glsl_shaders[glsl_NV12_RGBA].uniform.tex_1, 1);
+        break;
+    case VDP_YCBCR_FORMAT_YV12:
+        glUseProgram(glsl_shaders[glsl_YV12_RGBA].program);
+        glUniform1i(glsl_shaders[glsl_YV12_RGBA].uniform.tex_0, 0);
+        glUniform1i(glsl_shaders[glsl_YV12_RGBA].uniform.tex_1, 1);
+        break;
+    case VDP_YCBCR_FORMAT_UYVY:
+    case VDP_YCBCR_FORMAT_YUYV:
+    case VDP_YCBCR_FORMAT_Y8U8V8A8:
+    case VDP_YCBCR_FORMAT_V8U8Y8A8:
+    default:
+        /* do nothing */
+        break;
+    }
 
     glBegin(GL_QUADS);
         glTexCoord2f(0, 0); glVertex2f(0, 0);
@@ -1073,21 +1139,22 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
         glTexCoord2f(1, 1); glVertex2f(dstSurfData->width, dstSurfData->height);
         glTexCoord2f(0, 1); glVertex2f(0, dstSurfData->height);
     glEnd();
+
     glUseProgram(0);
     glFinish();
-    glDeleteTextures(2, tex_id);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDeleteTextures(2, tex_id);
 
     GLenum gl_error = glGetError();
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (VdpVideoSurfacePutBitsYCbCr): gl error %d\n", gl_error);
         err_code = VDP_STATUS_ERROR;
-        goto quit;
+        goto err;
     }
 
     err_code = VDP_STATUS_OK;
-quit:
+err:
     handle_release(surface);
     return err_code;
 }
