@@ -6,8 +6,8 @@
  * libvdpau-va-gl is distributed under the terms of the LGPLv3. See COPYING for details.
  */
 
-#ifndef VDPAU_SOFT_H_
-#define VDPAU_SOFT_H_
+#ifndef VA_GL_SRC_API_H
+#define VA_GL_SRC_API_H
 
 #include <GL/glx.h>
 #include <pthread.h>
@@ -222,4 +222,4 @@ VdpPreemptionCallbackRegister softVdpPreemptionCallbackRegister;
 VdpPresentationQueueTargetCreateX11 softVdpPresentationQueueTargetCreateX11;
 VdpGetProcAddress softVdpGetProcAddress;
 
-#endif /* VDPAU_SOFT_H_ */
+#endif /* VA_GL_SRC_API_H */

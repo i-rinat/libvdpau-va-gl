@@ -6,8 +6,8 @@
  * libvdpau-va-gl is distributed under the terms of the LGPLv3. See COPYING for details.
  */
 
-#ifndef __H264_PARSE_H
-#define __H264_PARSE_H
+#ifndef VA_GL_SRC_H264_PARSE_H
+#define VA_GL_SRC_H264_PARSE_H
 
 #include <va/va.h>
 #include "bitstream.h"
@@ -33,4 +33,4 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
 void
 reset_va_picture_h264(VAPictureH264 *p);
 
-#endif
+#endif /* VA_GL_SRC_H264_PARSE_H */

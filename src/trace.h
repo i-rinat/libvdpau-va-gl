@@ -6,6 +6,9 @@
  * libvdpau-va-gl is distributed under the terms of the LGPLv3. See COPYING for details.
  */
 
+#ifndef VA_GL_SRC_TRACE_H
+#define VA_GL_SRC_TRACE_H
+
 #include <stdio.h>
 #include <vdpau/vdpau.h>
 #include <vdpau/vdpau_x11.h>
@@ -99,3 +102,5 @@ VdpOutputSurfaceRenderBitmapSurface traceVdpOutputSurfaceRenderBitmapSurface;
 VdpPreemptionCallbackRegister traceVdpPreemptionCallbackRegister;
 VdpPresentationQueueTargetCreateX11 traceVdpPresentationQueueTargetCreateX11;
 VdpGetProcAddress traceVdpGetProcAddress;
+
+#endif /* VA_GL_SRC_TRACE_H */

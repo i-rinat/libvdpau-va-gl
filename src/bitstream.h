@@ -6,8 +6,8 @@
  * libvdpau-va-gl is distributed under the terms of the LGPLv3. See COPYING for details.
  */
 
-#ifndef __BITSTREAM_H
-#define __BITSTREAM_H
+#ifndef VA_GL_SRC_BITSTREAM_H
+#define VA_GL_SRC_BITSTREAM_H
 
 #include <unistd.h>
 #include <stdint.h>
@@ -59,4 +59,4 @@ rbsp_get_uev(rbsp_state_t *state);
 int
 rbsp_get_sev(rbsp_state_t *state);
 
-#endif
+#endif /* VA_GL_SRC_BITSTREAM_H */

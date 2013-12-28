@@ -6,8 +6,8 @@
  * libvdpau-va-gl is distributed under the terms of the LGPLv3. See COPYING for details.
  */
 
-#ifndef __GLOBALS_H
-#define __GLOBALS_H
+#ifndef VA_GL_SRC_GLOBALS_H
+#define VA_GL_SRC_GLOBALS_H
 
 #include <pthread.h>
 
@@ -31,4 +31,4 @@ struct global_data {
 
 extern struct global_data global;
 
-#endif /* __GLOBALS_H */
+#endif /* VA_GL_SRC_GLOBALS_H */

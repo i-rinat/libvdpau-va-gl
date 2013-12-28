@@ -6,9 +6,8 @@
  * libvdpau-va-gl is distributed under the terms of the LGPLv3. See COPYING for details.
  */
 
-#pragma once
-#ifndef HANDLE_STORAGE_H_
-#define HANDLE_STORAGE_H_
+#ifndef VA_GL_SRC_HANDLE_STORAGE_H
+#define VA_GL_SRC_HANDLE_STORAGE_H
 
 #include <vdpau/vdpau_x11.h>
 #include <glib.h>
@@ -63,4 +62,4 @@ free_list_pop(int32_t *free_list, int32_t *free_list_head)
     return value;
 }
 
-#endif /* HANDLE_STORAGE_H_ */
+#endif /* VA_GL_SRC_HANDLE_STORAGE_H */

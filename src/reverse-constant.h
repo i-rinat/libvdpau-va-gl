@@ -6,9 +6,8 @@
  * libvdpau-va-gl is distributed under the terms of the LGPLv3. See COPYING for details.
  */
 
-#pragma once
-#ifndef REVERSE_CONSTANT_H_
-#define REVERSE_CONSTANT_H_
+#ifndef VA_GL_SRC_REVERSE_CONSTANT_H
+#define VA_GL_SRC_REVERSE_CONSTANT_H
 
 #include <vdpau/vdpau.h>
 
@@ -29,4 +28,4 @@ const char * reverse_color_table_format(VdpColorTableFormat color_table_format);
 const char * reverse_color_standard(VdpColorStandard color_standard);
 const char * reverse_output_surface_render_rotate(int flags);
 
-#endif /* REVERSE_CONSTANT_H_ */
+#endif /* VA_GL_SRC_REVERSE_CONSTANT_H */

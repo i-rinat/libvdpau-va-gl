@@ -6,8 +6,8 @@
  * libvdpau-va-gl is distributed under the terms of the LGPLv3. See COPYING for details.
  */
 
-#ifndef __CTX_STACK_H
-#define __CTX_STACK_H
+#ifndef VA_GL_SRC_CTX_STACK_H
+#define VA_GL_SRC_CTX_STACK_H
 
 #include "api.h"
 
@@ -21,4 +21,4 @@ GLXContext  glx_context_get_root_context(void);
 void glx_context_lock(void);
 void glx_context_unlock(void);
 
-#endif /* __CTX_STACK_H */
+#endif /* VA_GL_SRC_CTX_STACK_H */
