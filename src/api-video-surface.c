@@ -251,9 +251,18 @@ softVdpVideoSurfaceGetParameters(VdpVideoSurface surface, VdpChromaType *chroma_
     return VDP_STATUS_OK;
 }
 
+static
 VdpStatus
-softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_ycbcr_format,
-                                void const *const *source_data, uint32_t const *source_pitches)
+vdpVideoSurfacePutBitsYCbCr_swscale(VdpVideoSurface surface, VdpYCbCrFormat source_ycbcr_format,
+                                    void const *const *source_data, uint32_t const *source_pitches)
+{
+    return VDP_STATUS_NO_IMPLEMENTATION;
+}
+
+static
+VdpStatus
+vdpVideoSurfacePutBitsYCbCr_glsl(VdpVideoSurface surface, VdpYCbCrFormat source_ycbcr_format,
+                                 void const *const *source_data, uint32_t const *source_pitches)
 {
     VdpStatus err_code;
     if (!source_data || !source_pitches)
@@ -401,6 +410,23 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
 err:
     handle_release(surface);
     return err_code;
+}
+
+VdpStatus
+softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_ycbcr_format,
+                                void const *const *source_data, uint32_t const *source_pitches)
+{
+    int using_glsl = 1;
+    VdpStatus ret;
+
+    if (using_glsl) {
+        ret = vdpVideoSurfacePutBitsYCbCr_glsl(surface, source_ycbcr_format, source_data,
+                                               source_pitches);
+    } else {
+        ret = vdpVideoSurfacePutBitsYCbCr_swscale(surface, source_ycbcr_format, source_data,
+                                                  source_pitches);
+    }
+    return ret;
 }
 
 VdpStatus
