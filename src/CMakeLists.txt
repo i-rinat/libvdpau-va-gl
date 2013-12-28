@@ -11,6 +11,7 @@ link_directories (
 )
 
 add_library (${DRIVER_NAME}_obj OBJECT
+	api-bitmap-surface.c
 	vdpau-decoder.c
 	vdpau-soft.c
 	vdpau-presentation.c
