@@ -15,7 +15,7 @@
 #include <string.h>
 #include "handle-storage.h"
 #include "vdpau-soft.h"
-#include "vdpau-trace.h"
+#include "trace.h"
 #include "globals.h"
 
 #include <sys/syscall.h>

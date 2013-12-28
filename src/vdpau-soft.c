@@ -24,7 +24,7 @@
 #include "h264-parse.h"
 #include "reverse-constant.h"
 #include "handle-storage.h"
-#include "vdpau-trace.h"
+#include "trace.h"
 #include "watermark.h"
 #include "globals.h"
 #include "shaders.h"

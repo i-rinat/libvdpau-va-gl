@@ -19,7 +19,7 @@
 #include "globals.h"
 #include "handle-storage.h"
 #include "vdpau-soft.h"
-#include "vdpau-trace.h"
+#include "trace.h"
 #include "watermark.h"
 
 static

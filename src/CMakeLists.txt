@@ -18,8 +18,8 @@ add_library (${DRIVER_NAME}_obj OBJECT
 	api-video-mixer.c
 	api-video-surface.c
 	vdpau-soft.c
-	vdpau-entry.c
-	vdpau-trace.c
+	entry.c
+	trace.c
 	reverse-constant.c
 	handle-storage.c
 	bitstream.c

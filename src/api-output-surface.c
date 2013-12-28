@@ -3,7 +3,7 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <stdlib.h>
-#include "vdpau-trace.h"
+#include "trace.h"
 #include <vdpau/vdpau.h>
 
 struct blend_state_struct {

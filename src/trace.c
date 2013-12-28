@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include "vdpau-soft.h"
-#include "vdpau-trace.h"
+#include "trace.h"
 #include "reverse-constant.h"
 
 static FILE *tlog = NULL;  ///< trace target

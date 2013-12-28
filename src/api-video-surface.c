@@ -9,7 +9,7 @@
 #include <va/va_glx.h>
 #include <vdpau/vdpau.h>
 #include "vdpau-soft.h"
-#include "vdpau-trace.h"
+#include "trace.h"
 
 
 VdpStatus

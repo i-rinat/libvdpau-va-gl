@@ -10,7 +10,7 @@
 #include <string.h>
 #include "ctx-stack.h"
 #include "h264-parse.h"
-#include "vdpau-trace.h"
+#include "trace.h"
 #include "vdpau-soft.h"
 
 

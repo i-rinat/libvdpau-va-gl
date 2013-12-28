@@ -14,7 +14,7 @@
 #include "ctx-stack.h"
 #include "globals.h"
 #include <assert.h>
-#include "vdpau-trace.h"
+#include "trace.h"
 #include <sys/syscall.h>
 #include <unistd.h>
 
