@@ -8,7 +8,7 @@
 #include <va/va.h>
 #include <va/va_glx.h>
 #include <vdpau/vdpau.h>
-#include "vdpau-soft.h"
+#include "api.h"
 #include "trace.h"
 
 

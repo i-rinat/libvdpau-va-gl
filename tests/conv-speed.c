@@ -5,7 +5,7 @@
 #define CHECK(expr) if (VDP_STATUS_OK != (expr)) assert(0);
 
 #include <assert.h>
-#include "vdpau-soft.h"
+#include "api.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

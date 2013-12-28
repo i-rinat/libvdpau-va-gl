@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "handle-storage.h"
-#include "vdpau-soft.h"
+#include "api.h"
 #include "trace.h"
 #include "globals.h"
 

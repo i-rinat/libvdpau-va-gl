@@ -18,7 +18,7 @@
 #include "ctx-stack.h"
 #include "globals.h"
 #include "handle-storage.h"
-#include "vdpau-soft.h"
+#include "api.h"
 #include "trace.h"
 #include "watermark.h"
 

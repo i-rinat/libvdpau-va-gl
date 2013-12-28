@@ -9,7 +9,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include "vdpau-soft.h"
+#include "api.h"
 #include "trace.h"
 #include "reverse-constant.h"
 

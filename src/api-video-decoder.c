@@ -11,7 +11,7 @@
 #include "ctx-stack.h"
 #include "h264-parse.h"
 #include "trace.h"
-#include "vdpau-soft.h"
+#include "api.h"
 
 
 VdpStatus

@@ -3,7 +3,7 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include "globals.h"
-#include "vdpau-soft.h"
+#include "api.h"
 #include "shaders.h"
 #include <stdlib.h>
 #include "trace.h"

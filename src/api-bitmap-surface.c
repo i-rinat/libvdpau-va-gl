@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <vdpau/vdpau.h>
-#include "vdpau-soft.h"
+#include "api.h"
 #include "trace.h"
 
 
