@@ -15,6 +15,8 @@
 #include <va/va.h>
 #include "handle-storage.h"
 
+#define DESCRIBE(xparam, format)    fprintf(stderr, #xparam " = %" #format "\n", xparam)
+
 #define MAX_RENDER_TARGETS          21
 #define NUM_RENDER_TARGETS_H264     21
 
