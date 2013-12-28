@@ -13,11 +13,11 @@ link_directories (
 add_library (${DRIVER_NAME}_obj OBJECT
 	api-bitmap-surface.c
 	api-output-surface.c
+	api-presentation-queue.c
+	api-video-decoder.c
 	api-video-mixer.c
 	api-video-surface.c
-	vdpau-decoder.c
 	vdpau-soft.c
-	vdpau-presentation.c
 	vdpau-entry.c
 	vdpau-trace.c
 	reverse-constant.c
