@@ -1,3 +1,11 @@
+/*
+ * Copyright 2013  Rinat Ibragimov
+ *
+ * This file is part of libvdpau-va-gl
+ *
+ * libvdpau-va-gl is distributed under the terms of the LGPLv3. See COPYING for details.
+ */
+
 #define GL_GLEXT_PROTOTYPES
 #include "ctx-stack.h"
 #include <GL/gl.h>
