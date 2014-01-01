@@ -649,6 +649,8 @@ softVdpDecoderRender_h264(VdpDecoder decoder, VdpDecoderData *decoderData,
     }
 
     free(merged_bitstream);
+
+    dstSurfData->sync_va_to_glx = 1;
     err_code = VDP_STATUS_OK;
 quit:
     return err_code;
