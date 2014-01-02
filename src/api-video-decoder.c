@@ -15,8 +15,8 @@
 
 
 VdpStatus
-softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width, uint32_t height,
-                     uint32_t max_references, VdpDecoder *decoder)
+vdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width, uint32_t height,
+                 uint32_t max_references, VdpDecoder *decoder)
 {
     VdpStatus err_code;
     if (!decoder)
@@ -75,7 +75,7 @@ softVdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width
             final_try = 1;
             break;
         default:
-            traceError("error (softVdpDecoderCreate): decoder %s not implemented\n",
+            traceError("error (vdpDecoderCreate): decoder %s not implemented\n",
                        reverse_decoder_profile(profile));
             err_code = VDP_STATUS_INVALID_DECODER_PROFILE;
             goto quit_free_data;
@@ -130,7 +130,7 @@ quit:
 }
 
 VdpStatus
-softVdpDecoderDestroy(VdpDecoder decoder)
+vdpDecoderDestroy(VdpDecoder decoder)
 {
     VdpDecoderData *decoderData = handle_acquire(decoder, HANDLETYPE_DECODER);
     if (NULL == decoderData)
@@ -151,8 +151,8 @@ softVdpDecoderDestroy(VdpDecoder decoder)
 }
 
 VdpStatus
-softVdpDecoderGetParameters(VdpDecoder decoder, VdpDecoderProfile *profile,
-                            uint32_t *width, uint32_t *height)
+vdpDecoderGetParameters(VdpDecoder decoder, VdpDecoderProfile *profile,
+                        uint32_t *width, uint32_t *height)
 {
     if (!profile || !width || !height)
         return VDP_STATUS_INVALID_HANDLE;
@@ -250,9 +250,9 @@ h264_translate_reference_frames(VdpVideoSurfaceData *dstSurfData, VdpDecoder dec
 }
 
 VdpStatus
-softVdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, VdpBool *is_supported,
-                                uint32_t *max_level, uint32_t *max_macroblocks,
-                                uint32_t *max_width, uint32_t *max_height)
+vdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, VdpBool *is_supported,
+                            uint32_t *max_level, uint32_t *max_macroblocks,
+                            uint32_t *max_width, uint32_t *max_height)
 {
     VdpStatus err_code;
     if (!is_supported || !max_level || !max_macroblocks || !max_width || !max_height)
@@ -466,10 +466,10 @@ h264_translate_iq_matrix(VAIQMatrixBufferH264 *iq_matrix, const VdpPictureInfoH2
 
 static
 VdpStatus
-softVdpDecoderRender_h264(VdpDecoder decoder, VdpDecoderData *decoderData,
-                          VdpVideoSurfaceData *dstSurfData, VdpPictureInfo const *picture_info,
-                          uint32_t bitstream_buffer_count,
-                          VdpBitstreamBuffer const *bitstream_buffers)
+vdpDecoderRender_h264(VdpDecoder decoder, VdpDecoderData *decoderData,
+                      VdpVideoSurfaceData *dstSurfData, VdpPictureInfo const *picture_info,
+                      uint32_t bitstream_buffer_count,
+                      VdpBitstreamBuffer const *bitstream_buffers)
 {
     VdpDeviceData *deviceData = decoderData->device;
     VADisplay va_dpy = deviceData->va_dpy;
@@ -488,7 +488,7 @@ softVdpDecoderRender_h264(VdpDecoder decoder, VdpDecoderData *decoderData,
     vs = h264_translate_reference_frames(dstSurfData, decoder, decoderData, &pic_param, vdppi);
     if (VDP_STATUS_OK != vs) {
         if (VDP_STATUS_RESOURCES == vs) {
-            traceError("error (softVdpDecoderRender): no surfaces left in buffer\n");
+            traceError("error (vdpDecoderRender): no surfaces left in buffer\n");
             err_code = VDP_STATUS_RESOURCES;
         } else {
             err_code = VDP_STATUS_ERROR;
@@ -570,7 +570,7 @@ softVdpDecoderRender_h264(VdpDecoder decoder, VdpDecoderData *decoderData,
     rbsp_attach_buffer(&st_g, merged_bitstream, total_bitstream_bytes);
     int nal_offset = rbsp_navigate_to_nal_unit(&st_g);
     if (nal_offset < 0) {
-        traceError("error (softVdpDecoderRender): no NAL header\n");
+        traceError("error (vdpDecoderRender): no NAL header\n");
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
@@ -657,9 +657,9 @@ quit:
 }
 
 VdpStatus
-softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
-                     VdpPictureInfo const *picture_info, uint32_t bitstream_buffer_count,
-                     VdpBitstreamBuffer const *bitstream_buffers)
+vdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
+                 VdpPictureInfo const *picture_info, uint32_t bitstream_buffer_count,
+                 VdpBitstreamBuffer const *bitstream_buffers)
 {
     VdpStatus err_code;
     if (!picture_info || !bitstream_buffers)
@@ -676,10 +676,10 @@ softVdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         VDP_DECODER_PROFILE_H264_HIGH ==     decoderData->profile)
     {
         // TODO: check exit code
-        softVdpDecoderRender_h264(decoder, decoderData, dstSurfData, picture_info,
+        vdpDecoderRender_h264(decoder, decoderData, dstSurfData, picture_info,
                                   bitstream_buffer_count, bitstream_buffers);
     } else {
-        traceError("error (softVdpDecoderRender): no implementation for profile %s\n",
+        traceError("error (vdpDecoderRender): no implementation for profile %s\n",
                    reverse_decoder_profile(decoderData->profile));
         err_code = VDP_STATUS_NO_IMPLEMENTATION;
         goto quit;

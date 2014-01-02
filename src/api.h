@@ -161,68 +161,77 @@ typedef struct {
 
 
 VdpStatus
-softVdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
+vdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,
                        VdpGetProcAddress **get_proc_address);
 
-VdpGetApiVersion softVdpGetApiVersion;
-VdpDecoderQueryCapabilities softVdpDecoderQueryCapabilities;
-VdpDecoderCreate softVdpDecoderCreate;
-VdpDecoderDestroy softVdpDecoderDestroy;
-VdpDecoderGetParameters softVdpDecoderGetParameters;
-VdpDecoderRender softVdpDecoderRender;
-VdpOutputSurfaceQueryCapabilities softVdpOutputSurfaceQueryCapabilities;
-VdpOutputSurfaceQueryGetPutBitsNativeCapabilities softVdpOutputSurfaceQueryGetPutBitsNativeCapabilities;
-VdpOutputSurfaceQueryPutBitsIndexedCapabilities softVdpOutputSurfaceQueryPutBitsIndexedCapabilities;
-VdpOutputSurfaceQueryPutBitsYCbCrCapabilities softVdpOutputSurfaceQueryPutBitsYCbCrCapabilities;
-VdpOutputSurfaceCreate softVdpOutputSurfaceCreate;
-VdpOutputSurfaceDestroy softVdpOutputSurfaceDestroy;
-VdpOutputSurfaceGetParameters softVdpOutputSurfaceGetParameters;
-VdpOutputSurfaceGetBitsNative softVdpOutputSurfaceGetBitsNative;
-VdpOutputSurfacePutBitsNative softVdpOutputSurfacePutBitsNative;
-VdpOutputSurfacePutBitsIndexed softVdpOutputSurfacePutBitsIndexed;
-VdpOutputSurfacePutBitsYCbCr softVdpOutputSurfacePutBitsYCbCr;
-VdpVideoMixerQueryFeatureSupport softVdpVideoMixerQueryFeatureSupport;
-VdpVideoMixerQueryParameterSupport softVdpVideoMixerQueryParameterSupport;
-VdpVideoMixerQueryAttributeSupport softVdpVideoMixerQueryAttributeSupport;
-VdpVideoMixerQueryParameterValueRange softVdpVideoMixerQueryParameterValueRange;
-VdpVideoMixerQueryAttributeValueRange softVdpVideoMixerQueryAttributeValueRange;
-VdpVideoMixerCreate softVdpVideoMixerCreate;
-VdpVideoMixerSetFeatureEnables softVdpVideoMixerSetFeatureEnables;
-VdpVideoMixerSetAttributeValues softVdpVideoMixerSetAttributeValues;
-VdpVideoMixerGetFeatureSupport softVdpVideoMixerGetFeatureSupport;
-VdpVideoMixerGetFeatureEnables softVdpVideoMixerGetFeatureEnables;
-VdpVideoMixerGetParameterValues softVdpVideoMixerGetParameterValues;
-VdpVideoMixerGetAttributeValues softVdpVideoMixerGetAttributeValues;
-VdpVideoMixerDestroy softVdpVideoMixerDestroy;
-VdpVideoMixerRender softVdpVideoMixerRender;
-VdpPresentationQueueTargetDestroy softVdpPresentationQueueTargetDestroy;
-VdpPresentationQueueCreate softVdpPresentationQueueCreate;
-VdpPresentationQueueDestroy softVdpPresentationQueueDestroy;
-VdpPresentationQueueSetBackgroundColor softVdpPresentationQueueSetBackgroundColor;
-VdpPresentationQueueGetBackgroundColor softVdpPresentationQueueGetBackgroundColor;
-VdpPresentationQueueGetTime softVdpPresentationQueueGetTime;
-VdpPresentationQueueDisplay softVdpPresentationQueueDisplay;
-VdpPresentationQueueBlockUntilSurfaceIdle softVdpPresentationQueueBlockUntilSurfaceIdle;
-VdpPresentationQueueQuerySurfaceStatus softVdpPresentationQueueQuerySurfaceStatus;
-VdpVideoSurfaceQueryCapabilities softVdpVideoSurfaceQueryCapabilities;
-VdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities softVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities;
-VdpVideoSurfaceCreate softVdpVideoSurfaceCreate;
-VdpVideoSurfaceDestroy softVdpVideoSurfaceDestroy;
-VdpVideoSurfaceGetParameters softVdpVideoSurfaceGetParameters;
-VdpVideoSurfaceGetBitsYCbCr softVdpVideoSurfaceGetBitsYCbCr;
-VdpVideoSurfacePutBitsYCbCr softVdpVideoSurfacePutBitsYCbCr;
-VdpBitmapSurfaceQueryCapabilities softVdpBitmapSurfaceQueryCapabilities;
-VdpBitmapSurfaceCreate softVdpBitmapSurfaceCreate;
-VdpBitmapSurfaceDestroy softVdpBitmapSurfaceDestroy;
-VdpBitmapSurfaceGetParameters softVdpBitmapSurfaceGetParameters;
-VdpBitmapSurfacePutBitsNative softVdpBitmapSurfacePutBitsNative;
-VdpDeviceDestroy softVdpDeviceDestroy;
-VdpGetInformationString softVdpGetInformationString;
-VdpGenerateCSCMatrix softVdpGenerateCSCMatrix;
-VdpOutputSurfaceRenderOutputSurface softVdpOutputSurfaceRenderOutputSurface;
-VdpOutputSurfaceRenderBitmapSurface softVdpOutputSurfaceRenderBitmapSurface;
-VdpPreemptionCallbackRegister softVdpPreemptionCallbackRegister;
-VdpPresentationQueueTargetCreateX11 softVdpPresentationQueueTargetCreateX11;
-VdpGetProcAddress softVdpGetProcAddress;
+VdpGetApiVersion            vdpGetApiVersion;
+
+VdpDecoderQueryCapabilities vdpDecoderQueryCapabilities;
+VdpDecoderCreate            vdpDecoderCreate;
+VdpDecoderDestroy           vdpDecoderDestroy;
+VdpDecoderGetParameters     vdpDecoderGetParameters;
+VdpDecoderRender            vdpDecoderRender;
+
+VdpOutputSurfaceQueryCapabilities               vdpOutputSurfaceQueryCapabilities;
+VdpOutputSurfaceQueryGetPutBitsNativeCapabilities vdpOutputSurfaceQueryGetPutBitsNativeCapabilities;
+VdpOutputSurfaceQueryPutBitsIndexedCapabilities vdpOutputSurfaceQueryPutBitsIndexedCapabilities;
+VdpOutputSurfaceQueryPutBitsYCbCrCapabilities   vdpOutputSurfaceQueryPutBitsYCbCrCapabilities;
+VdpOutputSurfaceCreate          vdpOutputSurfaceCreate;
+VdpOutputSurfaceDestroy         vdpOutputSurfaceDestroy;
+VdpOutputSurfaceGetParameters   vdpOutputSurfaceGetParameters;
+VdpOutputSurfaceGetBitsNative   vdpOutputSurfaceGetBitsNative;
+VdpOutputSurfacePutBitsNative   vdpOutputSurfacePutBitsNative;
+VdpOutputSurfacePutBitsIndexed  vdpOutputSurfacePutBitsIndexed;
+VdpOutputSurfacePutBitsYCbCr    vdpOutputSurfacePutBitsYCbCr;
+
+VdpVideoMixerQueryFeatureSupport        vdpVideoMixerQueryFeatureSupport;
+VdpVideoMixerQueryParameterSupport      vdpVideoMixerQueryParameterSupport;
+VdpVideoMixerQueryAttributeSupport      vdpVideoMixerQueryAttributeSupport;
+VdpVideoMixerQueryParameterValueRange   vdpVideoMixerQueryParameterValueRange;
+VdpVideoMixerQueryAttributeValueRange   vdpVideoMixerQueryAttributeValueRange;
+VdpVideoMixerCreate                     vdpVideoMixerCreate;
+VdpVideoMixerSetFeatureEnables          vdpVideoMixerSetFeatureEnables;
+VdpVideoMixerSetAttributeValues         vdpVideoMixerSetAttributeValues;
+VdpVideoMixerGetFeatureSupport          vdpVideoMixerGetFeatureSupport;
+VdpVideoMixerGetFeatureEnables          vdpVideoMixerGetFeatureEnables;
+VdpVideoMixerGetParameterValues         vdpVideoMixerGetParameterValues;
+VdpVideoMixerGetAttributeValues         vdpVideoMixerGetAttributeValues;
+VdpVideoMixerDestroy                    vdpVideoMixerDestroy;
+VdpVideoMixerRender                     vdpVideoMixerRender;
+
+VdpPresentationQueueTargetDestroy           vdpPresentationQueueTargetDestroy;
+VdpPresentationQueueCreate                  vdpPresentationQueueCreate;
+VdpPresentationQueueDestroy                 vdpPresentationQueueDestroy;
+VdpPresentationQueueSetBackgroundColor      vdpPresentationQueueSetBackgroundColor;
+VdpPresentationQueueGetBackgroundColor      vdpPresentationQueueGetBackgroundColor;
+VdpPresentationQueueGetTime                 vdpPresentationQueueGetTime;
+VdpPresentationQueueDisplay                 vdpPresentationQueueDisplay;
+VdpPresentationQueueBlockUntilSurfaceIdle   vdpPresentationQueueBlockUntilSurfaceIdle;
+VdpPresentationQueueQuerySurfaceStatus      vdpPresentationQueueQuerySurfaceStatus;
+
+VdpVideoSurfaceQueryCapabilities                vdpVideoSurfaceQueryCapabilities;
+VdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities vdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities;
+VdpVideoSurfaceCreate                           vdpVideoSurfaceCreate;
+VdpVideoSurfaceDestroy                          vdpVideoSurfaceDestroy;
+VdpVideoSurfaceGetParameters                    vdpVideoSurfaceGetParameters;
+VdpVideoSurfaceGetBitsYCbCr                     vdpVideoSurfaceGetBitsYCbCr;
+VdpVideoSurfacePutBitsYCbCr                     vdpVideoSurfacePutBitsYCbCr;
+
+VdpBitmapSurfaceQueryCapabilities   vdpBitmapSurfaceQueryCapabilities;
+VdpBitmapSurfaceCreate              vdpBitmapSurfaceCreate;
+VdpBitmapSurfaceDestroy             vdpBitmapSurfaceDestroy;
+VdpBitmapSurfaceGetParameters       vdpBitmapSurfaceGetParameters;
+VdpBitmapSurfacePutBitsNative       vdpBitmapSurfacePutBitsNative;
+
+VdpDeviceDestroy            vdpDeviceDestroy;
+VdpGetInformationString     vdpGetInformationString;
+VdpGenerateCSCMatrix        vdpGenerateCSCMatrix;
+
+VdpOutputSurfaceRenderOutputSurface vdpOutputSurfaceRenderOutputSurface;
+VdpOutputSurfaceRenderBitmapSurface vdpOutputSurfaceRenderBitmapSurface;
+
+VdpPreemptionCallbackRegister       vdpPreemptionCallbackRegister;
+VdpPresentationQueueTargetCreateX11 vdpPresentationQueueTargetCreateX11;
+VdpGetProcAddress                   vdpGetProcAddress;
 
 #endif /* VA_GL_SRC_API_H */

@@ -56,25 +56,25 @@ destroy_child_objects(int handle, void *item, void *p)
                 // do nothing
                 break;
             case HANDLETYPE_PRESENTATION_QUEUE_TARGET:
-                softVdpPresentationQueueDestroy(handle);
+                vdpPresentationQueueDestroy(handle);
                 break;
             case HANDLETYPE_PRESENTATION_QUEUE:
-                softVdpPresentationQueueDestroy(handle);
+                vdpPresentationQueueDestroy(handle);
                 break;
             case HANDLETYPE_VIDEO_MIXER:
-                softVdpVideoMixerDestroy(handle);
+                vdpVideoMixerDestroy(handle);
                 break;
             case HANDLETYPE_OUTPUT_SURFACE:
-                softVdpOutputSurfaceDestroy(handle);
+                vdpOutputSurfaceDestroy(handle);
                 break;
             case HANDLETYPE_VIDEO_SURFACE:
-                softVdpVideoSurfaceDestroy(handle);
+                vdpVideoSurfaceDestroy(handle);
                 break;
             case HANDLETYPE_BITMAP_SURFACE:
-                softVdpBitmapSurfaceDestroy(handle);
+                vdpBitmapSurfaceDestroy(handle);
                 break;
             case HANDLETYPE_DECODER:
-                softVdpDecoderDestroy(handle);
+                vdpDecoderDestroy(handle);
                 break;
             default:
                 traceError("warning (destroy_child_objects): unknown handle type %d\n", gh->type);
@@ -150,8 +150,8 @@ err:
 }
 
 VdpStatus
-softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
-                       VdpGetProcAddress **get_proc_address)
+vdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
+                   VdpGetProcAddress **get_proc_address)
 {
     if (!display_orig || !device || !get_proc_address)
         return VDP_STATUS_INVALID_POINTER;
@@ -234,7 +234,7 @@ softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
     glFinish();
 
     *device = handle_insert(data);
-    *get_proc_address = &softVdpGetProcAddress;
+    *get_proc_address = &vdpGetProcAddress;
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -248,7 +248,7 @@ softVdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
 }
 
 VdpStatus
-softVdpDeviceDestroy(VdpDevice device)
+vdpDeviceDestroy(VdpDevice device)
 {
     VdpStatus err_code;
     VdpDeviceData *data = handle_acquire(device, HANDLETYPE_DEVICE);
@@ -258,14 +258,14 @@ softVdpDeviceDestroy(VdpDevice device)
     if (0 != data->refcount) {
         // Buggy client forgot to destroy dependend objects or decided that destroying
         // VdpDevice destroys all child object. Let's try to mitigate and prevent leakage.
-        traceError("warning (softVdpDeviceDestroy): non-zero reference count (%d). "
+        traceError("warning (vdpDeviceDestroy): non-zero reference count (%d). "
                    "Trying to free child objects.\n", data->refcount);
         void *parent_object = data;
         handle_execute_for_all(destroy_child_objects, parent_object);
     }
 
     if (0 != data->refcount) {
-        traceError("error (softVdpDeviceDestroy): still non-zero reference count (%d)\n",
+        traceError("error (vdpDeviceDestroy): still non-zero reference count (%d)\n",
                    data->refcount);
         traceError("Here is the list of objects:\n");
         struct {
@@ -316,7 +316,7 @@ quit_skip_release:
 }
 
 VdpStatus
-softVdpGetApiVersion(uint32_t *api_version)
+vdpGetApiVersion(uint32_t *api_version)
 {
     if (!api_version)
         return VDP_STATUS_INVALID_POINTER;
@@ -326,13 +326,13 @@ softVdpGetApiVersion(uint32_t *api_version)
 
 static
 const char *
-softVdpGetErrorString(VdpStatus status)
+vdpGetErrorString(VdpStatus status)
 {
     return reverse_status(status);
 }
 
 VdpStatus
-softVdpGetInformationString(char const **information_string)
+vdpGetInformationString(char const **information_string)
 {
     if (!information_string)
         return VDP_STATUS_INVALID_POINTER;
@@ -341,17 +341,17 @@ softVdpGetInformationString(char const **information_string)
 }
 
 VdpStatus
-softVdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_pointer)
+vdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_pointer)
 {
     (void)device;   // there is no difference between various devices. All have same procedures
     if (!function_pointer)
         return VDP_STATUS_INVALID_POINTER;
     switch (function_id) {
     case VDP_FUNC_ID_GET_ERROR_STRING:
-        *function_pointer = &softVdpGetErrorString;
+        *function_pointer = &vdpGetErrorString;
         break;
     case VDP_FUNC_ID_GET_PROC_ADDRESS:
-        *function_pointer = &softVdpGetProcAddress;
+        *function_pointer = &vdpGetProcAddress;
         break;
     case VDP_FUNC_ID_GET_API_VERSION:
         *function_pointer = &traceVdpGetApiVersion;
@@ -545,7 +545,7 @@ softVdpGetProcAddress(VdpDevice device, VdpFuncId function_id, void **function_p
 }
 
 VdpStatus
-softVdpPreemptionCallbackRegister(VdpDevice device, VdpPreemptionCallback callback, void *context)
+vdpPreemptionCallbackRegister(VdpDevice device, VdpPreemptionCallback callback, void *context)
 {
     (void)device; (void)callback; (void)context;
     return VDP_STATUS_OK;

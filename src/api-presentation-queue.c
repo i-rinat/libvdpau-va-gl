@@ -40,9 +40,9 @@ vdptime2timespec(VdpTime t)
 }
 
 VdpStatus
-softVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_queue,
-                                              VdpOutputSurface surface,
-                                              VdpTime *first_presentation_time)
+vdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_queue,
+                                          VdpOutputSurface surface,
+                                          VdpTime *first_presentation_time)
 
 {
     if (!first_presentation_time)
@@ -72,10 +72,9 @@ softVdpPresentationQueueBlockUntilSurfaceIdle(VdpPresentationQueue presentation_
 }
 
 VdpStatus
-softVdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_queue,
-                                           VdpOutputSurface surface,
-                                           VdpPresentationQueueStatus *status,
-                                           VdpTime *first_presentation_time)
+vdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_queue,
+                                       VdpOutputSurface surface, VdpPresentationQueueStatus *status,
+                                       VdpTime *first_presentation_time)
 {
     if (!status || !first_presentation_time)
         return VDP_STATUS_INVALID_POINTER;
@@ -278,9 +277,8 @@ quit:
 }
 
 VdpStatus
-softVdpPresentationQueueCreate(VdpDevice device,
-                               VdpPresentationQueueTarget presentation_queue_target,
-                               VdpPresentationQueue *presentation_queue)
+vdpPresentationQueueCreate(VdpDevice device, VdpPresentationQueueTarget presentation_queue_target,
+                           VdpPresentationQueue *presentation_queue)
 {
     if (!presentation_queue)
         return VDP_STATUS_INVALID_POINTER;
@@ -339,7 +337,7 @@ softVdpPresentationQueueCreate(VdpDevice device,
 }
 
 VdpStatus
-softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
+vdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 {
     VdpPresentationQueueData *pqData =
         handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
@@ -363,8 +361,8 @@ softVdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 }
 
 VdpStatus
-softVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_queue,
-                                           VdpColor *const background_color)
+vdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_queue,
+                                       VdpColor *const background_color)
 {
     VdpPresentationQueueData *pqData =
         handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
@@ -385,8 +383,8 @@ softVdpPresentationQueueSetBackgroundColor(VdpPresentationQueue presentation_que
 }
 
 VdpStatus
-softVdpPresentationQueueGetBackgroundColor(VdpPresentationQueue presentation_queue,
-                                           VdpColor *background_color)
+vdpPresentationQueueGetBackgroundColor(VdpPresentationQueue presentation_queue,
+                                       VdpColor *background_color)
 {
     if (!background_color)
         return VDP_STATUS_INVALID_POINTER;
@@ -402,8 +400,7 @@ softVdpPresentationQueueGetBackgroundColor(VdpPresentationQueue presentation_que
 }
 
 VdpStatus
-softVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue,
-                                VdpTime *current_time)
+vdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue, VdpTime *current_time)
 {
     if (!current_time)
         return VDP_STATUS_INVALID_POINTER;
@@ -415,9 +412,9 @@ softVdpPresentationQueueGetTime(VdpPresentationQueue presentation_queue,
 }
 
 VdpStatus
-softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSurface surface,
-                                uint32_t clip_width, uint32_t clip_height,
-                                VdpTime earliest_presentation_time)
+vdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSurface surface,
+                            uint32_t clip_width, uint32_t clip_height,
+                            VdpTime earliest_presentation_time)
 {
     VdpPresentationQueueData *pqData =
         handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
@@ -495,8 +492,8 @@ softVdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutp
 }
 
 VdpStatus
-softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
-                                        VdpPresentationQueueTarget *target)
+vdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
+                                    VdpPresentationQueueTarget *target)
 {
     if (!target)
         return VDP_STATUS_INVALID_POINTER;
@@ -532,7 +529,7 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
     XVisualInfo *vi;
     vi = glXChooseVisual(deviceData->display, deviceData->screen, att);
     if (NULL == vi) {
-        traceError("error (softVdpPresentationQueueTargetCreateX11): glXChooseVisual failed\n");
+        traceError("error (vdpPresentationQueueTargetCreateX11): glXChooseVisual failed\n");
         free(data);
         pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
         handle_release(device);
@@ -551,7 +548,7 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
 }
 
 VdpStatus
-softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_target)
+vdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_target)
 {
     VdpPresentationQueueTargetData *pqTargetData =
         handle_acquire(presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET);
@@ -560,7 +557,7 @@ softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_qu
     VdpDeviceData *deviceData = pqTargetData->device;
 
     if (0 != pqTargetData->refcount) {
-        traceError("warning (softVdpPresentationQueueTargetDestroy): non-zero reference"
+        traceError("warning (vdpPresentationQueueTargetDestroy): non-zero reference"
                    "count (%d)\n", pqTargetData->refcount);
         handle_release(presentation_queue_target);
         return VDP_STATUS_ERROR;

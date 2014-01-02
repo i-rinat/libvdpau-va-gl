@@ -18,10 +18,10 @@
 
 
 VdpStatus
-softVdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
-                        VdpVideoMixerFeature const *features, uint32_t parameter_count,
-                        VdpVideoMixerParameter const *parameters,
-                        void const *const *parameter_values, VdpVideoMixer *mixer)
+vdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
+                    VdpVideoMixerFeature const *features, uint32_t parameter_count,
+                    VdpVideoMixerParameter const *parameters,
+                    void const *const *parameter_values, VdpVideoMixer *mixer)
 {
     VdpStatus err_code;
     if (!mixer)
@@ -51,7 +51,7 @@ quit:
 }
 
 VdpStatus
-softVdpVideoMixerDestroy(VdpVideoMixer mixer)
+vdpVideoMixerDestroy(VdpVideoMixer mixer)
 {
     VdpVideoMixerData *videoMixerData = handle_acquire(mixer, HANDLETYPE_VIDEO_MIXER);
     if (NULL == videoMixerData)
@@ -65,90 +65,89 @@ softVdpVideoMixerDestroy(VdpVideoMixer mixer)
 }
 
 VdpStatus
-softVdpVideoMixerGetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_count,
-                                    VdpVideoMixerAttribute const *attributes,
-                                    void *const *attribute_values)
+vdpVideoMixerGetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_count,
+                                VdpVideoMixerAttribute const *attributes,
+                                void *const *attribute_values)
 {
     (void)mixer; (void)attribute_count; (void)attributes; (void)attribute_values;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
 VdpStatus
-softVdpVideoMixerGetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
-                                   VdpVideoMixerFeature const *features, VdpBool *feature_enables)
+vdpVideoMixerGetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
+                               VdpVideoMixerFeature const *features, VdpBool *feature_enables)
 {
     (void)mixer; (void)feature_count; (void)features; (void)feature_enables;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
 VdpStatus
-softVdpVideoMixerGetFeatureSupport(VdpVideoMixer mixer, uint32_t feature_count,
-                                   VdpVideoMixerFeature const *features, VdpBool *feature_supports)
+vdpVideoMixerGetFeatureSupport(VdpVideoMixer mixer, uint32_t feature_count,
+                               VdpVideoMixerFeature const *features, VdpBool *feature_supports)
 {
     (void)mixer; (void)feature_count; (void)features; (void)feature_supports;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
 VdpStatus
-softVdpVideoMixerGetParameterValues(VdpVideoMixer mixer, uint32_t parameter_count,
-                                    VdpVideoMixerParameter const *parameters,
-                                    void *const *parameter_values)
+vdpVideoMixerGetParameterValues(VdpVideoMixer mixer, uint32_t parameter_count,
+                                VdpVideoMixerParameter const *parameters,
+                                void *const *parameter_values)
 {
     (void)mixer; (void)parameter_count; (void)parameters; (void)parameter_values;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
 VdpStatus
-softVdpVideoMixerQueryAttributeSupport(VdpDevice device, VdpVideoMixerAttribute attribute,
-                                       VdpBool *is_supported)
+vdpVideoMixerQueryAttributeSupport(VdpDevice device, VdpVideoMixerAttribute attribute,
+                                   VdpBool *is_supported)
 {
     (void)device; (void)attribute; (void)is_supported;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
 VdpStatus
-softVdpVideoMixerQueryAttributeValueRange(VdpDevice device, VdpVideoMixerAttribute attribute,
-                                          void *min_value, void *max_value)
+vdpVideoMixerQueryAttributeValueRange(VdpDevice device, VdpVideoMixerAttribute attribute,
+                                      void *min_value, void *max_value)
 {
     (void)device; (void)attribute; (void)min_value; (void)max_value;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
 VdpStatus
-softVdpVideoMixerQueryFeatureSupport(VdpDevice device, VdpVideoMixerFeature feature,
-                                     VdpBool *is_supported)
+vdpVideoMixerQueryFeatureSupport(VdpDevice device, VdpVideoMixerFeature feature,
+                                 VdpBool *is_supported)
 {
     (void)device; (void)feature; (void)is_supported;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
 VdpStatus
-softVdpVideoMixerQueryParameterSupport(VdpDevice device, VdpVideoMixerParameter parameter,
-                                       VdpBool *is_supported)
+vdpVideoMixerQueryParameterSupport(VdpDevice device, VdpVideoMixerParameter parameter,
+                                   VdpBool *is_supported)
 {
     (void)device; (void)parameter; (void)is_supported;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
 VdpStatus
-softVdpVideoMixerQueryParameterValueRange(VdpDevice device, VdpVideoMixerParameter parameter,
-                                          void *min_value, void *max_value)
+vdpVideoMixerQueryParameterValueRange(VdpDevice device, VdpVideoMixerParameter parameter,
+                                      void *min_value, void *max_value)
 {
     (void)device; (void)parameter; (void)min_value; (void)max_value;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
 VdpStatus
-softVdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface,
-                        VdpRect const *background_source_rect,
-                        VdpVideoMixerPictureStructure current_picture_structure,
-                        uint32_t video_surface_past_count,
-                        VdpVideoSurface const *video_surface_past,
-                        VdpVideoSurface video_surface_current, uint32_t video_surface_future_count,
-                        VdpVideoSurface const *video_surface_future,
-                        VdpRect const *video_source_rect, VdpOutputSurface destination_surface,
-                        VdpRect const *destination_rect, VdpRect const *destination_video_rect,
-                        uint32_t layer_count, VdpLayer const *layers)
+vdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface,
+                    VdpRect const *background_source_rect,
+                    VdpVideoMixerPictureStructure current_picture_structure,
+                    uint32_t video_surface_past_count, VdpVideoSurface const *video_surface_past,
+                    VdpVideoSurface video_surface_current, uint32_t video_surface_future_count,
+                    VdpVideoSurface const *video_surface_future, VdpRect const *video_source_rect,
+                    VdpOutputSurface destination_surface, VdpRect const *destination_rect,
+                    VdpRect const *destination_video_rect, uint32_t layer_count,
+                    VdpLayer const *layers)
 {
     VdpStatus err_code;
     (void)mixer;    // TODO: mixer should be used to get mixing parameters
@@ -268,18 +267,17 @@ quit:
 }
 
 VdpStatus
-softVdpVideoMixerSetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_count,
-                                    VdpVideoMixerAttribute const *attributes,
-                                    void const *const *attribute_values)
+vdpVideoMixerSetAttributeValues(VdpVideoMixer mixer, uint32_t attribute_count,
+                                VdpVideoMixerAttribute const *attributes,
+                                void const *const *attribute_values)
 {
     (void)mixer; (void)attribute_count; (void)attributes; (void)attribute_values;
     return VDP_STATUS_OK;
 }
 
 VdpStatus
-softVdpVideoMixerSetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
-                                   VdpVideoMixerFeature const *features,
-                                   VdpBool const *feature_enables)
+vdpVideoMixerSetFeatureEnables(VdpVideoMixer mixer, uint32_t feature_count,
+                               VdpVideoMixerFeature const *features, VdpBool const *feature_enables)
 {
     (void)mixer; (void)feature_count; (void)features; (void)feature_enables;
     return VDP_STATUS_OK;

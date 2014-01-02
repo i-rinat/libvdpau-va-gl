@@ -9,7 +9,7 @@
 #include <vdpau/vdpau.h>
 
 VdpStatus
-softVdpGenerateCSCMatrix(VdpProcamp *procamp, VdpColorStandard standard, VdpCSCMatrix *csc_matrix)
+vdpGenerateCSCMatrix(VdpProcamp *procamp, VdpColorStandard standard, VdpCSCMatrix *csc_matrix)
 {
     if (!csc_matrix)
         return VDP_STATUS_INVALID_POINTER;

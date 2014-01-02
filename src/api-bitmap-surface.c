@@ -17,8 +17,8 @@
 
 
 VdpStatus
-softVdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
-                           uint32_t height, VdpBool frequently_accessed, VdpBitmapSurface *surface)
+vdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
+                       uint32_t height, VdpBool frequently_accessed, VdpBitmapSurface *surface)
 {
     VdpStatus err_code;
     if (!surface)
@@ -138,7 +138,7 @@ quit:
 }
 
 VdpStatus
-softVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
+vdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
 {
     VdpBitmapSurfaceData *data = handle_acquire(surface, HANDLETYPE_BITMAP_SURFACE);
     if (NULL == data)
@@ -168,8 +168,8 @@ softVdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
 }
 
 VdpStatus
-softVdpBitmapSurfaceGetParameters(VdpBitmapSurface surface, VdpRGBAFormat *rgba_format,
-                                  uint32_t *width, uint32_t *height, VdpBool *frequently_accessed)
+vdpBitmapSurfaceGetParameters(VdpBitmapSurface surface, VdpRGBAFormat *rgba_format,
+                              uint32_t *width, uint32_t *height, VdpBool *frequently_accessed)
 {
     VdpBitmapSurfaceData *srcSurfData = handle_acquire(surface, HANDLETYPE_BITMAP_SURFACE);
     if (NULL == srcSurfData)
@@ -190,8 +190,8 @@ softVdpBitmapSurfaceGetParameters(VdpBitmapSurface surface, VdpRGBAFormat *rgba_
 }
 
 VdpStatus
-softVdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *source_data,
-                                  uint32_t const *source_pitches, VdpRect const *destination_rect)
+vdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *source_data,
+                              uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
     VdpStatus err_code;
     if (!source_data || !source_pitches)
@@ -254,9 +254,8 @@ quit:
 }
 
 VdpStatus
-softVdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba_format,
-                                      VdpBool *is_supported, uint32_t *max_width,
-                                      uint32_t *max_height)
+vdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba_format,
+                                  VdpBool *is_supported, uint32_t *max_width, uint32_t *max_height)
 {
     VdpStatus err_code;
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);

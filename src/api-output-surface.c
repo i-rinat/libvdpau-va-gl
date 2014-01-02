@@ -201,8 +201,8 @@ vdpBlendStateToGLBlendState(VdpOutputSurfaceRenderBlendState const *blend_state)
 }
 
 VdpStatus
-softVdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
-                           uint32_t height, VdpOutputSurface *surface)
+vdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t width,
+                       uint32_t height, VdpOutputSurface *surface)
 {
     VdpStatus err_code;
     if (!surface)
@@ -315,7 +315,7 @@ quit:
 }
 
 VdpStatus
-softVdpOutputSurfaceDestroy(VdpOutputSurface surface)
+vdpOutputSurfaceDestroy(VdpOutputSurface surface)
 {
     VdpStatus err_code;
     VdpOutputSurfaceData *data = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
@@ -346,9 +346,8 @@ quit:
 }
 
 VdpStatus
-softVdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *source_rect,
-                                  void *const *destination_data,
-                                  uint32_t const *destination_pitches)
+vdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *source_rect,
+                              void *const *destination_data, uint32_t const *destination_pitches)
 {
     VdpStatus err_code;
     if (!destination_data || !destination_pitches)
@@ -390,8 +389,8 @@ quit:
 }
 
 VdpStatus
-softVdpOutputSurfaceGetParameters(VdpOutputSurface surface, VdpRGBAFormat *rgba_format,
-                                  uint32_t *width, uint32_t *height)
+vdpOutputSurfaceGetParameters(VdpOutputSurface surface, VdpRGBAFormat *rgba_format,
+                              uint32_t *width, uint32_t *height)
 {
     if (!rgba_format || !width || !height)
         return VDP_STATUS_INVALID_POINTER;
@@ -409,10 +408,10 @@ softVdpOutputSurfaceGetParameters(VdpOutputSurface surface, VdpRGBAFormat *rgba_
 }
 
 VdpStatus
-softVdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat source_indexed_format,
-                                   void const *const *source_data, uint32_t const *source_pitch,
-                                   VdpRect const *destination_rect,
-                                   VdpColorTableFormat color_table_format, void const *color_table)
+vdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat source_indexed_format,
+                               void const *const *source_data, uint32_t const *source_pitch,
+                               VdpRect const *destination_rect,
+                               VdpColorTableFormat color_table_format, void const *color_table)
 {
     VdpStatus err_code;
     if (!source_data || !source_pitch || !color_table)
@@ -490,8 +489,8 @@ quit:
 }
 
 VdpStatus
-softVdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *source_data,
-                                  uint32_t const *source_pitches, VdpRect const *destination_rect)
+vdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *source_data,
+                              uint32_t const *source_pitches, VdpRect const *destination_rect)
 {
     VdpStatus err_code;
     if (!source_data || !source_pitches)
@@ -534,9 +533,9 @@ quit:
 }
 
 VdpStatus
-softVdpOutputSurfacePutBitsYCbCr(VdpOutputSurface surface, VdpYCbCrFormat source_ycbcr_format,
-                                 void const *const *source_data, uint32_t const *source_pitches,
-                                 VdpRect const *destination_rect, VdpCSCMatrix const *csc_matrix)
+vdpOutputSurfacePutBitsYCbCr(VdpOutputSurface surface, VdpYCbCrFormat source_ycbcr_format,
+                             void const *const *source_data, uint32_t const *source_pitches,
+                             VdpRect const *destination_rect, VdpCSCMatrix const *csc_matrix)
 {
     (void)surface; (void)source_ycbcr_format; (void)source_data; (void)source_pitches;
     (void)destination_rect; (void)csc_matrix;
@@ -544,9 +543,8 @@ softVdpOutputSurfacePutBitsYCbCr(VdpOutputSurface surface, VdpYCbCrFormat source
 }
 
 VdpStatus
-softVdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba_format,
-                                      VdpBool *is_supported, uint32_t *max_width,
-                                      uint32_t *max_height)
+vdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba_format,
+                                  VdpBool *is_supported, uint32_t *max_width, uint32_t *max_height)
 {
     VdpStatus err_code;
     if (!is_supported || !max_width || !max_height)
@@ -588,20 +586,20 @@ quit:
 }
 
 VdpStatus
-softVdpOutputSurfaceQueryGetPutBitsNativeCapabilities(VdpDevice device,
-                                                      VdpRGBAFormat surface_rgba_format,
-                                                      VdpBool *is_supported)
+vdpOutputSurfaceQueryGetPutBitsNativeCapabilities(VdpDevice device,
+                                                  VdpRGBAFormat surface_rgba_format,
+                                                  VdpBool *is_supported)
 {
     (void)device; (void)surface_rgba_format; (void)is_supported;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
 VdpStatus
-softVdpOutputSurfaceQueryPutBitsIndexedCapabilities(VdpDevice device,
-                                                    VdpRGBAFormat surface_rgba_format,
-                                                    VdpIndexedFormat bits_indexed_format,
-                                                    VdpColorTableFormat color_table_format,
-                                                    VdpBool *is_supported)
+vdpOutputSurfaceQueryPutBitsIndexedCapabilities(VdpDevice device,
+                                                VdpRGBAFormat surface_rgba_format,
+                                                VdpIndexedFormat bits_indexed_format,
+                                                VdpColorTableFormat color_table_format,
+                                                VdpBool *is_supported)
 {
     (void)device; (void)surface_rgba_format; (void)bits_indexed_format; (void)color_table_format;
     (void)is_supported;
@@ -609,22 +607,22 @@ softVdpOutputSurfaceQueryPutBitsIndexedCapabilities(VdpDevice device,
 }
 
 VdpStatus
-softVdpOutputSurfaceQueryPutBitsYCbCrCapabilities(VdpDevice device,
-                                                  VdpRGBAFormat surface_rgba_format,
-                                                  VdpYCbCrFormat bits_ycbcr_format,
-                                                  VdpBool *is_supported)
+vdpOutputSurfaceQueryPutBitsYCbCrCapabilities(VdpDevice device,
+                                              VdpRGBAFormat surface_rgba_format,
+                                              VdpYCbCrFormat bits_ycbcr_format,
+                                              VdpBool *is_supported)
 {
     (void)device; (void)surface_rgba_format; (void)bits_ycbcr_format; (void)is_supported;
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
 VdpStatus
-softVdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
-                                        VdpRect const *destination_rect,
-                                        VdpBitmapSurface source_surface, VdpRect const *source_rect,
-                                        VdpColor const *colors,
-                                        VdpOutputSurfaceRenderBlendState const *blend_state,
-                                        uint32_t flags)
+vdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
+                                    VdpRect const *destination_rect,
+                                    VdpBitmapSurface source_surface, VdpRect const *source_rect,
+                                    VdpColor const *colors,
+                                    VdpOutputSurfaceRenderBlendState const *blend_state,
+                                    uint32_t flags)
 {
     VdpStatus err_code;
 
@@ -718,12 +716,12 @@ quit_skip_release:
 }
 
 VdpStatus
-softVdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
-                                        VdpRect const *destination_rect,
-                                        VdpOutputSurface source_surface, VdpRect const *source_rect,
-                                        VdpColor const *colors,
-                                        VdpOutputSurfaceRenderBlendState const *blend_state,
-                                        uint32_t flags)
+vdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
+                                    VdpRect const *destination_rect,
+                                    VdpOutputSurface source_surface, VdpRect const *source_rect,
+                                    VdpColor const *colors,
+                                    VdpOutputSurfaceRenderBlendState const *blend_state,
+                                    uint32_t flags)
 {
     VdpStatus err_code;
 

@@ -30,12 +30,12 @@ main(int argc, char *argv[])
     dpy = XOpenDisplay(NULL);
     assert(dpy);
 
-    CHECK(softVdpDeviceCreateX11(dpy, 0, &vdp_device, &get_proc_address));
-    CHECK(softVdpVideoSurfaceCreate(vdp_device, VDP_CHROMA_TYPE_420, width, height,
-                                    &vdp_video_surface));
-    CHECK(softVdpOutputSurfaceCreate(vdp_device, VDP_RGBA_FORMAT_B8G8R8A8, width, height,
-                                     &vdp_output_surface));
-    CHECK(softVdpVideoMixerCreate(vdp_device, 0, NULL, 0, NULL, NULL, &vdp_video_mixer));
+    CHECK(vdpDeviceCreateX11(dpy, 0, &vdp_device, &get_proc_address));
+    CHECK(vdpVideoSurfaceCreate(vdp_device, VDP_CHROMA_TYPE_420, width, height,
+                                &vdp_video_surface));
+    CHECK(vdpOutputSurfaceCreate(vdp_device, VDP_RGBA_FORMAT_B8G8R8A8, width, height,
+                                 &vdp_output_surface));
+    CHECK(vdpVideoMixerCreate(vdp_device, 0, NULL, 0, NULL, NULL, &vdp_video_mixer));
 
     char *y_plane = malloc(width * height);
     char *u_plane = malloc((width/2) * (height/2));
@@ -58,21 +58,21 @@ main(int argc, char *argv[])
 
     clock_gettime(CLOCK_MONOTONIC, &t_start);
     for (int k = 0; k < rep_count; k ++) {
-        CHECK(softVdpVideoSurfacePutBitsYCbCr(vdp_video_surface, VDP_YCBCR_FORMAT_YV12,
-                                              source_planes, source_pitches));
-        CHECK(softVdpVideoMixerRender(vdp_video_mixer, -1, NULL,
-                                      VDP_VIDEO_MIXER_PICTURE_STRUCTURE_FRAME,
-                                      0, NULL, vdp_video_surface, 0, NULL,
-                                      NULL, vdp_output_surface, NULL, NULL, 0, NULL));
+        CHECK(vdpVideoSurfacePutBitsYCbCr(vdp_video_surface, VDP_YCBCR_FORMAT_YV12,
+                                          source_planes, source_pitches));
+        CHECK(vdpVideoMixerRender(vdp_video_mixer, -1, NULL,
+                                  VDP_VIDEO_MIXER_PICTURE_STRUCTURE_FRAME,
+                                  0, NULL, vdp_video_surface, 0, NULL,
+                                  NULL, vdp_output_surface, NULL, NULL, 0, NULL));
     }
     clock_gettime(CLOCK_MONOTONIC, &t_end);
     double duration = t_end.tv_sec - t_start.tv_sec + (t_end.tv_nsec - t_start.tv_nsec) / 1.0e9;
 
     printf("%d repetitions in %f secs, %f per sec\n", rep_count, duration, rep_count / duration);
 
-    CHECK(softVdpOutputSurfaceDestroy(vdp_output_surface));
-    CHECK(softVdpVideoMixerDestroy(vdp_video_mixer));
-    CHECK(softVdpVideoSurfaceDestroy(vdp_video_surface));
-    CHECK(softVdpDeviceDestroy(vdp_device));
+    CHECK(vdpOutputSurfaceDestroy(vdp_output_surface));
+    CHECK(vdpVideoMixerDestroy(vdp_video_mixer));
+    CHECK(vdpVideoSurfaceDestroy(vdp_video_surface));
+    CHECK(vdpDeviceDestroy(vdp_device));
     return 0;
 }

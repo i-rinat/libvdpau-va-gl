@@ -21,8 +21,8 @@
 
 
 VdpStatus
-softVdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t width,
-                          uint32_t height, VdpVideoSurface *surface)
+vdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t width, uint32_t height,
+                      VdpVideoSurface *surface)
 {
     VdpStatus err_code;
     if (!surface)
@@ -94,7 +94,7 @@ quit:
 }
 
 VdpStatus
-softVdpVideoSurfaceDestroy(VdpVideoSurface surface)
+vdpVideoSurfaceDestroy(VdpVideoSurface surface)
 {
     VdpVideoSurfaceData *videoSurfData = handle_acquire(surface, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == videoSurfData)
@@ -137,8 +137,8 @@ softVdpVideoSurfaceDestroy(VdpVideoSurface surface)
 }
 
 VdpStatus
-softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destination_ycbcr_format,
-                                void *const *destination_data, uint32_t const *destination_pitches)
+vdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destination_ycbcr_format,
+                            void *const *destination_data, uint32_t const *destination_pitches)
 {
     VdpStatus err_code;
     if (!destination_data || !destination_pitches)
@@ -213,7 +213,7 @@ softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destinat
             vaUnmapBuffer(va_dpy, q.buf);
         } else {
             const char *c = (const char *)&q.format.fourcc;
-            traceError("error (softVdpVideoSurfaceGetBitsYCbCr): not implemented conversion "
+            traceError("error (vdpVideoSurfaceGetBitsYCbCr): not implemented conversion "
                        "VA FOURCC %c%c%c%c -> %s\n", *c, *(c+1), *(c+2), *(c+3),
                        reverse_ycbcr_format(destination_ycbcr_format));
             vaDestroyImage(va_dpy, q.image_id);
@@ -223,7 +223,7 @@ softVdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destinat
         vaDestroyImage(va_dpy, q.image_id);
     } else {
         // software fallback
-        traceError("error (softVdpVideoSurfaceGetBitsYCbCr): not implemented software fallback\n");
+        traceError("error (vdpVideoSurfaceGetBitsYCbCr): not implemented software fallback\n");
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
@@ -242,8 +242,8 @@ quit:
 }
 
 VdpStatus
-softVdpVideoSurfaceGetParameters(VdpVideoSurface surface, VdpChromaType *chroma_type,
-                                 uint32_t *width, uint32_t *height)
+vdpVideoSurfaceGetParameters(VdpVideoSurface surface, VdpChromaType *chroma_type,
+                             uint32_t *width, uint32_t *height)
 {
     if (!chroma_type || !width || !height)
         return VDP_STATUS_INVALID_POINTER;
@@ -421,8 +421,8 @@ err:
 }
 
 VdpStatus
-softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_ycbcr_format,
-                                void const *const *source_data, uint32_t const *source_pitches)
+vdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_ycbcr_format,
+                            void const *const *source_data, uint32_t const *source_pitches)
 {
     int using_glsl = 1;
     VdpStatus ret;
@@ -438,9 +438,8 @@ softVdpVideoSurfacePutBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat source_y
 }
 
 VdpStatus
-softVdpVideoSurfaceQueryCapabilities(VdpDevice device, VdpChromaType surface_chroma_type,
-                                     VdpBool *is_supported, uint32_t *max_width,
-                                     uint32_t *max_height)
+vdpVideoSurfaceQueryCapabilities(VdpDevice device, VdpChromaType surface_chroma_type,
+                                 VdpBool *is_supported, uint32_t *max_width, uint32_t *max_height)
 {
     if (!is_supported || !max_width || !max_height)
         return VDP_STATUS_INVALID_POINTER;
@@ -454,10 +453,9 @@ softVdpVideoSurfaceQueryCapabilities(VdpDevice device, VdpChromaType surface_chr
 }
 
 VdpStatus
-softVdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(VdpDevice device,
-                                                    VdpChromaType surface_chroma_type,
-                                                    VdpYCbCrFormat bits_ycbcr_format,
-                                                    VdpBool *is_supported)
+vdpVideoSurfaceQueryGetPutBitsYCbCrCapabilities(VdpDevice device, VdpChromaType surface_chroma_type,
+                                                VdpYCbCrFormat bits_ycbcr_format,
+                                                VdpBool *is_supported)
 {
     if (!is_supported)
         return VDP_STATUS_INVALID_POINTER;
