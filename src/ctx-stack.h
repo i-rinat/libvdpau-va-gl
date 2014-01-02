@@ -21,4 +21,7 @@ GLXContext  glx_context_get_root_context(void);
 void glx_context_lock(void);
 void glx_context_unlock(void);
 
+void x11_push_eh(void);
+int  x11_pop_eh(void);
+
 #endif /* VA_GL_SRC_CTX_STACK_H */

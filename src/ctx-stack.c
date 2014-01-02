@@ -27,6 +27,8 @@ GHashTable     *glc_hash_table = NULL;
 int             glc_hash_table_ref_count = 0;
 GLXContext      root_glc;
 XVisualInfo    *root_vi;
+static  int     x11_error_code = 0;
+static  void   *x11_prev_handler = NULL;
 
 void
 glx_context_push_global(Display *dpy, Drawable wnd, GLXContext glc)
@@ -156,4 +158,43 @@ GLXContext
 glx_context_get_root_context(void)
 {
     return root_glc;
+}
+
+static
+int
+x11_error_handler(Display *dpy, XErrorEvent *ee)
+{
+    x11_error_code = ee->error_code;
+    return 0;
+}
+
+void
+x11_push_eh(void)
+{
+    x11_error_code = 0;
+    void *ptr = XSetErrorHandler(&x11_error_handler);
+
+    if (ptr != x11_error_handler)
+        x11_prev_handler = ptr;
+}
+
+int
+x11_pop_eh(void)
+{
+    // Although this looks like right thing to do, brief testing shows it's highly unstable.
+    // So this code will stay here commented out as a reminder.
+/*
+    void *ptr = XSetErrorHandler(x11_prev_handler);
+    if (ptr != x11_error_handler) {
+        // if someone have managed to set own handler after ours, restore it
+        void *ptr2 = XSetErrorHandler(ptr);
+        if (ptr != ptr2) {
+            // someone again has set another handler
+            traceError("warning (%s): someone set X error handler while restore previous\n",
+                       __func__);
+            XSetErrorHandler(ptr2);
+        }
+    }
+*/
+    return x11_error_code;
 }
