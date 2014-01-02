@@ -122,7 +122,7 @@ do_presentation_queue_display(VdpPresentationQueueData *pqData)
     if (surfData == NULL)
         return;
 
-    glx_context_push_global(deviceData->display, pqData->target->drawable, pqData->target->glc);
+    glx_context_push_global(deviceData->display, pqData->target->glx_pixmap, pqData->target->glc);
 
     const uint32_t target_width  = (clip_width > 0)  ? clip_width  : surfData->width;
     const uint32_t target_height = (clip_height > 0) ? clip_height : surfData->height;
@@ -175,7 +175,24 @@ do_presentation_queue_display(VdpPresentationQueueData *pqData)
         glEnd();
     }
 
-    glXSwapBuffers(deviceData->display, pqData->target->drawable);
+    glFinish();
+    GLenum gl_error = glGetError();
+    glx_context_pop();
+
+    x11_push_eh();
+    glx_context_lock();
+    XSync(deviceData->display, False);
+    XCopyArea(deviceData->display, pqData->target->pixmap, pqData->target->drawable,
+                         pqData->target->plain_copy_gc, 0, 0,
+                         target_width, target_height, 0, 0);
+    XSync(deviceData->display, False);
+    int x11_err = x11_pop_eh();
+    glx_context_unlock();
+    if (x11_err != Success) {
+        char buf[200] = { 0 };
+        XGetErrorText(deviceData->display, x11_err, buf, sizeof(buf));
+        traceError("warning (%s): caught X11 error %s\n", __func__, buf);
+    }
 
     struct timespec now;
     clock_gettime(CLOCK_REALTIME, &now);
@@ -189,8 +206,6 @@ do_presentation_queue_display(VdpPresentationQueueData *pqData)
                       delta_ts.tv_sec, delta_ts.tv_nsec);
     }
 
-    GLenum gl_error = glGetError();
-    glx_context_pop();
     handle_release(surface);
 
     if (GL_NO_ERROR != gl_error) {
@@ -495,13 +510,25 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
         return VDP_STATUS_RESOURCES;
     }
 
+    Window root_wnd;
+    int xpos, ypos;
+    unsigned int width, height, border_width, depth;
+
+    pthread_mutex_lock(&global.glx_ctx_stack_mutex);
+    XGetGeometry(deviceData->display, drawable, &root_wnd, &xpos, &ypos,
+                 &width, &height, &border_width, &depth);
     data->type = HANDLETYPE_PRESENTATION_QUEUE_TARGET;
     data->device = deviceData;
     data->drawable = drawable;
     data->refcount = 0;
+    data->pixmap = XCreatePixmap(deviceData->display, root_wnd, width, height, depth);
+    XGCValues gc_values = {.function = GXcopy, .graphics_exposures = True };
+    data->plain_copy_gc = XCreateGC(deviceData->display, data->pixmap,
+                                    GCFunction | GCGraphicsExposures, &gc_values);
+    XSync(deviceData->display, False);
 
-    pthread_mutex_lock(&global.glx_ctx_stack_mutex);
-    GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
+    // No double buffering since we are going to render to glx pixmap
+    GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, None };
     XVisualInfo *vi;
     vi = glXChooseVisual(deviceData->display, deviceData->screen, att);
     if (NULL == vi) {
@@ -511,6 +538,7 @@ softVdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
         handle_release(device);
         return VDP_STATUS_ERROR;
     }
+    data->glx_pixmap = glXCreateGLXPixmap(deviceData->display, vi, data->pixmap);
 
     // create context for dislaying result (can share display lists with deviceData->glc
     data->glc = glXCreateContext(deviceData->display, vi, deviceData->root_glc, GL_TRUE);
@@ -541,6 +569,9 @@ softVdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_qu
     // drawable may be destroyed already, so one should activate global context
     glx_context_push_thread_local(deviceData);
     glXDestroyContext(deviceData->display, pqTargetData->glc);
+    glXDestroyGLXPixmap(deviceData->display, pqTargetData->glx_pixmap);
+    XFreeGC(deviceData->display, pqTargetData->plain_copy_gc);
+    XFreePixmap(deviceData->display, pqTargetData->pixmap);
 
     GLenum gl_error = glGetError();
     glx_context_pop();
