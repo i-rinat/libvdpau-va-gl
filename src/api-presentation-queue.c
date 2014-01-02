@@ -99,6 +99,51 @@ vdpPresentationQueueQuerySurfaceStatus(VdpPresentationQueue presentation_queue,
 
 static
 void
+free_glx_pixmaps(VdpPresentationQueueTargetData *pqTargetData)
+{
+    Display *dpy = pqTargetData->device->display;
+
+    // if pixmap is None, nothing was allocated
+    if (None == pqTargetData->pixmap)
+        return;
+
+    glXDestroyGLXPixmap(dpy, pqTargetData->glx_pixmap);
+    XFreeGC(dpy, pqTargetData->plain_copy_gc);
+    XFreePixmap(dpy, pqTargetData->pixmap);
+    pqTargetData->pixmap = None;
+}
+
+// create new pixmap, glx pixmap, GC if size has changed.
+// This function relies on external serializing Xlib access
+static
+void
+recreate_pixmaps_if_geometry_changed(VdpPresentationQueueTargetData *pqTargetData)
+{
+    Window          root_wnd;
+    int             xpos, ypos;
+    unsigned int    width, height, border_width, depth;
+    Display        *dpy = pqTargetData->device->display;
+
+    XGetGeometry(dpy, pqTargetData->drawable, &root_wnd, &xpos, &ypos, &width, &height,
+                 &border_width, &depth);
+    if (width != pqTargetData->drawable_width || height != pqTargetData->drawable_height) {
+        free_glx_pixmaps(pqTargetData);
+        pqTargetData->drawable_width = width;
+        pqTargetData->drawable_height = height;
+
+        pqTargetData->pixmap = XCreatePixmap(dpy, pqTargetData->device->root,
+                                             pqTargetData->drawable_width,
+                                             pqTargetData->drawable_height, depth);
+        XGCValues gc_values = {.function = GXcopy, .graphics_exposures = True };
+        pqTargetData->plain_copy_gc = XCreateGC(dpy, pqTargetData->pixmap,
+                                                GCFunction | GCGraphicsExposures, &gc_values);
+        pqTargetData->glx_pixmap = glXCreateGLXPixmap(dpy, pqTargetData->xvi, pqTargetData->pixmap);
+        XSync(dpy, False);
+    }
+}
+
+static
+void
 do_presentation_queue_display(VdpPresentationQueueData *pqData)
 {
     pthread_mutex_lock(&pqData->queue_mutex);
@@ -507,38 +552,31 @@ vdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
         return VDP_STATUS_RESOURCES;
     }
 
-    Window root_wnd;
-    int xpos, ypos;
-    unsigned int width, height, border_width, depth;
-
     pthread_mutex_lock(&global.glx_ctx_stack_mutex);
-    XGetGeometry(deviceData->display, drawable, &root_wnd, &xpos, &ypos,
-                 &width, &height, &border_width, &depth);
     data->type = HANDLETYPE_PRESENTATION_QUEUE_TARGET;
     data->device = deviceData;
     data->drawable = drawable;
     data->refcount = 0;
-    data->pixmap = XCreatePixmap(deviceData->display, root_wnd, width, height, depth);
-    XGCValues gc_values = {.function = GXcopy, .graphics_exposures = True };
-    data->plain_copy_gc = XCreateGC(deviceData->display, data->pixmap,
-                                    GCFunction | GCGraphicsExposures, &gc_values);
-    XSync(deviceData->display, False);
+
+    // emulate geometry change. Hope there will be no drawables of such size
+    data->drawable_width = (unsigned int)(-1);
+    data->drawable_height = (unsigned int)(-1);
+    data->pixmap = None;
 
     // No double buffering since we are going to render to glx pixmap
     GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, None };
-    XVisualInfo *vi;
-    vi = glXChooseVisual(deviceData->display, deviceData->screen, att);
-    if (NULL == vi) {
+    data->xvi = glXChooseVisual(deviceData->display, deviceData->screen, att);
+    if (NULL == data->xvi) {
         traceError("error (vdpPresentationQueueTargetCreateX11): glXChooseVisual failed\n");
         free(data);
         pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
         handle_release(device);
         return VDP_STATUS_ERROR;
     }
-    data->glx_pixmap = glXCreateGLXPixmap(deviceData->display, vi, data->pixmap);
+    recreate_pixmaps_if_geometry_changed(data);
 
     // create context for dislaying result (can share display lists with deviceData->glc
-    data->glc = glXCreateContext(deviceData->display, vi, deviceData->root_glc, GL_TRUE);
+    data->glc = glXCreateContext(deviceData->display, data->xvi, deviceData->root_glc, GL_TRUE);
     deviceData->refcount ++;
     *target = handle_insert(data);
     pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
@@ -566,9 +604,7 @@ vdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_
     // drawable may be destroyed already, so one should activate global context
     glx_context_push_thread_local(deviceData);
     glXDestroyContext(deviceData->display, pqTargetData->glc);
-    glXDestroyGLXPixmap(deviceData->display, pqTargetData->glx_pixmap);
-    XFreeGC(deviceData->display, pqTargetData->plain_copy_gc);
-    XFreePixmap(deviceData->display, pqTargetData->pixmap);
+    free_glx_pixmaps(pqTargetData);
 
     GLenum gl_error = glGetError();
     glx_context_pop();
@@ -579,6 +615,7 @@ vdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_
     }
 
     deviceData->refcount --;
+    XFree(pqTargetData->xvi);
     handle_expunge(presentation_queue_target);
     free(pqTargetData);
     return VDP_STATUS_OK;

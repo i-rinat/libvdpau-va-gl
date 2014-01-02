@@ -73,10 +73,13 @@ typedef struct {
     pthread_mutex_t lock;
     int             refcount;
     Drawable        drawable;       ///< X drawable to output to
-    Pixmap          pixmap;
-    GLXPixmap       glx_pixmap;
+    unsigned int    drawable_width; ///< last seen drawable width
+    unsigned int    drawable_height;///< last seen drawable height
+    Pixmap          pixmap;         ///< draw buffer
+    GLXPixmap       glx_pixmap;     ///< GLX pixmap proxy
     GC              plain_copy_gc;  ///< X GC for displaying buffer content
     GLXContext      glc;            ///< GL context used for output
+    XVisualInfo    *xvi;
 } VdpPresentationQueueTargetData;
 
 /** @brief VdpPresentationQueue object parameters */
