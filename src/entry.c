@@ -126,7 +126,6 @@ va_gl_library_constructor(void)
     handle_initialize_storage();
 
     // Initialize global data
-    pthread_mutex_init(&global.glx_ctx_stack_mutex, NULL);
     initialize_quirks();
 
     // initialize tracer

@@ -553,7 +553,7 @@ vdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
         return VDP_STATUS_RESOURCES;
     }
 
-    pthread_mutex_lock(&global.glx_ctx_stack_mutex);
+    glx_context_lock();
     data->type = HANDLETYPE_PRESENTATION_QUEUE_TARGET;
     data->device = deviceData;
     data->drawable = drawable;
@@ -570,7 +570,7 @@ vdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
     if (NULL == data->xvi) {
         traceError("error (vdpPresentationQueueTargetCreateX11): glXChooseVisual failed\n");
         free(data);
-        pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
+        glx_context_unlock();
         handle_release(device);
         return VDP_STATUS_ERROR;
     }
@@ -580,7 +580,7 @@ vdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
     data->glc = glXCreateContext(deviceData->display, data->xvi, deviceData->root_glc, GL_TRUE);
     deviceData->refcount ++;
     *target = handle_insert(data);
-    pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
+    glx_context_unlock();
 
     handle_release(device);
     return VDP_STATUS_OK;

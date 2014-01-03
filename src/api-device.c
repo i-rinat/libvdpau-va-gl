@@ -290,9 +290,9 @@ vdpDeviceDestroy(VdpDevice device)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glx_context_pop();
 
-    pthread_mutex_lock(&global.glx_ctx_stack_mutex);
+    glx_context_lock();
     glXMakeCurrent(data->display, None, NULL);
-    pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
+    glx_context_unlock();
 
     glx_context_unref_glc_hash_table(data->display);
 

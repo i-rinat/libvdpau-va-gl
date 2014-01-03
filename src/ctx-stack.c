@@ -29,11 +29,24 @@ GLXContext      root_glc;
 XVisualInfo    *root_vi;
 static  int     x11_error_code = 0;
 static  void   *x11_prev_handler = NULL;
+static  pthread_mutex_t glx_ctx_stack_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void
+glx_context_lock(void)
+{
+    pthread_mutex_lock(&glx_ctx_stack_mutex);
+}
+
+void
+glx_context_unlock(void)
+{
+    pthread_mutex_unlock(&glx_ctx_stack_mutex);
+}
 
 void
 glx_context_push_global(Display *dpy, Drawable wnd, GLXContext glc)
 {
-    pthread_mutex_lock(&global.glx_ctx_stack_mutex);
+    glx_context_lock();
     assert(0 == glx_ctx_stack_element_count);
 
     glx_ctx_stack_display = glXGetCurrentDisplay();
@@ -54,7 +67,7 @@ glx_context_push_global(Display *dpy, Drawable wnd, GLXContext glc)
 void
 glx_context_push_thread_local(VdpDeviceData *deviceData)
 {
-    pthread_mutex_lock(&global.glx_ctx_stack_mutex);
+    glx_context_lock();
     Display *dpy = deviceData->display;
     const Window wnd = deviceData->root;
     const gint thread_id = (gint) syscall(__NR_gettid);
@@ -89,28 +102,15 @@ glx_context_pop()
         if (glx_ctx_stack_display)
             glXMakeCurrent(glx_ctx_stack_display, glx_ctx_stack_wnd, glx_ctx_stack_glc);
     }
-
     glx_ctx_stack_element_count --;
 
-    pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
-}
-
-void
-glx_context_lock(void)
-{
-    pthread_mutex_lock(&global.glx_ctx_stack_mutex);
-}
-
-void
-glx_context_unlock(void)
-{
-    pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
+    glx_context_unlock();
 }
 
 void
 glx_context_ref_glc_hash_table(Display *dpy, int screen)
 {
-    pthread_mutex_lock(&global.glx_ctx_stack_mutex);
+    glx_context_lock();
     if (0 == glc_hash_table_ref_count) {
         glc_hash_table = g_hash_table_new(g_direct_hash, g_direct_equal);
         glc_hash_table_ref_count = 1;
@@ -125,7 +125,7 @@ glx_context_ref_glc_hash_table(Display *dpy, int screen)
     } else {
         glc_hash_table_ref_count ++;
     }
-    pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
+    glx_context_unlock();
 }
 
 static
@@ -141,7 +141,7 @@ glc_hash_destroy_func(gpointer key, gpointer value, gpointer user_data)
 void
 glx_context_unref_glc_hash_table(Display *dpy)
 {
-    pthread_mutex_lock(&global.glx_ctx_stack_mutex);
+    glx_context_lock();
     glc_hash_table_ref_count --;
     if (0 == glc_hash_table_ref_count) {
         g_hash_table_foreach(glc_hash_table, glc_hash_destroy_func, dpy);
@@ -151,7 +151,7 @@ glx_context_unref_glc_hash_table(Display *dpy)
         glXDestroyContext(dpy, root_glc);
         XFree(root_vi);
     }
-    pthread_mutex_unlock(&global.glx_ctx_stack_mutex);
+    glx_context_unlock();
 }
 
 GLXContext
