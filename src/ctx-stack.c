@@ -18,18 +18,18 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-static __thread Display *glx_ctx_stack_display;
-static __thread Drawable glx_ctx_stack_wnd;
-static __thread GLXContext glx_ctx_stack_glc;
-static __thread int glx_ctx_stack_same;
-static __thread int glx_ctx_stack_element_count = 0;
-GHashTable     *glc_hash_table = NULL;
-int             glc_hash_table_ref_count = 0;
-GLXContext      root_glc;
-XVisualInfo    *root_vi;
-static  int     x11_error_code = 0;
-static  void   *x11_prev_handler = NULL;
-static  pthread_mutex_t glx_ctx_stack_mutex = PTHREAD_MUTEX_INITIALIZER;
+static __thread Display    *glx_ctx_stack_display;
+static __thread Drawable    glx_ctx_stack_wnd;
+static __thread GLXContext  glx_ctx_stack_glc;
+static __thread int         glx_ctx_stack_same;
+static __thread int         glx_ctx_stack_element_count = 0;
+static          GHashTable *glc_hash_table = NULL;
+static          int         glc_hash_table_ref_count = 0;
+static          GLXContext  root_glc = NULL;
+static          XVisualInfo *root_vi = NULL;
+static          int         x11_error_code = 0;
+static          void       *x11_prev_handler = NULL;
+static          pthread_mutex_t glx_ctx_stack_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void
 glx_context_lock(void)
