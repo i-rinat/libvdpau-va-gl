@@ -17,6 +17,9 @@
 #include "trace.h"
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+
 
 static __thread Display    *glx_ctx_stack_display;
 static __thread Drawable    glx_ctx_stack_wnd;
@@ -31,6 +34,11 @@ static          int         x11_error_code = 0;
 static          void       *x11_prev_handler = NULL;
 static          pthread_mutex_t glx_ctx_stack_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+struct val_s {
+    Display    *dpy;
+    GLXContext  glc;
+};
+
 void
 glx_context_lock(void)
 {
@@ -41,6 +49,25 @@ void
 glx_context_unlock(void)
 {
     pthread_mutex_unlock(&glx_ctx_stack_mutex);
+}
+
+static
+void
+value_destroy_func(gpointer data)
+{
+    struct val_s *val = data;
+    glXDestroyContext(val->dpy, val->glc);
+    free(val);
+}
+
+static
+void *
+make_val(Display *dpy, GLXContext glc)
+{
+    struct val_s *val = malloc(sizeof(struct val_s));
+    val->dpy = dpy;
+    val->glc = glc;
+    return val;
 }
 
 void
@@ -70,26 +97,28 @@ glx_context_push_thread_local(VdpDeviceData *deviceData)
     glx_context_lock();
     Display *dpy = deviceData->display;
     const Window wnd = deviceData->root;
-    const gint thread_id = (gint) syscall(__NR_gettid);
+    int thread_id = (int)syscall(__NR_gettid);
 
-    GLXContext glc = g_hash_table_lookup(glc_hash_table, GINT_TO_POINTER(thread_id));
-    if (!glc) {
-        glc = glXCreateContext(dpy, root_vi, root_glc, GL_TRUE);
+    struct val_s *val = g_hash_table_lookup(glc_hash_table, GINT_TO_POINTER(thread_id));
+    if (!val) {
+        GLXContext glc = glXCreateContext(dpy, root_vi, root_glc, GL_TRUE);
         assert(glc);
-        g_hash_table_insert(glc_hash_table, GINT_TO_POINTER(thread_id), glc);
+        val = make_val(dpy, glc);
+        g_hash_table_insert(glc_hash_table, GINT_TO_POINTER(thread_id), val);
     }
+    assert(val->dpy == dpy);
 
     glx_ctx_stack_display = glXGetCurrentDisplay();
     glx_ctx_stack_wnd =     glXGetCurrentDrawable();
     glx_ctx_stack_glc =     glXGetCurrentContext();
     glx_ctx_stack_element_count ++;
 
-    if (dpy == glx_ctx_stack_display && wnd == glx_ctx_stack_wnd && glc == glx_ctx_stack_glc) {
+    if (dpy == glx_ctx_stack_display && wnd == glx_ctx_stack_wnd && val->glc == glx_ctx_stack_glc) {
         // Same context. Don't call MakeCurrent.
         glx_ctx_stack_same = 1;
     } else {
         glx_ctx_stack_same = 0;
-        glXMakeCurrent(dpy, wnd, glc);
+        glXMakeCurrent(dpy, wnd, val->glc);
     }
 }
 
@@ -112,7 +141,8 @@ glx_context_ref_glc_hash_table(Display *dpy, int screen)
 {
     glx_context_lock();
     if (0 == glc_hash_table_ref_count) {
-        glc_hash_table = g_hash_table_new(g_direct_hash, g_direct_equal);
+        glc_hash_table = g_hash_table_new_full(g_direct_hash, g_direct_equal,
+                                               NULL, value_destroy_func);
         glc_hash_table_ref_count = 1;
 
         GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
@@ -128,23 +158,12 @@ glx_context_ref_glc_hash_table(Display *dpy, int screen)
     glx_context_unlock();
 }
 
-static
-void
-glc_hash_destroy_func(gpointer key, gpointer value, gpointer user_data)
-{
-    (void)key;
-    GLXContext glc = value;
-    Display *dpy = user_data;
-    glXDestroyContext(dpy, glc);
-}
-
 void
 glx_context_unref_glc_hash_table(Display *dpy)
 {
     glx_context_lock();
     glc_hash_table_ref_count --;
     if (0 == glc_hash_table_ref_count) {
-        g_hash_table_foreach(glc_hash_table, glc_hash_destroy_func, dpy);
         g_hash_table_unref(glc_hash_table);
         glc_hash_table = NULL;
 
