@@ -70,6 +70,20 @@ make_val(Display *dpy, GLXContext glc)
     return val;
 }
 
+static
+gboolean
+is_thread_expired(gpointer key, gpointer value, gpointer user_data)
+{
+    int thread_id = GPOINTER_TO_INT(key);
+    (void)value;
+    (void)user_data;
+    if (kill(thread_id, 0) == 0) {
+        // thread still exists, do not delete element
+        return FALSE;
+    }
+    return TRUE;
+}
+
 void
 glx_context_push_global(Display *dpy, Drawable wnd, GLXContext glc)
 {
@@ -105,6 +119,9 @@ glx_context_push_thread_local(VdpDeviceData *deviceData)
         assert(glc);
         val = make_val(dpy, glc);
         g_hash_table_insert(glc_hash_table, GINT_TO_POINTER(thread_id), val);
+
+        // try cleanup expired entries
+        g_hash_table_foreach_remove(glc_hash_table, is_thread_expired, NULL);
     }
     assert(val->dpy == dpy);
 
