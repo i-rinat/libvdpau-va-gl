@@ -161,7 +161,7 @@ VdpStatus
 vdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
                    VdpGetProcAddress **get_proc_address)
 {
-    if (!display_orig || !device || !get_proc_address)
+    if (!display_orig || !device)
         return VDP_STATUS_INVALID_POINTER;
 
     // Let's get own connection to the X server
@@ -242,7 +242,8 @@ vdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
     glFinish();
 
     *device = handle_insert(data);
-    *get_proc_address = &vdpGetProcAddress;
+    if (get_proc_address)
+        *get_proc_address = &vdpGetProcAddress;
 
     GLenum gl_error = glGetError();
     glx_context_pop();
