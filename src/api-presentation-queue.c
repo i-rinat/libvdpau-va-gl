@@ -166,8 +166,10 @@ do_presentation_queue_display(VdpPresentationQueueData *pqData)
     if (surfData == NULL)
         return;
 
-    glx_context_push_global(deviceData->display, pqData->target->glx_pixmap, pqData->target->glc);
+    glx_context_lock();
     recreate_pixmaps_if_geometry_changed(pqData->target);
+    glx_context_unlock();
+    glx_context_push_global(deviceData->display, pqData->target->glx_pixmap, pqData->target->glc);
 
     const uint32_t target_width  = (clip_width > 0)  ? clip_width  : surfData->width;
     const uint32_t target_height = (clip_height > 0) ? clip_height : surfData->height;
