@@ -7,11 +7,9 @@
 // TOUCHES: VdpBitmapSurfaceCreate
 // TOUCHES: VdpBitmapSurfaceQueryCapabilities
 
-#include "vdpau-init.h"
+#include "tests-common.h"
 #include <stdio.h>
 
-#define MIN(x,y) ((x) < (y) ? (x) : (y))
-#define MAX(x,y) ((x) > (y) ? (x) : (y))
 
 void
 test_bitmaps_of_format(VdpDevice device, int fmt, const char *fmt_name,
@@ -26,8 +24,8 @@ test_bitmaps_of_format(VdpDevice device, int fmt, const char *fmt_name,
         for (uint32_t freq = 0; freq <= 1; freq ++) {
             const uint32_t size = MAX(1, MIN(k, max_square_size));
             printf("trying square %s bitmap %d x %d (%d)\n", fmt_name, size, size, freq);
-            ASSERT_OK(vdp_bitmap_surface_create(device, fmt, size, size, freq, &bmp_surf1));
-            ASSERT_OK(vdp_bitmap_surface_destroy(bmp_surf1));
+            ASSERT_OK(vdpBitmapSurfaceCreate(device, fmt, size, size, freq, &bmp_surf1));
+            ASSERT_OK(vdpBitmapSurfaceDestroy(bmp_surf1));
         }
     }
 
@@ -36,8 +34,8 @@ test_bitmaps_of_format(VdpDevice device, int fmt, const char *fmt_name,
         for (uint32_t freq = 0; freq <= 1; freq ++) {
             const uint32_t size = MAX(1, MIN(k, max_width));
             printf("trying width stretched %s bitmap %d x %d (%d)\n", fmt_name, size, 128, freq);
-            ASSERT_OK(vdp_bitmap_surface_create(device, fmt, size, 128, freq, &bmp_surf1));
-            ASSERT_OK(vdp_bitmap_surface_destroy(bmp_surf1));
+            ASSERT_OK(vdpBitmapSurfaceCreate(device, fmt, size, 128, freq, &bmp_surf1));
+            ASSERT_OK(vdpBitmapSurfaceDestroy(bmp_surf1));
         }
     }
 
@@ -46,8 +44,8 @@ test_bitmaps_of_format(VdpDevice device, int fmt, const char *fmt_name,
         for (uint32_t freq = 0; freq <= 1; freq ++) {
             const uint32_t size = MAX(1, MIN(k, max_height));
             printf("trying height stretched %s bitmap %d x %d (%d)\n", fmt_name, 128, size, freq);
-            ASSERT_OK(vdp_bitmap_surface_create(device, fmt, 128, size, freq, &bmp_surf1));
-            ASSERT_OK(vdp_bitmap_surface_destroy(bmp_surf1));
+            ASSERT_OK(vdpBitmapSurfaceCreate(device, fmt, 128, size, freq, &bmp_surf1));
+            ASSERT_OK(vdpBitmapSurfaceDestroy(bmp_surf1));
         }
     }
 }
@@ -55,16 +53,17 @@ test_bitmaps_of_format(VdpDevice device, int fmt, const char *fmt_name,
 
 int main(void)
 {
+    Display *dpy = get_dpy();
     VdpDevice device;
 
-    ASSERT_OK(vdpau_init_functions(&device, NULL, 0));
+    ASSERT_OK(vdpDeviceCreateX11(dpy, 0, &device, NULL));
 
     uint32_t max_width, max_height;
     VdpBool is_supported;
 
     // querying max_size
-    ASSERT_OK(vdp_bitmap_surface_query_capabilities(device, VDP_RGBA_FORMAT_B8G8R8A8, &is_supported,
-                &max_width, &max_height));
+    ASSERT_OK(vdpBitmapSurfaceQueryCapabilities(device, VDP_RGBA_FORMAT_B8G8R8A8, &is_supported,
+                                                &max_width, &max_height));
     assert(is_supported);
     assert(max_width > 0);
     assert(max_height > 0);
@@ -84,7 +83,7 @@ int main(void)
     test_bitmaps_of_format(device, VDP_RGBA_FORMAT_A8, "VDP_RGBA_FORMAT_A8",
                            max_width, max_height);
 
-    ASSERT_OK(vdp_device_destroy(device));
+    ASSERT_OK(vdpDeviceDestroy(device));
 
     printf("pass\n");
     return 0;

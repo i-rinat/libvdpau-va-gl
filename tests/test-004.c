@@ -5,26 +5,27 @@
 // Rendering the same pattern via both paths and then comparing results. Using opaque copy,
 // only source matters.
 
+#include "tests-common.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "vdpau-init.h"
 
 #define WIDTH       509
 #define HEIGHT      601
 
 int main(void)
 {
+    Display *dpy = get_dpy();
     int err_code = 0;
     VdpDevice device;
-    ASSERT_OK(vdpau_init_functions(&device, NULL, 0));
+    ASSERT_OK(vdpDeviceCreateX11(dpy, 0, &device, NULL));
 
     VdpOutputSurface out_surface_in;
     VdpOutputSurface out_surface_out;
     VdpBitmapSurface bmp_surface;
-    ASSERT_OK(vdp_output_surface_create(device, VDP_RGBA_FORMAT_B8G8R8A8, WIDTH, HEIGHT, &out_surface_in));
-    ASSERT_OK(vdp_output_surface_create(device, VDP_RGBA_FORMAT_B8G8R8A8, WIDTH, HEIGHT, &out_surface_out));
-    ASSERT_OK(vdp_bitmap_surface_create(device, VDP_RGBA_FORMAT_B8G8R8A8, WIDTH, HEIGHT, 1, &bmp_surface));
+    ASSERT_OK(vdpOutputSurfaceCreate(device, VDP_RGBA_FORMAT_B8G8R8A8, WIDTH, HEIGHT, &out_surface_in));
+    ASSERT_OK(vdpOutputSurfaceCreate(device, VDP_RGBA_FORMAT_B8G8R8A8, WIDTH, HEIGHT, &out_surface_out));
+    ASSERT_OK(vdpBitmapSurfaceCreate(device, VDP_RGBA_FORMAT_B8G8R8A8, WIDTH, HEIGHT, 1, &bmp_surface));
 
     uint32_t *src = malloc(4 * WIDTH * HEIGHT);
     uint32_t *dst = malloc(4 * WIDTH * HEIGHT);
@@ -40,24 +41,24 @@ int main(void)
     uint32_t source_pitches[] = { 4 * WIDTH };
     uint32_t destination_pitches[] = { 4 * WIDTH };
 
-    ASSERT_OK(vdp_output_surface_put_bits_native(out_surface_in, source_data, source_pitches, NULL));
-    ASSERT_OK(vdp_bitmap_surface_put_bits_native(bmp_surface, source_data, source_pitches, NULL));
+    ASSERT_OK(vdpOutputSurfacePutBitsNative(out_surface_in, source_data, source_pitches, NULL));
+    ASSERT_OK(vdpBitmapSurfacePutBitsNative(bmp_surface, source_data, source_pitches, NULL));
 
     VdpOutputSurfaceRenderBlendState blend_state_opaque_copy = {
-        .struct_version = VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION,
-        .blend_factor_source_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
-        .blend_factor_source_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
-        .blend_factor_destination_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
-        .blend_factor_destination_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
-        .blend_equation_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
-        .blend_equation_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
-        .blend_constant = {0, 0, 0, 0}
+        .struct_version =                   VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION,
+        .blend_factor_source_color =        VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
+        .blend_factor_source_alpha =        VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
+        .blend_factor_destination_color =   VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
+        .blend_factor_destination_alpha =   VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
+        .blend_equation_color =             VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
+        .blend_equation_alpha =             VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
+        .blend_constant =                   {0, 0, 0, 0}
     };
-    ASSERT_OK(vdp_output_surface_render_output_surface(out_surface_out, NULL, out_surface_in, NULL,
+    ASSERT_OK(vdpOutputSurfaceRenderOutputSurface(out_surface_out, NULL, out_surface_in, NULL,
                 NULL, &blend_state_opaque_copy, VDP_OUTPUT_SURFACE_RENDER_ROTATE_0));
 
     // check result of vdpOutputSurfaceRenderOutputSurface
-    ASSERT_OK(vdp_output_surface_get_bits_native(out_surface_out, NULL, destination_data, destination_pitches));
+    ASSERT_OK(vdpOutputSurfaceGetBitsNative(out_surface_out, NULL, destination_data, destination_pitches));
     if (memcmp(src, dst, 4 * WIDTH * HEIGHT)) {
         printf("fail / vdpOutputSurfaceRenderOutputSurface\n");
         err_code = 1;
@@ -65,9 +66,9 @@ int main(void)
     }
 
     // check vdpOutputSurfaceRenderBitmapSurface
-    ASSERT_OK(vdp_output_surface_render_bitmap_surface(out_surface_out, NULL, bmp_surface, NULL,
+    ASSERT_OK(vdpOutputSurfaceRenderBitmapSurface(out_surface_out, NULL, bmp_surface, NULL,
                 NULL, &blend_state_opaque_copy, VDP_OUTPUT_SURFACE_RENDER_ROTATE_0));
-    ASSERT_OK(vdp_output_surface_get_bits_native(out_surface_out, NULL, destination_data, destination_pitches));
+    ASSERT_OK(vdpOutputSurfaceGetBitsNative(out_surface_out, NULL, destination_data, destination_pitches));
     if (memcmp(src, dst, 4 * WIDTH * HEIGHT)) {
         printf("fail / vdpOutputSurfaceRenderBitmapSurface\n");
         err_code = 2;

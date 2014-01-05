@@ -9,21 +9,22 @@
 //
 // coloring with color {0, 1, 0, 1}. This should be green with alpha == 1.
 
+#include "tests-common.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "vdpau-init.h"
 
 
 int main(void)
 {
+    Display *dpy = get_dpy();
     VdpDevice device;
-    ASSERT_OK(vdpau_init_functions(&device, NULL, 0));
+    ASSERT_OK(vdpDeviceCreateX11(dpy, 0, &device, NULL));
 
     VdpBitmapSurface bmp_surface;
     VdpOutputSurface out_surface;
-    ASSERT_OK(vdp_bitmap_surface_create(device, VDP_RGBA_FORMAT_A8, 5, 5, 1, &bmp_surface));
-    ASSERT_OK(vdp_output_surface_create(device, VDP_RGBA_FORMAT_B8G8R8A8, 7, 7, &out_surface));
+    ASSERT_OK(vdpBitmapSurfaceCreate(device, VDP_RGBA_FORMAT_A8, 5, 5, 1, &bmp_surface));
+    ASSERT_OK(vdpOutputSurfaceCreate(device, VDP_RGBA_FORMAT_B8G8R8A8, 7, 7, &out_surface));
 
     const uint8_t bmp_data[5 * 5] = {
     /*   1     2     3     4     5  */
@@ -43,27 +44,27 @@ int main(void)
         green_screen[k] = 0xff00ff00;
     }
 
-    ASSERT_OK(vdp_output_surface_put_bits_native(out_surface, source_data, source_pitches, NULL));
-    ASSERT_OK(vdp_bitmap_surface_put_bits_native(bmp_surface, source_data_bmp, source_pitches_bmp, NULL));
+    ASSERT_OK(vdpOutputSurfacePutBitsNative(out_surface, source_data, source_pitches, NULL));
+    ASSERT_OK(vdpBitmapSurfacePutBitsNative(bmp_surface, source_data_bmp, source_pitches_bmp, NULL));
 
     VdpOutputSurfaceRenderBlendState blend_state = {
-        .blend_factor_source_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_SRC_ALPHA,
-        .blend_factor_destination_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-        .blend_factor_source_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
-        .blend_factor_destination_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_SRC_ALPHA,
-        .blend_equation_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
-        .blend_equation_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
-        .blend_constant = {0, 0, 0, 0}
+        .blend_factor_source_color =        VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_SRC_ALPHA,
+        .blend_factor_destination_color =   VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+        .blend_factor_source_alpha =        VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
+        .blend_factor_destination_alpha =   VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_SRC_ALPHA,
+        .blend_equation_color =             VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
+        .blend_equation_alpha =             VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
+        .blend_constant =                   {0, 0, 0, 0}
     };
     VdpColor color[] = {{0.7, 0.3, 0.1, 0.6}};
 
     VdpRect dest_rect = {1, 1, 6, 6};
-    ASSERT_OK(vdp_output_surface_render_bitmap_surface(out_surface, &dest_rect, bmp_surface, NULL,
+    ASSERT_OK(vdpOutputSurfaceRenderBitmapSurface(out_surface, &dest_rect, bmp_surface, NULL,
                 color, &blend_state, VDP_OUTPUT_SURFACE_RENDER_ROTATE_0));
 
     uint32_t result_buf[7 * 7];
     void * const dest_data[] = { result_buf };
-    ASSERT_OK(vdp_output_surface_get_bits_native(out_surface, NULL, dest_data, source_pitches));
+    ASSERT_OK(vdpOutputSurfaceGetBitsNative(out_surface, NULL, dest_data, source_pitches));
 
     printf("--- actual ---\n");
     for (int k = 0; k < 7 * 7; k ++) {

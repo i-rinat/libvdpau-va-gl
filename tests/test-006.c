@@ -6,7 +6,7 @@
 // Initialization function executed once, but then 30 threads try to do the same work
 // with rendering simultaneously.
 
-#include "vdpau-init.h"
+#include "tests-common.h"
 #include <stdlib.h>
 #include <pthread.h>
 
@@ -25,20 +25,20 @@ void *thread_1_func(void *p)
     VdpOutputSurface out_surface_2;
     VdpBitmapSurface bmp_surface;
 
-    ASSERT_OK(vdp_presentation_queue_target_create_x11(device, window, &pq_target));
-    ASSERT_OK(vdp_presentation_queue_create(device, pq_target, &pq));
-    ASSERT_OK(vdp_output_surface_create(device, VDP_RGBA_FORMAT_B8G8R8A8, 300, 150, &out_surface));
-    ASSERT_OK(vdp_output_surface_create(device, VDP_RGBA_FORMAT_B8G8R8A8, 300, 150, &out_surface_2));
-    ASSERT_OK(vdp_bitmap_surface_create(device, VDP_RGBA_FORMAT_B8G8R8A8, 300, 150, 1, &bmp_surface));
+    ASSERT_OK(vdpPresentationQueueTargetCreateX11(device, window, &pq_target));
+    ASSERT_OK(vdpPresentationQueueCreate(device, pq_target, &pq));
+    ASSERT_OK(vdpOutputSurfaceCreate(device, VDP_RGBA_FORMAT_B8G8R8A8, 300, 150, &out_surface));
+    ASSERT_OK(vdpOutputSurfaceCreate(device, VDP_RGBA_FORMAT_B8G8R8A8, 300, 150, &out_surface_2));
+    ASSERT_OK(vdpBitmapSurfaceCreate(device, VDP_RGBA_FORMAT_B8G8R8A8, 300, 150, 1, &bmp_surface));
 
     uint32_t buf[300*150];
     const void * const source_data[] = { buf };
     uint32_t source_pitches[] = { 4 * 300 };
     for (int k = 0; k < 300*150; k ++) { buf[k] = 0xff000000 + (k & 0xffffff); }
-    ASSERT_OK(vdp_bitmap_surface_put_bits_native(bmp_surface, source_data, source_pitches, NULL));
+    ASSERT_OK(vdpBitmapSurfacePutBitsNative(bmp_surface, source_data, source_pitches, NULL));
     VdpTime vdpTime = 0;
-    ASSERT_OK(vdp_presentation_queue_block_until_surface_idle(pq, out_surface, &vdpTime));
-    ASSERT_OK(vdp_presentation_queue_get_time(pq, &vdpTime));
+    ASSERT_OK(vdpPresentationQueueBlockUntilSurfaceIdle(pq, out_surface, &vdpTime));
+    ASSERT_OK(vdpPresentationQueueGetTime(pq, &vdpTime));
 
     VdpOutputSurfaceRenderBlendState blend_state = {
        .blend_factor_source_color=VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
@@ -51,25 +51,27 @@ void *thread_1_func(void *p)
     };
     VdpRect source_rect = {0, 0, 300, 150};
     VdpRect destination_rect = {0, 0, 300, 150};
-    ASSERT_OK(vdp_output_surface_render_bitmap_surface(out_surface, &destination_rect, bmp_surface,
+    ASSERT_OK(vdpOutputSurfaceRenderBitmapSurface(out_surface, &destination_rect, bmp_surface,
                 &source_rect, NULL, &blend_state, VDP_OUTPUT_SURFACE_RENDER_ROTATE_0));
 
-    ASSERT_OK(vdp_presentation_queue_display(pq, out_surface, 0, 0, 0));
+    ASSERT_OK(vdpPresentationQueueDisplay(pq, out_surface, 0, 0, 0));
 
-    ASSERT_OK(vdp_output_surface_destroy(out_surface));
-    ASSERT_OK(vdp_output_surface_destroy(out_surface_2));
-    ASSERT_OK(vdp_presentation_queue_destroy(pq));
-    ASSERT_OK(vdp_presentation_queue_target_destroy(pq_target));
-    ASSERT_OK(vdp_bitmap_surface_destroy(bmp_surface));
+    ASSERT_OK(vdpOutputSurfaceDestroy(out_surface));
+    ASSERT_OK(vdpOutputSurfaceDestroy(out_surface_2));
+    ASSERT_OK(vdpPresentationQueueDestroy(pq));
+    ASSERT_OK(vdpPresentationQueueTargetDestroy(pq_target));
+    ASSERT_OK(vdpBitmapSurfaceDestroy(bmp_surface));
 
     return NULL;
 }
 
 int main(void)
 {
+    Display *dpy = get_dpy();
+    window = get_wnd();
     pthread_t pt[THREAD_COUNT];
 
-    ASSERT_OK(vdpau_init_functions(&device, &window, 0));
+    ASSERT_OK(vdpDeviceCreateX11(dpy, 0, &device, NULL));
 
     for (int k = 0; k < THREAD_COUNT; k ++)
         pthread_create(&pt[k], NULL, thread_1_func, NULL);
@@ -77,7 +79,7 @@ int main(void)
     for (int k = 0; k < THREAD_COUNT; k ++)
         pthread_join(pt[k], NULL);
 
-    ASSERT_OK(vdp_device_destroy(device));
+    ASSERT_OK(vdpDeviceDestroy(device));
 
     return 0;
 }

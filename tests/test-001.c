@@ -3,24 +3,25 @@
 // Render second into first. Check that red dots do not get smoothed.
 // The dot at (1, 1) checks for smoothing, one at (3,3) checks for edge condition.
 
+#include "tests-common.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <vdpau/vdpau.h>
-#include "vdpau-init.h"
 
 
 int main(void)
 {
     VdpDevice device;
-    VdpStatus st = vdpau_init_functions(&device, NULL, 0);
-    assert (VDP_STATUS_OK == st);
+    Display *dpy = get_dpy();
+    Window wnd = get_wnd();
+
+    ASSERT_OK(vdpDeviceCreateX11(dpy, 0, &device, NULL));
 
     VdpOutputSurface out_surface_1;
     VdpOutputSurface out_surface_2;
 
-    ASSERT_OK(vdp_output_surface_create(device, VDP_RGBA_FORMAT_B8G8R8A8, 4, 4, &out_surface_1));
-    ASSERT_OK(vdp_output_surface_create(device, VDP_RGBA_FORMAT_B8G8R8A8, 4, 4, &out_surface_2));
+    ASSERT_OK(vdpOutputSurfaceCreate(device, VDP_RGBA_FORMAT_B8G8R8A8, 4, 4, &out_surface_1));
+    ASSERT_OK(vdpOutputSurfaceCreate(device, VDP_RGBA_FORMAT_B8G8R8A8, 4, 4, &out_surface_2));
 
     uint32_t black_box[] = {
         0xff000000, 0xff000000, 0xff000000, 0xff000000,
@@ -41,28 +42,28 @@ int main(void)
     uint32_t source_pitches[] = { 4 * 4 };
 
     // upload data
-    ASSERT_OK(vdp_output_surface_put_bits_native(out_surface_1, source_data_1, source_pitches, NULL));
-    ASSERT_OK(vdp_output_surface_put_bits_native(out_surface_2, source_data_2, source_pitches, NULL));
+    ASSERT_OK(vdpOutputSurfacePutBitsNative(out_surface_1, source_data_1, source_pitches, NULL));
+    ASSERT_OK(vdpOutputSurfacePutBitsNative(out_surface_2, source_data_2, source_pitches, NULL));
 
     // render
     VdpOutputSurfaceRenderBlendState blend_state = {
-        .struct_version = VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION,
-        .blend_factor_source_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
-        .blend_factor_source_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
-        .blend_factor_destination_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
-        .blend_factor_destination_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
-        .blend_equation_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
-        .blend_equation_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
-        .blend_constant = {0, 0, 0, 0}
+        .struct_version =                   VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION,
+        .blend_factor_source_color =        VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
+        .blend_factor_source_alpha =        VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
+        .blend_factor_destination_color =   VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
+        .blend_factor_destination_alpha =   VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
+        .blend_equation_color =             VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
+        .blend_equation_alpha =             VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
+        .blend_constant =                   {0, 0, 0, 0}
     };
 
-    ASSERT_OK(vdp_output_surface_render_output_surface(out_surface_1, NULL, out_surface_2, NULL,
+    ASSERT_OK(vdpOutputSurfaceRenderOutputSurface(out_surface_1, NULL, out_surface_2, NULL,
                 NULL, &blend_state, VDP_OUTPUT_SURFACE_RENDER_ROTATE_0));
 
     // get data back
     uint32_t receive_buf[16];
     void * const dest_data[] = {receive_buf};
-    ASSERT_OK(vdp_output_surface_get_bits_native(out_surface_1, NULL, dest_data, source_pitches));
+    ASSERT_OK(vdpOutputSurfaceGetBitsNative(out_surface_1, NULL, dest_data, source_pitches));
 
     printf("output surface\n");
     for (int k = 0; k < 16; k ++) {
@@ -83,21 +84,21 @@ int main(void)
 
     // Check bitmap surface rendering smoothing issue
     VdpBitmapSurface bmp_surface;
-    ASSERT_OK(vdp_bitmap_surface_create(device, VDP_RGBA_FORMAT_B8G8R8A8, 4, 4, 1, &bmp_surface));
-    ASSERT_OK(vdp_bitmap_surface_put_bits_native(bmp_surface, source_data_2, source_pitches, NULL));
+    ASSERT_OK(vdpBitmapSurfaceCreate(device, VDP_RGBA_FORMAT_B8G8R8A8, 4, 4, 1, &bmp_surface));
+    ASSERT_OK(vdpBitmapSurfacePutBitsNative(bmp_surface, source_data_2, source_pitches, NULL));
     VdpOutputSurfaceRenderBlendState blend_state_opaque_copy = {
-        .struct_version = VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION,
-        .blend_factor_source_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
-        .blend_factor_source_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
-        .blend_factor_destination_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
-        .blend_factor_destination_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
-        .blend_equation_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
-        .blend_equation_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
-        .blend_constant = {0, 0, 0, 0}
+        .struct_version =                   VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION,
+        .blend_factor_source_color =        VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
+        .blend_factor_source_alpha =        VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
+        .blend_factor_destination_color =   VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
+        .blend_factor_destination_alpha =   VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
+        .blend_equation_color =             VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
+        .blend_equation_alpha =             VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
+        .blend_constant =                   {0, 0, 0, 0}
     };
-    ASSERT_OK(vdp_output_surface_render_bitmap_surface(out_surface_1, NULL, bmp_surface, NULL,
+    ASSERT_OK(vdpOutputSurfaceRenderBitmapSurface(out_surface_1, NULL, bmp_surface, NULL,
                 NULL, &blend_state_opaque_copy, VDP_OUTPUT_SURFACE_RENDER_ROTATE_0));
-    ASSERT_OK(vdp_output_surface_get_bits_native(out_surface_1, NULL, dest_data, source_pitches));
+    ASSERT_OK(vdpOutputSurfaceGetBitsNative(out_surface_1, NULL, dest_data, source_pitches));
 
     printf("bitmap surface\n");
     for (int k = 0; k < 16; k ++) {

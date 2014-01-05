@@ -7,13 +7,14 @@
 // Bitmap surfaces checked too. But since there is no way to download data directly from
 // bitmap surface, we doing this via rendering to output surface.
 
+#include "tests-common.h"
 #include <stdio.h>
 #include <string.h>
-#include "vdpau-init.h"
 
 
 int main(void)
 {
+    Display *dpy = get_dpy();
     VdpDevice device;
     VdpOutputSurface out_surface;
     VdpBitmapSurface bmp_surface;
@@ -30,12 +31,12 @@ int main(void)
     uint32_t source_pitches[] = { 5 };
     uint32_t destination_pitches[] = { 5 };
 
-    ASSERT_OK(vdpau_init_functions(&device, NULL, 0));
-    ASSERT_OK(vdp_output_surface_create(device, VDP_RGBA_FORMAT_A8, 5, 5, &out_surface));
+    ASSERT_OK(vdpDeviceCreateX11(dpy, 0, &device, NULL));
+    ASSERT_OK(vdpOutputSurfaceCreate(device, VDP_RGBA_FORMAT_A8, 5, 5, &out_surface));
 
     // upload image to surface, download image from surface
-    ASSERT_OK(vdp_output_surface_put_bits_native(out_surface, source_data, source_pitches, NULL));
-    ASSERT_OK(vdp_output_surface_get_bits_native(out_surface, NULL, destination_data, destination_pitches));
+    ASSERT_OK(vdpOutputSurfacePutBitsNative(out_surface, source_data, source_pitches, NULL));
+    ASSERT_OK(vdpOutputSurfaceGetBitsNative(out_surface, NULL, destination_data, destination_pitches));
 
     printf("outputsurface\n");
     for (int k = 0; k < 25; k ++) {
@@ -55,23 +56,23 @@ int main(void)
     }
 
     // Do check bitmap surface
-    ASSERT_OK(vdp_bitmap_surface_create(device, VDP_RGBA_FORMAT_A8, 5, 5, 1, &bmp_surface));
-    ASSERT_OK(vdp_bitmap_surface_put_bits_native(bmp_surface, source_data, source_pitches, NULL));
+    ASSERT_OK(vdpBitmapSurfaceCreate(device, VDP_RGBA_FORMAT_A8, 5, 5, 1, &bmp_surface));
+    ASSERT_OK(vdpBitmapSurfacePutBitsNative(bmp_surface, source_data, source_pitches, NULL));
 
     // draw alpha channel as color
     VdpOutputSurfaceRenderBlendState blend_state = {
-        .struct_version = VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION,
-        .blend_factor_source_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_SRC_ALPHA,
-        .blend_factor_source_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
-        .blend_factor_destination_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
-        .blend_factor_destination_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
-        .blend_equation_color = VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
-        .blend_equation_alpha = VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
-        .blend_constant = {0, 0, 0, 0}
+        .struct_version =                   VDP_OUTPUT_SURFACE_RENDER_BLEND_STATE_VERSION,
+        .blend_factor_source_color =        VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_SRC_ALPHA,
+        .blend_factor_source_alpha =        VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ONE,
+        .blend_factor_destination_color =   VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
+        .blend_factor_destination_alpha =   VDP_OUTPUT_SURFACE_RENDER_BLEND_FACTOR_ZERO,
+        .blend_equation_color =             VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
+        .blend_equation_alpha =             VDP_OUTPUT_SURFACE_RENDER_BLEND_EQUATION_ADD,
+        .blend_constant =                   {0, 0, 0, 0}
     };
-    ASSERT_OK(vdp_output_surface_render_bitmap_surface(out_surface, NULL, bmp_surface, NULL, NULL,
+    ASSERT_OK(vdpOutputSurfaceRenderBitmapSurface(out_surface, NULL, bmp_surface, NULL, NULL,
                 &blend_state, VDP_OUTPUT_SURFACE_RENDER_ROTATE_0));
-    ASSERT_OK(vdp_output_surface_get_bits_native(out_surface, NULL, destination_data, destination_pitches));
+    ASSERT_OK(vdpOutputSurfaceGetBitsNative(out_surface, NULL, destination_data, destination_pitches));
 
     printf("bitmapsurface\n");
     for (int k = 0; k < 25; k ++) {

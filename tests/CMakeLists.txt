@@ -18,7 +18,8 @@ list(APPEND _all_tests test-000 ${_vdpau_tests})
 add_executable(test-000 EXCLUDE_FROM_ALL test-000.c ../src/bitstream.c)
 
 foreach(_test ${_vdpau_tests})
-	add_executable(${_test} EXCLUDE_FROM_ALL "${_test}.c" vdpau-init.c)
+	add_executable(${_test} EXCLUDE_FROM_ALL "${_test}.c" tests-common.c)
+	target_link_libraries(${_test} ${DRIVER_NAME}_static)
 endforeach(_test)
 
 foreach(_test ${_all_tests})

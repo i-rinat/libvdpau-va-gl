@@ -3,16 +3,17 @@
 // Create and destroy vdp device many times a row.
 // Intended to check X resource leakage introduced by library.
 
-#include "vdpau-init.h"
+#include "tests-common.h"
 #include <stdio.h>
 
 int main(void)
 {
     VdpDevice device;
+    Display *dpy = get_dpy();
 
-    for (int k = 0; k < 3000; k ++) {
-        ASSERT_OK(vdpau_init_functions(&device, NULL, 0));
-        ASSERT_OK(vdp_device_destroy(device));
+    for (int k = 0; k < 300; k ++) {
+        ASSERT_OK(vdpDeviceCreateX11(dpy, 0, &device, NULL));
+        ASSERT_OK(vdpDeviceDestroy(device));
     }
 
     printf("pass\n");

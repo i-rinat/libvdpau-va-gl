@@ -22,7 +22,7 @@ include_directories (
 	${LIBSWSCALE_INCLUDE_DIRS}
 	${GL_INCLUDE_DIRS}
 	${GENERATED_INCLUDE_DIRS}
-    ${CMAKE_BINARY_DIR}
+	${CMAKE_BINARY_DIR}
 	src
 )
 
