@@ -12,7 +12,6 @@
 #include <GL/glu.h>
 #include "globals.h"
 #include "api.h"
-#include "shaders.h"
 #include <stdlib.h>
 #include "trace.h"
 #include <va/va_glx.h>
@@ -86,67 +85,76 @@ destroy_child_objects(int handle, void *item, void *p)
 
 static
 VdpStatus
-compile_shaders(void)
+compile_shaders(VdpDeviceData *deviceData)
 {
-    static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-    const int shader_count = sizeof(glsl_shaders)/sizeof(glsl_shaders[0]);
     VdpStatus retval = VDP_STATUS_ERROR;
 
-    pthread_mutex_lock(&lock);
-    for (int k = 0; k < shader_count; k ++) {
+    for (int k = 0; k < SHADER_COUNT; k ++) {
         struct shader_s *s = &glsl_shaders[k];
-        if (!s->program) {
-            GLint errmsg_len;
-            int ok;
+        GLint errmsg_len;
+        GLuint f_shader, program;
+        int ok;
 
-            s->f_shader = glCreateShader(GL_FRAGMENT_SHADER);
-            glShaderSource(s->f_shader, 1, &s->body, &s->len);
-            glCompileShader(s->f_shader);
-            glGetShaderiv(s->f_shader, GL_COMPILE_STATUS, &ok);
-            if (!ok) {
-                glGetShaderiv(s->f_shader, GL_INFO_LOG_LENGTH, &errmsg_len);
-                char *errmsg = malloc(errmsg_len);
-                glGetShaderInfoLog(s->f_shader, errmsg_len, NULL, errmsg);
-                traceError("error (%s): compilation of shader #%d failed with '%s'\n", __func__, k,
-                           errmsg);
-                free(errmsg);
-                glDeleteShader(s->f_shader);
-                goto err;
-            }
 
-            s->program = glCreateProgram();
-            glAttachShader(s->program, s->f_shader);
-            glLinkProgram(s->program);
-            glGetProgramiv(s->program, GL_LINK_STATUS, &ok);
-            if (!ok) {
-                glGetProgramiv(s->program, GL_INFO_LOG_LENGTH, &errmsg_len);
-                char *errmsg = malloc(errmsg_len);
-                glGetProgramInfoLog(s->program, errmsg_len, NULL, errmsg);
-                traceError("error (%s): linking of shader #%d failed with '%s'\n", __func__, k,
-                           errmsg);
-                free(errmsg);
-                glDeleteProgram(s->program);
-                glDeleteShader(s->f_shader);
-                goto err;
-            }
+        f_shader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(f_shader, 1, &s->body, &s->len);
+        glCompileShader(f_shader);
+        glGetShaderiv(f_shader, GL_COMPILE_STATUS, &ok);
+        if (!ok) {
+            glGetShaderiv(f_shader, GL_INFO_LOG_LENGTH, &errmsg_len);
+            char *errmsg = malloc(errmsg_len);
+            glGetShaderInfoLog(f_shader, errmsg_len, NULL, errmsg);
+            traceError("error (%s): compilation of shader #%d failed with '%s'\n", __func__, k,
+                       errmsg);
+            free(errmsg);
+            glDeleteShader(f_shader);
+            goto err;
+        }
 
-            switch (k) {
-            case glsl_YV12_RGBA:
-            case glsl_NV12_RGBA:
-                s->uniform.tex_0 = glGetUniformLocation(s->program, "tex[0]");
-                s->uniform.tex_1 = glGetUniformLocation(s->program, "tex[1]");
-                break;
-            default:
-                /* nothing */
-                break;
-            }
+        program = glCreateProgram();
+        glAttachShader(program, f_shader);
+        glLinkProgram(program);
+        glGetProgramiv(program, GL_LINK_STATUS, &ok);
+        if (!ok) {
+            glGetProgramiv(program, GL_INFO_LOG_LENGTH, &errmsg_len);
+            char *errmsg = malloc(errmsg_len);
+            glGetProgramInfoLog(program, errmsg_len, NULL, errmsg);
+            traceError("error (%s): linking of shader #%d failed with '%s'\n", __func__, k,
+                       errmsg);
+            free(errmsg);
+            glDeleteProgram(program);
+            glDeleteShader(f_shader);
+            goto err;
+        }
+
+        deviceData->shaders[k].f_shader = f_shader;
+        deviceData->shaders[k].program = program;
+
+        switch (k) {
+        case glsl_YV12_RGBA:
+        case glsl_NV12_RGBA:
+            deviceData->shaders[k].uniform.tex_0 = glGetUniformLocation(program, "tex[0]");
+            deviceData->shaders[k].uniform.tex_1 = glGetUniformLocation(program, "tex[1]");
+            break;
+        default:
+            /* nothing */
+            break;
         }
     }
 
     retval = VDP_STATUS_OK;
 err:
-    pthread_mutex_unlock(&lock);
     return retval;
+}
+
+static
+void
+destroy_shaders(VdpDeviceData *deviceData)
+{
+    for (int k = 0; k < SHADER_COUNT; k ++) {
+        glDeleteProgram(deviceData->shaders[k].program);
+        glDeleteShader(deviceData->shaders[k].f_shader);
+    }
 }
 
 VdpStatus
@@ -213,7 +221,7 @@ vdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
         }
     }
 
-    compile_shaders();
+    compile_shaders(data);
 
     glGenTextures(1, &data->watermark_tex_id);
     glBindTexture(GL_TEXTURE_2D, data->watermark_tex_id);
@@ -288,6 +296,7 @@ vdpDeviceDestroy(VdpDevice device)
     glx_context_push_thread_local(data);
     glDeleteTextures(1, &data->watermark_tex_id);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    destroy_shaders(data);
     glx_context_pop();
 
     glx_context_lock();

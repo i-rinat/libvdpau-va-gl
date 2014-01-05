@@ -377,14 +377,14 @@ vdpVideoSurfacePutBitsYCbCr_glsl(VdpVideoSurface surface, VdpYCbCrFormat source_
 
     switch (source_ycbcr_format) {
     case VDP_YCBCR_FORMAT_NV12:
-        glUseProgram(glsl_shaders[glsl_NV12_RGBA].program);
-        glUniform1i(glsl_shaders[glsl_NV12_RGBA].uniform.tex_0, 0);
-        glUniform1i(glsl_shaders[glsl_NV12_RGBA].uniform.tex_1, 1);
+        glUseProgram(deviceData->shaders[glsl_NV12_RGBA].program);
+        glUniform1i(deviceData->shaders[glsl_NV12_RGBA].uniform.tex_0, 0);
+        glUniform1i(deviceData->shaders[glsl_NV12_RGBA].uniform.tex_1, 1);
         break;
     case VDP_YCBCR_FORMAT_YV12:
-        glUseProgram(glsl_shaders[glsl_YV12_RGBA].program);
-        glUniform1i(glsl_shaders[glsl_YV12_RGBA].uniform.tex_0, 0);
-        glUniform1i(glsl_shaders[glsl_YV12_RGBA].uniform.tex_1, 1);
+        glUseProgram(deviceData->shaders[glsl_YV12_RGBA].program);
+        glUniform1i(deviceData->shaders[glsl_YV12_RGBA].uniform.tex_0, 0);
+        glUniform1i(deviceData->shaders[glsl_YV12_RGBA].uniform.tex_1, 1);
         break;
     case VDP_YCBCR_FORMAT_UYVY:
     case VDP_YCBCR_FORMAT_YUYV:

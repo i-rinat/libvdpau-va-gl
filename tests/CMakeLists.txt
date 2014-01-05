@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 project(tests-for-libvdpau-va-gl)
 
 include_directories(..)
+include_directories(${GENERATED_INCLUDE_DIRS})
 find_package(X11 REQUIRED)
 pkg_check_modules(VDPAU vdpau REQUIRED)
 

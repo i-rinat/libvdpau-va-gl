@@ -28,7 +28,7 @@ main(int argc, char *argv[])
 
     // h file
     fprintf(fp_h,
-        "// generated file, all modifications will be lost\n\n"
+        "// generated file, all changes will be lost\n\n"
         "#ifndef VA_GL_GLSL_SHADERS_H\n"
         "#define VA_GL_GLSL_SHADERS_H\n"
         "\n"
@@ -37,15 +37,10 @@ main(int argc, char *argv[])
         "struct shader_s {\n"
         "    const char *body;\n"
         "    int         len;\n"
-        "    GLuint      f_shader;\n"
-        "    GLuint      program;\n"
-        "    struct {\n"
-        "        int     tex_0;\n"
-        "        int     tex_1;\n"
-        "    } uniform;\n"
         "};\n"
         "\n"
         "extern struct shader_s glsl_shaders[%d];\n\n", argc - 3);
+    fprintf(fp_h, "#define SHADER_COUNT     %d\n\n", argc - 3);
     fprintf(fp_h, "enum {\n");
     for (int k = 3; k < argc; k ++) {
         char *fname = strdup(argv[k]);
@@ -63,7 +58,7 @@ main(int argc, char *argv[])
     fclose(fp_h);
 
     // c file
-    fprintf(fp_c, "// generated file, all modifications will be lost\n\n");
+    fprintf(fp_c, "// generated file, all changes will be lost\n\n");
     char *tmps = strdup(argv[1]);
     char *h_name = basename(tmps);
     fprintf(fp_c, "#include \"%s\"\n", h_name);
@@ -107,8 +102,6 @@ main(int argc, char *argv[])
         }
         fprintf(fp_c, "\",\n");
         fprintf(fp_c, "    .len = %d,\n", len);
-        fprintf(fp_c, "    .f_shader = 0,\n");
-        fprintf(fp_c, "    .program = 0,\n");
         fprintf(fp_c, "  },\n");
 
         free(buf);

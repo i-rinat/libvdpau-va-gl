@@ -14,6 +14,7 @@
 #include <vdpau/vdpau.h>
 #include <va/va.h>
 #include "handle-storage.h"
+#include "shaders.h"
 
 #define DESCRIBE(xparam, format)    fprintf(stderr, #xparam " = %" #format "\n", xparam)
 
@@ -38,6 +39,14 @@ typedef struct {
     int             va_version_major;
     int             va_version_minor;
     GLuint          watermark_tex_id;   ///< GL texture id for watermark
+    struct {
+        GLuint      f_shader;
+        GLuint      program;
+        struct {
+            int     tex_0;
+            int     tex_1;
+        } uniform;
+    } shaders[SHADER_COUNT];
 } VdpDeviceData;
 
 /** @brief VdpVideoMixer object parameters */
