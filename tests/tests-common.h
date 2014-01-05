@@ -16,4 +16,7 @@
 Display    *get_dpy(void);
 Window      get_wnd(void);
 
+int
+calc_difference_a8(uint8_t *src1, uint8_t *src2, int count);
+
 #endif // VA_GL_TESTS_TESTS_COMMON_H

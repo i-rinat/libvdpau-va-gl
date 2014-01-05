@@ -59,7 +59,7 @@ int main(void)
 
     // check result of vdpOutputSurfaceRenderOutputSurface
     ASSERT_OK(vdpOutputSurfaceGetBitsNative(out_surface_out, NULL, destination_data, destination_pitches));
-    if (memcmp(src, dst, 4 * WIDTH * HEIGHT)) {
+    if (calc_difference_r8g8b8a8(src, dst, WIDTH * HEIGHT) > 2) {
         printf("fail / vdpOutputSurfaceRenderOutputSurface\n");
         err_code = 1;
         goto free_resources_and_exit;
@@ -69,7 +69,7 @@ int main(void)
     ASSERT_OK(vdpOutputSurfaceRenderBitmapSurface(out_surface_out, NULL, bmp_surface, NULL,
                 NULL, &blend_state_opaque_copy, VDP_OUTPUT_SURFACE_RENDER_ROTATE_0));
     ASSERT_OK(vdpOutputSurfaceGetBitsNative(out_surface_out, NULL, destination_data, destination_pitches));
-    if (memcmp(src, dst, 4 * WIDTH * HEIGHT)) {
+    if (calc_difference_r8g8b8a8(src, dst, WIDTH * HEIGHT) > 2) {
         printf("fail / vdpOutputSurfaceRenderBitmapSurface\n");
         err_code = 2;
         goto free_resources_and_exit;

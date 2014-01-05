@@ -50,7 +50,7 @@ int main(void)
     }
     printf("==========\n");
 
-    if (memcmp(out_buf, twenty_five, 25)) {
+    if (calc_difference_a8(out_buf, twenty_five, 25) > 2) {
         printf("failure\n");
         return 1;
     }
@@ -86,7 +86,7 @@ int main(void)
     }
     printf("==========\n");
 
-    if (memcmp(out_buf, twenty_five, 25)) {
+    if (calc_difference_a8(out_buf, twenty_five, 25) > 2) {
         printf("failure\n");
         return 2;
     }
