@@ -65,8 +65,7 @@ vdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t wid
         data->bytes_per_pixel = 1;
         break;
     default:
-        traceError("error (VdpBitmapSurfaceCreate): %s not implemented\n",
-                   reverse_rgba_format(rgba_format));
+        traceError("error (%s): %s not implemented\n", __func__, reverse_rgba_format(rgba_format));
         free(data);
         err_code = VDP_STATUS_INVALID_RGBA_FORMAT;
         goto quit;
@@ -84,7 +83,7 @@ vdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t wid
     if (frequently_accessed) {
         data->bitmap_data = calloc(width * height, data->bytes_per_pixel);
         if (NULL == data->bitmap_data) {
-            traceError("error (VdpBitmapSurfaceCreate): calloc returned NULL\n");
+            traceError("error (%s): calloc returned NULL\n", __func__);
             free(data);
             err_code = VDP_STATUS_RESOURCES;
             goto quit;
@@ -106,7 +105,7 @@ vdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t wid
     GLuint gl_error = glGetError();
     if (GL_NO_ERROR != gl_error) {
         // Requested RGBA format was wrong
-        traceError("error (VdpBitmapSurfaceCreate): texture failure, gl error (%d, %s)\n", gl_error,
+        traceError("error (%s): texture failure, gl error (%d, %s)\n", __func__, gl_error,
                    gluErrorString(gl_error));
         free(data);
         glx_context_pop();
@@ -123,7 +122,7 @@ vdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t wid
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
         free(data);
-        traceError("error (VdpBitmapSurfaceCreate): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
@@ -156,7 +155,7 @@ vdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
     GLenum gl_error = glGetError();
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpBitmapSurfaceDestroy): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
         handle_release(surface);
         return VDP_STATUS_ERROR;
     }
@@ -241,7 +240,7 @@ vdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *sourc
         GLenum gl_error = glGetError();
         glx_context_pop();
         if (GL_NO_ERROR != gl_error) {
-            traceError("error (VdpBitmapSurfacePutBitsNative): gl error %d\n", gl_error);
+            traceError("error (%s): gl error %d\n", __func__, gl_error);
             err_code = VDP_STATUS_ERROR;
             goto quit;
         }
@@ -287,7 +286,7 @@ vdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba_f
     GLenum gl_error = glGetError();
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpBitmapSurfaceQueryCapabilities): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }

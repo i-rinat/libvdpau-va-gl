@@ -75,7 +75,7 @@ vdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width, ui
             final_try = 1;
             break;
         default:
-            traceError("error (vdpDecoderCreate): decoder %s not implemented\n",
+            traceError("error (%s): decoder %s not implemented\n", __func__,
                        reverse_decoder_profile(profile));
             err_code = VDP_STATUS_INVALID_DECODER_PROFILE;
             goto quit_free_data;
@@ -213,7 +213,7 @@ h264_translate_reference_frames(VdpVideoSurfaceData *dstSurfData, VdpDecoder dec
             handle_acquire(vdp_ref->surface, HANDLETYPE_VIDEO_SURFACE);
         VAPictureH264 *va_ref = &(pic_param->ReferenceFrames[k]);
         if (NULL == vdpSurfData) {
-            traceError("error (h264_translate_reference_frames): NULL == vdpSurfData");
+            traceError("error (%s): NULL == vdpSurfData\n", __func__);
             return VDP_STATUS_ERROR;
         }
 
@@ -488,7 +488,7 @@ vdpDecoderRender_h264(VdpDecoder decoder, VdpDecoderData *decoderData,
     vs = h264_translate_reference_frames(dstSurfData, decoder, decoderData, &pic_param, vdppi);
     if (VDP_STATUS_OK != vs) {
         if (VDP_STATUS_RESOURCES == vs) {
-            traceError("error (vdpDecoderRender): no surfaces left in buffer\n");
+            traceError("error (%s): no surfaces left in buffer\n", __func__);
             err_code = VDP_STATUS_RESOURCES;
         } else {
             err_code = VDP_STATUS_ERROR;
@@ -570,7 +570,7 @@ vdpDecoderRender_h264(VdpDecoder decoder, VdpDecoderData *decoderData,
     rbsp_attach_buffer(&st_g, merged_bitstream, total_bitstream_bytes);
     int nal_offset = rbsp_navigate_to_nal_unit(&st_g);
     if (nal_offset < 0) {
-        traceError("error (vdpDecoderRender): no NAL header\n");
+        traceError("error (%s): no NAL header\n", __func__);
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
@@ -679,7 +679,7 @@ vdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         vdpDecoderRender_h264(decoder, decoderData, dstSurfData, picture_info,
                                   bitstream_buffer_count, bitstream_buffers);
     } else {
-        traceError("error (vdpDecoderRender): no implementation for profile %s\n",
+        traceError("error (%s): no implementation for profile %s\n", __func__,
                    reverse_decoder_profile(decoderData->profile));
         err_code = VDP_STATUS_NO_IMPLEMENTATION;
         goto quit;

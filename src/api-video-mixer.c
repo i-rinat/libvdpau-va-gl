@@ -254,7 +254,7 @@ vdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface,
     GLenum gl_error = glGetError();
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpVideoMixerRender): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }

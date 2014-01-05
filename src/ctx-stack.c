@@ -165,7 +165,7 @@ glx_context_ref_glc_hash_table(Display *dpy, int screen)
         GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
         root_vi = glXChooseVisual(dpy, screen, att);
         if (NULL == root_vi) {
-            traceError("error (glx_context_ref_glc_hash_table): glXChooseVisual failed\n");
+            traceError("error (%s): glXChooseVisual failed\n", __func__);
             return;
         }
         root_glc = glXCreateContext(dpy, root_vi, NULL, GL_TRUE);

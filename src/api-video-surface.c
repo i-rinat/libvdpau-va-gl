@@ -75,7 +75,7 @@ vdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t widt
     GLenum gl_error = glGetError();
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpVideoSurfaceCreate): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
         free(data);
         err_code = VDP_STATUS_ERROR;
         goto quit;
@@ -107,7 +107,7 @@ vdpVideoSurfaceDestroy(VdpVideoSurface surface)
     GLenum gl_error = glGetError();
 
     if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpVideoSurfaceDestroy): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
         glx_context_pop();
         handle_release(surface);
         return VDP_STATUS_ERROR;
@@ -213,8 +213,8 @@ vdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destination_
             vaUnmapBuffer(va_dpy, q.buf);
         } else {
             const char *c = (const char *)&q.format.fourcc;
-            traceError("error (vdpVideoSurfaceGetBitsYCbCr): not implemented conversion "
-                       "VA FOURCC %c%c%c%c -> %s\n", *c, *(c+1), *(c+2), *(c+3),
+            traceError("error (%s): not implemented conversion VA FOURCC %c%c%c%c -> %s\n",
+                       __func__, *c, *(c+1), *(c+2), *(c+3),
                        reverse_ycbcr_format(destination_ycbcr_format));
             vaDestroyImage(va_dpy, q.image_id);
             err_code = VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
@@ -223,14 +223,14 @@ vdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destination_
         vaDestroyImage(va_dpy, q.image_id);
     } else {
         // software fallback
-        traceError("error (vdpVideoSurfaceGetBitsYCbCr): not implemented software fallback\n");
+        traceError("error (%s): not implemented software fallback\n", __func__);
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
 
     GLenum gl_error = glGetError();
     if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpVideoSurfaceGetBitsYCbCr): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
@@ -410,7 +410,7 @@ vdpVideoSurfacePutBitsYCbCr_glsl(VdpVideoSurface surface, VdpYCbCrFormat source_
     GLenum gl_error = glGetError();
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpVideoSurfacePutBitsYCbCr): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
         err_code = VDP_STATUS_ERROR;
         goto err;
     }

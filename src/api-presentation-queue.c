@@ -254,7 +254,7 @@ do_presentation_queue_display(VdpPresentationQueueData *pqData)
     handle_release(surface);
 
     if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpPresentationQueueDisplay): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
     }
 }
 
@@ -282,7 +282,8 @@ presentation_thread(void *param)
             pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
             ret = pthread_cond_timedwait(&pqData->new_work_available, &cond_mutex, &target_time);
             if (ret != 0 && ret != ETIMEDOUT) {
-                traceError("%s: pthread_cond_timedwait failed with code %d\n", __func__, ret);
+                traceError("error (%s): pthread_cond_timedwait failed with code %d\n", __func__,
+                           ret);
                 goto quit;
             }
 
@@ -393,7 +394,7 @@ vdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
     pthread_cancel(pqData->worker_thread);
 
     if (0 != pthread_join(pqData->worker_thread, NULL)) {
-        traceError("VdpPresentationQueueDestroy: failed to stop worker thread");
+        traceError("error (%s): failed to stop worker thread\n", __func__);
         handle_release(presentation_queue);
         return VDP_STATUS_ERROR;
     }
@@ -568,7 +569,7 @@ vdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
     GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, None };
     data->xvi = glXChooseVisual(deviceData->display, deviceData->screen, att);
     if (NULL == data->xvi) {
-        traceError("error (vdpPresentationQueueTargetCreateX11): glXChooseVisual failed\n");
+        traceError("error (%s): glXChooseVisual failed\n", __func__);
         free(data);
         glx_context_unlock();
         handle_release(device);
@@ -596,8 +597,8 @@ vdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_
     VdpDeviceData *deviceData = pqTargetData->device;
 
     if (0 != pqTargetData->refcount) {
-        traceError("warning (vdpPresentationQueueTargetDestroy): non-zero reference"
-                   "count (%d)\n", pqTargetData->refcount);
+        traceError("warning (%s): non-zero reference count (%d)\n", __func__,
+                   pqTargetData->refcount);
         handle_release(presentation_queue_target);
         return VDP_STATUS_ERROR;
     }
@@ -610,7 +611,7 @@ vdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_
     GLenum gl_error = glGetError();
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpPresentationQueueTargetDestroy): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
         handle_release(presentation_queue_target);
         return VDP_STATUS_ERROR;
     }

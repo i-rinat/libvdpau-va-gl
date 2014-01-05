@@ -255,7 +255,7 @@ vdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t wid
         data->bytes_per_pixel = 1;
         break;
     default:
-        traceError("error (VdpOutputSurfaceCreate): %s is not implemented\n",
+        traceError("error (%s): %s is not implemented\n", __func__,
                    reverse_rgba_format(rgba_format));
         free(data);
         err_code = VDP_STATUS_INVALID_RGBA_FORMAT;
@@ -284,8 +284,8 @@ vdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t wid
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, data->tex_id, 0);
     GLenum gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
-        traceError("error (VdpOutputSurfaceCreate): "
-                   "framebuffer not ready, %d, %s\n", gl_status, gluErrorString(gl_status));
+        traceError("error (%s): framebuffer not ready, %d, %s\n", __func__, gl_status,
+                   gluErrorString(gl_status));
         glx_context_pop();
         free(data);
         err_code = VDP_STATUS_ERROR;
@@ -299,7 +299,7 @@ vdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t wid
     GLenum gl_error = glGetError();
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpOutputSurfaceCreate): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
         free(data);
         err_code = VDP_STATUS_ERROR;
         goto quit;
@@ -330,7 +330,7 @@ vdpOutputSurfaceDestroy(VdpOutputSurface surface)
     GLenum gl_error = glGetError();
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpOutputSurfaceDestroy): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
@@ -377,7 +377,7 @@ vdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *source_re
     GLenum gl_error = glGetError();
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpOutputSurfaceGetBitsNative): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
@@ -467,7 +467,7 @@ vdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat source
             GLenum gl_error = glGetError();
             glx_context_pop();
             if (GL_NO_ERROR != gl_error) {
-                traceError("error (VdpOutputSurfacePutBitsIndexed): gl error %d\n", gl_error);
+                traceError("error (%s): gl error %d\n", __func__, gl_error);
                 err_code = VDP_STATUS_ERROR;
                 goto quit;
             }
@@ -477,7 +477,7 @@ vdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat source
         } while (0);
         break;
     default:
-        traceError("error (VdpOutputSurfacePutBitsIndexed): unsupported indexed format %s\n",
+        traceError("error (%s): unsupported indexed format %s\n", __func__,
                    reverse_indexed_format(source_indexed_format));
         err_code = VDP_STATUS_INVALID_INDEXED_FORMAT;
         goto quit;
@@ -521,7 +521,7 @@ vdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *sourc
     GLenum gl_error = glGetError();
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpOutputSurfacePutBitsNative): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
@@ -571,7 +571,7 @@ vdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba_f
 
     GLenum gl_error = glGetError();
     if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpOutputSurfaceQueryCapabilities): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
@@ -702,7 +702,7 @@ vdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
     GLenum gl_error = glGetError();
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpOutputSurfaceRenderBitmapSurface): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
@@ -793,7 +793,7 @@ vdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
     GLenum gl_error = glGetError();
     glx_context_pop();
     if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpOutputSurfaceRenderOutputSurface): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }

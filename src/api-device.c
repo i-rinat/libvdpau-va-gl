@@ -76,7 +76,7 @@ destroy_child_objects(int handle, void *item, void *p)
                 vdpDecoderDestroy(handle);
                 break;
             default:
-                traceError("warning (destroy_child_objects): unknown handle type %d\n", gh->type);
+                traceError("warning (%s): unknown handle type %d\n", __func__, gh->type);
                 break;
             }
         }
@@ -248,7 +248,7 @@ vdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
     glx_context_pop();
 
     if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpDeviceCreateX11): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
         return VDP_STATUS_ERROR;
     }
 
@@ -266,15 +266,14 @@ vdpDeviceDestroy(VdpDevice device)
     if (0 != data->refcount) {
         // Buggy client forgot to destroy dependend objects or decided that destroying
         // VdpDevice destroys all child object. Let's try to mitigate and prevent leakage.
-        traceError("warning (vdpDeviceDestroy): non-zero reference count (%d). "
-                   "Trying to free child objects.\n", data->refcount);
+        traceError("warning (%s): non-zero reference count (%d). Trying to free child objects.\n",
+                   __func__, data->refcount);
         void *parent_object = data;
         handle_execute_for_all(destroy_child_objects, parent_object);
     }
 
     if (0 != data->refcount) {
-        traceError("error (vdpDeviceDestroy): still non-zero reference count (%d)\n",
-                   data->refcount);
+        traceError("error (%s): still non-zero reference count (%d)\n", __func__, data->refcount);
         traceError("Here is the list of objects:\n");
         struct {
             int cnt;
@@ -311,7 +310,7 @@ vdpDeviceDestroy(VdpDevice device)
 
     GLenum gl_error = glGetError();
     if (GL_NO_ERROR != gl_error) {
-        traceError("error (VdpDeviceDestroy): gl error %d\n", gl_error);
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
         err_code = VDP_STATUS_ERROR;
         goto quit_skip_release;
     }
