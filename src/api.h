@@ -124,8 +124,13 @@ typedef struct {
     VdpDeviceData  *device;         ///< link to parent
     pthread_mutex_t lock;
     VdpChromaType   chroma_type;    ///< video chroma type
+    VdpYCbCrFormat  format;         ///< current data format
     uint32_t        width;
     uint32_t        height;
+    uint32_t        stride;
+    uint32_t        chroma_width;
+    uint32_t        chroma_height;
+    uint32_t        chroma_stride;
     VASurfaceID     va_surf;        ///< VA-API surface
     void           *va_glx;         ///< handle for VA-API/GLX interaction
     int             sync_va_to_glx; ///< whenever VA-API surface should be converted to GL texture
@@ -133,6 +138,9 @@ typedef struct {
     GLuint          fbo_id;         ///< framebuffer object id
     VdpDecoder      decoder;        ///< associated VdpDecoder
     int32_t         rt_idx;         ///< index in VdpDecoder's render_targets
+    uint8_t        *y_plane;
+    uint8_t        *u_plane;
+    uint8_t        *v_plane;
 } VdpVideoSurfaceData;
 
 /** @brief VdpBitmapSurface object parameters */

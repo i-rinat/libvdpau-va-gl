@@ -10,6 +10,7 @@
 #include "ctx-stack.h"
 #include <GL/gl.h>
 #include <GL/glu.h>
+#include <libswscale/swscale.h>
 #include "shaders.h"
 #include <stdlib.h>
 #include <string.h>
@@ -27,6 +28,13 @@ vdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t widt
     VdpStatus err_code;
     if (!surface)
         return VDP_STATUS_INVALID_POINTER;
+    if (chroma_type != VDP_CHROMA_TYPE_420 &&
+        chroma_type != VDP_CHROMA_TYPE_422 &&
+        chroma_type != VDP_CHROMA_TYPE_444)
+    {
+        return VDP_STATUS_INVALID_CHROMA_TYPE;
+    }
+
     VdpDeviceData *deviceData = handle_acquire(device, HANDLETYPE_DEVICE);
     if (NULL == deviceData)
         return VDP_STATUS_INVALID_HANDLE;
@@ -42,11 +50,34 @@ vdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t widt
     data->chroma_type = chroma_type;
     data->width = width;
     data->height = height;
+
+    switch (chroma_type) {
+    case VDP_CHROMA_TYPE_420:
+        data->chroma_width = ((width + 1) & (~1u)) / 2;
+        data->chroma_height = ((height + 1) & (~1u)) / 2;
+        data->stride = (width + 0xfu) & (~0xfu);
+        break;
+    case VDP_CHROMA_TYPE_422:
+        data->chroma_width = ((width + 1) & (~1u)) / 2;
+        data->chroma_height = height;
+        data->stride = (width + 2 * data->chroma_width + 0xfu) & (~0xfu);
+        break;
+    case VDP_CHROMA_TYPE_444:
+        data->chroma_width = width;
+        data->chroma_height = height;
+        data->stride = (4 * width + 0xfu) & (~0xfu);
+        break;
+    }
+    data->chroma_stride = (data->chroma_width + 0xfu) & (~0xfu);
+
     data->va_surf = VA_INVALID_SURFACE;
     data->va_glx = NULL;
     data->tex_id = 0;
     data->sync_va_to_glx = 0;
     data->decoder = VDP_INVALID_HANDLE;
+    data->y_plane = NULL;
+    data->u_plane = NULL;
+    data->v_plane = NULL;
 
     glx_context_push_thread_local(deviceData);
     glGenTextures(1, &data->tex_id);
@@ -128,6 +159,12 @@ vdpVideoSurfaceDestroy(VdpVideoSurface surface)
         }
         // .va_surf will be freed in VdpDecoderDestroy
     }
+
+    if (videoSurfData->y_plane)
+        free(videoSurfData->y_plane);
+    if (videoSurfData->u_plane)
+        free(videoSurfData->u_plane);
+    // do not free videoSurfData->v_plane, it's just pointer into the middle of u_plane
 
     glx_context_pop();
     deviceData->refcount --;
@@ -257,6 +294,62 @@ vdpVideoSurfaceGetParameters(VdpVideoSurface surface, VdpChromaType *chroma_type
 
     handle_release(surface);
     return VDP_STATUS_OK;
+}
+
+static
+int
+vdpau_ycbcr_to_av_pixfmt(int fmt)
+{
+    switch (fmt) {
+    case VDP_YCBCR_FORMAT_NV12:     return AV_PIX_FMT_NV12;
+    case VDP_YCBCR_FORMAT_YV12:     return AV_PIX_FMT_YUV420P;
+    case VDP_YCBCR_FORMAT_UYVY:     return AV_PIX_FMT_UYVY422;
+    case VDP_YCBCR_FORMAT_YUYV:     return AV_PIX_FMT_YUYV422;
+    case VDP_YCBCR_FORMAT_Y8U8V8A8: return AV_PIX_FMT_NONE;
+    case VDP_YCBCR_FORMAT_V8U8Y8A8: return AV_PIX_FMT_NONE;
+    default:                        return AV_PIX_FMT_NONE;
+    }
+}
+
+static
+VdpStatus
+_video_surface_ensure_allocated(VdpVideoSurfaceData *surf)
+{
+    const uint32_t chroma_plane_size =
+        (surf->chroma_stride * surf->chroma_height + 0xfu) & (~0xfu);
+    if (surf->y_plane)
+        return VDP_STATUS_OK;
+
+    switch (surf->chroma_type) {
+    case VDP_CHROMA_TYPE_420:
+        surf->y_plane = malloc(surf->stride * surf->height);
+        if (!surf->y_plane)
+            return VDP_STATUS_RESOURCES;
+        surf->u_plane = malloc(chroma_plane_size * 2);
+        if (!surf->u_plane) {
+            free(surf->y_plane);
+            return VDP_STATUS_RESOURCES;
+        }
+        surf->v_plane = surf->u_plane + chroma_plane_size;
+        return VDP_STATUS_OK;
+
+    case VDP_CHROMA_TYPE_422:
+        surf->y_plane = malloc(surf->stride * surf->height);
+        if (!surf->y_plane)
+            return VDP_STATUS_RESOURCES;
+        surf->u_plane = surf->v_plane = NULL;
+        return VDP_STATUS_OK;
+
+    case VDP_CHROMA_TYPE_444:
+        surf->y_plane = malloc(surf->stride * surf->height);
+        if (!surf->y_plane)
+            return VDP_STATUS_RESOURCES;
+        surf->u_plane = surf->v_plane = NULL;
+        return VDP_STATUS_OK;
+
+    default:
+        return VDP_STATUS_INVALID_CHROMA_TYPE;
+    }
 }
 
 static
