@@ -694,9 +694,15 @@ vdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
         glMatrixMode(GL_TEXTURE);
         glLoadIdentity();
         glScalef(1.0f/srcSurfData->width, 1.0f/srcSurfData->height, 1.0f);
+        if (srcSurfData->rgba_format == VDP_RGBA_FORMAT_A8) {
+            glUseProgram(deviceData->shaders[glsl_red_to_alpha_swizzle].program);
+            glUniform1i(deviceData->shaders[glsl_red_to_alpha_swizzle].uniform.tex_0, 0);
+        }
     }
 
     compose_surfaces(bs, s_rect, d_rect, colors, flags, !!srcSurfData);
+
+    glUseProgram(0);
     glFinish();
 
     GLenum gl_error = glGetError();

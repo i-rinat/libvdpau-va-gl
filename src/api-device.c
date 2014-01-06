@@ -136,6 +136,9 @@ compile_shaders(VdpDeviceData *deviceData)
             deviceData->shaders[k].uniform.tex_0 = glGetUniformLocation(program, "tex[0]");
             deviceData->shaders[k].uniform.tex_1 = glGetUniformLocation(program, "tex[1]");
             break;
+        case glsl_red_to_alpha_swizzle:
+            deviceData->shaders[k].uniform.tex_0 = glGetUniformLocation(program, "tex_0");
+            break;
         default:
             /* nothing */
             break;

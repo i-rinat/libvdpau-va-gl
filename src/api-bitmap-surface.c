@@ -112,11 +112,6 @@ vdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t wid
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
-    if (VDP_RGBA_FORMAT_A8 == rgba_format) {
-        // map red channel to alpha
-        GLint swizzle_mask[] = {GL_ONE, GL_ONE, GL_ONE, GL_RED};
-        glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle_mask);
-    }
 
     gl_error = glGetError();
     glx_context_pop();

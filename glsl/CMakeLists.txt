@@ -1,6 +1,7 @@
 set(shader_list_no_path
 	NV12_RGBA.glsl
 	YV12_RGBA.glsl
+	red_to_alpha_swizzle.glsl
 )
 set(GENERATED_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR} PARENT_SCOPE)
 
