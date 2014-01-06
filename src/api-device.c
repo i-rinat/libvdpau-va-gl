@@ -234,14 +234,17 @@ vdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_ONE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_ONE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_ONE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_RED);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, watermark_width, watermark_height, 0, GL_RED,
-                 GL_UNSIGNED_BYTE, watermark_data);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    char *tex_data = malloc(watermark_width * watermark_height * 4);
+    if (tex_data) {
+        const char *s = watermark_data;
+        char *d = tex_data;
+        for (int k = 0; k < watermark_width * watermark_height; k ++) {
+            *d++ = 255; *d++ = 255; *d++ = 255; *d++ = *s++;
+        }
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, watermark_width, watermark_height, 0, GL_BGRA,
+                     GL_UNSIGNED_BYTE, tex_data);
+        free(tex_data);
+    }
     glFinish();
 
     *device = handle_insert(data);
