@@ -264,6 +264,7 @@ static
 void *
 presentation_thread(void *param)
 {
+    pthread_mutex_t cond_mutex = PTHREAD_MUTEX_INITIALIZER;
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
     VdpPresentationQueue presentation_queue = (VdpPresentationQueue)(size_t)param;
     VdpPresentationQueueData *pqData =
@@ -271,7 +272,7 @@ presentation_thread(void *param)
     if (NULL == pqData)
         return NULL;
 
-    pthread_mutex_lock(&pqData->cond_mutex);
+    pthread_mutex_lock(&cond_mutex);
     while (1) {
         struct timespec now;
         clock_gettime(CLOCK_REALTIME, &now);
@@ -281,7 +282,7 @@ presentation_thread(void *param)
             int ret;
             handle_release(presentation_queue);
             pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-            ret = pthread_cond_timedwait(&pqData->new_work_available, &pqData->cond_mutex, &target_time);
+            ret = pthread_cond_timedwait(&pqData->new_work_available, &cond_mutex, &target_time);
             if (ret != 0 && ret != ETIMEDOUT) {
                 traceError("error (%s): pthread_cond_timedwait failed with code %d\n", __func__,
                            ret);
@@ -372,7 +373,6 @@ vdpPresentationQueueCreate(VdpDevice device, VdpPresentationQueueTarget presenta
     data->queue.firstfree = 0;
 
     pthread_mutex_init(&data->queue_mutex, NULL);
-    pthread_mutex_init(&data->cond_mutex, NULL);
     pthread_cond_init(&data->new_work_available, NULL);
 
     // launch worker thread
@@ -531,9 +531,7 @@ vdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSu
         surfData->queued_at = timespec2vdptime(now);
     }
 
-    pthread_mutex_lock(&pqData->cond_mutex);
     pthread_cond_broadcast(&pqData->new_work_available);
-    pthread_mutex_unlock(&pqData->cond_mutex);
 
     handle_release(presentation_queue);
     handle_release(surface);

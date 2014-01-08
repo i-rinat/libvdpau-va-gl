@@ -116,7 +116,6 @@ typedef struct {
     pthread_t           worker_thread;
     pthread_mutex_t     queue_mutex;
     pthread_cond_t      new_work_available;
-    pthread_mutex_t     cond_mutex;
 } VdpPresentationQueueData;
 
 /** @brief VdpVideoSurface object parameters */
