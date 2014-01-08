@@ -77,8 +77,10 @@ handle_acquire(int handle, HandleType type)
 
     while (1) {
         pthread_mutex_lock(&lock);
-        if (!_is_valid(handle, type))
+        if (!_is_valid(handle, type)) {
+            res = NULL;
             break;
+        }
         res = g_hash_table_lookup(vdp_handles, GINT_TO_POINTER(handle));
         if (pthread_mutex_trylock(&res->lock) == 0)
             break;
