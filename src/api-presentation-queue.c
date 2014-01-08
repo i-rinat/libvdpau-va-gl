@@ -317,7 +317,6 @@ presentation_thread(void *param)
         }
 
         // do event processing
-        pthread_mutex_unlock(&pqData->queue_mutex);
         do_presentation_queue_display(pqData);
     }
 
