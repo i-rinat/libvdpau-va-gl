@@ -24,7 +24,6 @@
 static __thread Display    *glx_ctx_stack_display;
 static __thread Drawable    glx_ctx_stack_wnd;
 static __thread GLXContext  glx_ctx_stack_glc;
-static __thread int         glx_ctx_stack_same;
 static __thread int         glx_ctx_stack_element_count = 0;
 static          GHashTable *glc_hash_table = NULL;
 static          int         glc_hash_table_ref_count = 0;
@@ -56,6 +55,7 @@ void
 value_destroy_func(gpointer data)
 {
     struct val_s *val = data;
+    glXMakeCurrent(val->dpy, None, NULL);
     glXDestroyContext(val->dpy, val->glc);
     free(val);
 }
@@ -93,16 +93,9 @@ glx_context_push_global(Display *dpy, Drawable wnd, GLXContext glc)
     glx_ctx_stack_display = glXGetCurrentDisplay();
     glx_ctx_stack_wnd =     glXGetCurrentDrawable();
     glx_ctx_stack_glc =     glXGetCurrentContext();
-    glx_ctx_stack_same =    0;
     glx_ctx_stack_element_count ++;
 
-    if (dpy == glx_ctx_stack_display && wnd == glx_ctx_stack_wnd && glc == glx_ctx_stack_glc) {
-        // Same context. Don't call MakeCurrent.
-        glx_ctx_stack_same = 1;
-    } else {
-        glx_ctx_stack_same = 0;
-        glXMakeCurrent(dpy, wnd, glc);
-    }
+    glXMakeCurrent(dpy, wnd, glc);
 }
 
 void
@@ -112,6 +105,11 @@ glx_context_push_thread_local(VdpDeviceData *deviceData)
     Display *dpy = deviceData->display;
     const Window wnd = deviceData->root;
     int thread_id = (int)syscall(__NR_gettid);
+
+    glx_ctx_stack_display = glXGetCurrentDisplay();
+    glx_ctx_stack_wnd =     glXGetCurrentDrawable();
+    glx_ctx_stack_glc =     glXGetCurrentContext();
+    glx_ctx_stack_element_count ++;
 
     struct val_s *val = g_hash_table_lookup(glc_hash_table, GINT_TO_POINTER(thread_id));
     if (!val) {
@@ -125,31 +123,15 @@ glx_context_push_thread_local(VdpDeviceData *deviceData)
     }
     assert(val->dpy == dpy);
 
-    glx_ctx_stack_display = glXGetCurrentDisplay();
-    glx_ctx_stack_wnd =     glXGetCurrentDrawable();
-    glx_ctx_stack_glc =     glXGetCurrentContext();
-    glx_ctx_stack_element_count ++;
-
-    if (dpy == glx_ctx_stack_display && wnd == glx_ctx_stack_wnd && val->glc == glx_ctx_stack_glc) {
-        // Same context. Don't call MakeCurrent.
-        glx_ctx_stack_same = 1;
-    } else {
-        glx_ctx_stack_same = 0;
-        glXMakeCurrent(dpy, wnd, val->glc);
-    }
+    glXMakeCurrent(dpy, wnd, val->glc);
 }
 
 void
 glx_context_pop()
 {
     assert(1 == glx_ctx_stack_element_count);
-
-    if (!glx_ctx_stack_same) {
-        if (glx_ctx_stack_display)
-            glXMakeCurrent(glx_ctx_stack_display, glx_ctx_stack_wnd, glx_ctx_stack_glc);
-    }
+    glXMakeCurrent(glx_ctx_stack_display, glx_ctx_stack_wnd, glx_ctx_stack_glc);
     glx_ctx_stack_element_count --;
-
     glx_context_unlock();
 }
 
