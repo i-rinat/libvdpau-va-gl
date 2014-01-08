@@ -146,7 +146,6 @@ static
 void
 do_presentation_queue_display(VdpPresentationQueueData *pqData)
 {
-    pthread_mutex_lock(&pqData->queue_mutex);
     assert(pqData->queue.used > 0);
 
     const int entry = pqData->queue.head;
@@ -160,7 +159,6 @@ do_presentation_queue_display(VdpPresentationQueueData *pqData)
     pqData->queue.freelist[pqData->queue.head] = pqData->queue.firstfree;
     pqData->queue.firstfree = pqData->queue.head;
     pqData->queue.head = pqData->queue.item[pqData->queue.head].next;
-    pthread_mutex_unlock(&pqData->queue_mutex);
 
     VdpOutputSurfaceData *surfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (surfData == NULL)
@@ -295,14 +293,12 @@ presentation_thread(void *param)
             if (!pqData)
                 goto quit;
             pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-            pthread_mutex_lock(&pqData->queue_mutex);
             if (pqData->queue.head != -1) {
                 struct timespec ht = vdptime2timespec(pqData->queue.item[pqData->queue.head].t);
                 if (now.tv_sec > ht.tv_sec ||
                     (now.tv_sec == ht.tv_sec && now.tv_nsec > ht.tv_nsec))
                 {
                     // break loop and process event
-                    pthread_mutex_unlock(&pqData->queue_mutex);
                     break;
                 } else {
                     // sleep until next event
@@ -313,7 +309,6 @@ presentation_thread(void *param)
                 target_time = now;
                 target_time.tv_sec += 1;
             }
-            pthread_mutex_unlock(&pqData->queue_mutex);
         }
 
         // do event processing
@@ -372,7 +367,6 @@ vdpPresentationQueueCreate(VdpDevice device, VdpPresentationQueueTarget presenta
     data->queue.freelist[PRESENTATION_QUEUE_LENGTH - 1] = -1;
     data->queue.firstfree = 0;
 
-    pthread_mutex_init(&data->queue_mutex, NULL);
     pthread_cond_init(&data->new_work_available, NULL);
 
     // launch worker thread
@@ -470,21 +464,16 @@ vdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSu
         return VDP_STATUS_INVALID_HANDLE;
 
     // push work to queue
-    pthread_mutex_lock(&pqData->queue_mutex);
     while (pqData->queue.used >= PRESENTATION_QUEUE_LENGTH) {
         // wait while queue is full
         // TODO: check for deadlock here
-        // TODO: is there a way to drop pqData->queue_mutex, and use only pqData->lock?
-        pthread_mutex_unlock(&pqData->queue_mutex);
         handle_release(presentation_queue);
         usleep(10*1000);
         pqData = handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
-        pthread_mutex_lock(&pqData->queue_mutex);
     }
 
     VdpOutputSurfaceData *surfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == surfData) {
-        pthread_mutex_unlock(&pqData->queue_mutex);
         handle_release(presentation_queue);
         return VDP_STATUS_INVALID_HANDLE;
     }
@@ -522,8 +511,6 @@ vdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSu
         pqData->queue.item[new_item].next = ptr;
         pqData->queue.item[prev].next = new_item;
     }
-
-    pthread_mutex_unlock(&pqData->queue_mutex);
 
     if (global.quirks.log_pq_delay) {
         struct timespec now;

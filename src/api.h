@@ -114,7 +114,6 @@ typedef struct {
     } queue;
 
     pthread_t           worker_thread;
-    pthread_mutex_t     queue_mutex;
     pthread_cond_t      new_work_available;
 } VdpPresentationQueueData;
 
