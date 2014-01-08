@@ -262,15 +262,14 @@ static
 void *
 presentation_thread(void *param)
 {
-    pthread_mutex_t cond_mutex = PTHREAD_MUTEX_INITIALIZER;
-    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
     VdpPresentationQueue presentation_queue = (VdpPresentationQueue)(size_t)param;
     VdpPresentationQueueData *pqData =
         handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
     if (NULL == pqData)
         return NULL;
+    pthread_mutex_t *cond_mutex = &pqData->target->lock;
 
-    pthread_mutex_lock(&cond_mutex);
+    pthread_mutex_lock(cond_mutex);
     while (1) {
         struct timespec now;
         clock_gettime(CLOCK_REALTIME, &now);
@@ -279,8 +278,7 @@ presentation_thread(void *param)
         while (1) {
             int ret;
             handle_release(presentation_queue);
-            pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-            ret = pthread_cond_timedwait(&pqData->new_work_available, &cond_mutex, &target_time);
+            ret = pthread_cond_timedwait(&pqData->new_work_available, cond_mutex, &target_time);
             if (ret != 0 && ret != ETIMEDOUT) {
                 traceError("error (%s): pthread_cond_timedwait failed with code %d\n", __func__,
                            ret);
@@ -292,7 +290,11 @@ presentation_thread(void *param)
             pqData = handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
             if (!pqData)
                 goto quit;
-            pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+            if (pqData->thread_state == 1) {
+                pqData->thread_state = 2;
+                handle_release(presentation_queue);
+                goto quit;
+            }
             if (pqData->queue.head != -1) {
                 struct timespec ht = vdptime2timespec(pqData->queue.item[pqData->queue.head].t);
                 if (now.tv_sec > ht.tv_sec ||
@@ -316,6 +318,7 @@ presentation_thread(void *param)
     }
 
 quit:
+    pthread_mutex_unlock(cond_mutex);
     return NULL;
 }
 
@@ -350,6 +353,7 @@ vdpPresentationQueueCreate(VdpDevice device, VdpPresentationQueueTarget presenta
     data->bg_color.green = 0.0;
     data->bg_color.blue = 0.0;
     data->bg_color.alpha = 0.0;
+    data->thread_state = 0;
 
     deviceData->refcount ++;
     targetData->refcount ++;
@@ -372,9 +376,13 @@ vdpPresentationQueueCreate(VdpDevice device, VdpPresentationQueueTarget presenta
     // launch worker thread
     pthread_create(&data->worker_thread, NULL, presentation_thread,
                    (void *)(size_t)(*presentation_queue));
-
     handle_release(device);
     handle_release(presentation_queue_target);
+
+    // wait till worker thread starts listen to the conditional variable
+    handle_acquire(presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET);
+    handle_release(presentation_queue_target);
+
     return VDP_STATUS_OK;
 }
 
@@ -386,14 +394,16 @@ vdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
     if (NULL == pqData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    pthread_cancel(pqData->worker_thread);
-
-    if (0 != pthread_join(pqData->worker_thread, NULL)) {
-        traceError("error (%s): failed to stop worker thread\n", __func__);
+    pqData->thread_state = 1;   // send termination request
+    do {
         handle_release(presentation_queue);
-        return VDP_STATUS_ERROR;
-    }
+        usleep(10*1000);
+        pqData = handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
+        if (NULL == pqData)
+            return VDP_STATUS_INVALID_HANDLE;
+    } while (pqData->thread_state != 2);
 
+    pthread_cond_destroy(&pqData->new_work_available);
     handle_expunge(presentation_queue);
     pqData->device->refcount --;
     pqData->target->refcount --;
@@ -518,7 +528,9 @@ vdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSu
         surfData->queued_at = timespec2vdptime(now);
     }
 
+    pthread_mutex_lock(&pqData->target->lock);
     pthread_cond_broadcast(&pqData->new_work_available);
+    pthread_mutex_unlock(&pqData->target->lock);
 
     handle_release(presentation_queue);
     handle_release(surface);

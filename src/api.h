@@ -115,6 +115,7 @@ typedef struct {
 
     pthread_t           worker_thread;
     pthread_cond_t      new_work_available;
+    int                 thread_state;   ///< 0 -- running, 1 -- terminating, 2 -- terminated
 } VdpPresentationQueueData;
 
 /** @brief VdpVideoSurface object parameters */
