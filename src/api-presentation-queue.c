@@ -165,9 +165,10 @@ do_presentation_queue_display(VdpPresentationQueueData *pqData)
         return;
 
     glx_context_lock();
-    recreate_pixmaps_if_geometry_changed(pqData->target);
+    recreate_pixmaps_if_geometry_changed(pqData->targetData);
     glx_context_unlock();
-    glx_context_push_global(deviceData->display, pqData->target->glx_pixmap, pqData->target->glc);
+    glx_context_push_global(deviceData->display, pqData->targetData->glx_pixmap,
+                            pqData->targetData->glc);
 
     const uint32_t target_width  = (clip_width > 0)  ? clip_width  : surfData->width;
     const uint32_t target_height = (clip_height > 0) ? clip_height : surfData->height;
@@ -227,9 +228,8 @@ do_presentation_queue_display(VdpPresentationQueueData *pqData)
     x11_push_eh();
     glx_context_lock();
     XSync(deviceData->display, False);
-    XCopyArea(deviceData->display, pqData->target->pixmap, pqData->target->drawable,
-                         pqData->target->plain_copy_gc, 0, 0,
-                         target_width, target_height, 0, 0);
+    XCopyArea(deviceData->display, pqData->targetData->pixmap, pqData->targetData->drawable,
+              pqData->targetData->plain_copy_gc, 0, 0, target_width, target_height, 0, 0);
     XSync(deviceData->display, False);
     int x11_err = x11_pop_eh();
     glx_context_unlock();
@@ -267,9 +267,10 @@ presentation_thread(void *param)
         handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
     if (NULL == pqData)
         return NULL;
-    pthread_mutex_t *cond_mutex = &pqData->target->lock;
+    pthread_mutex_t *cond_mutex = &pqData->targetData->lock;
+    int pq_target = pqData->target;
 
-    pthread_mutex_lock(cond_mutex);
+    handle_acquire(HANDLETYPE_PRESENTATION_QUEUE_TARGET, pqData->target);
     while (1) {
         struct timespec now;
         clock_gettime(CLOCK_REALTIME, &now);
@@ -282,18 +283,22 @@ presentation_thread(void *param)
             if (ret != 0 && ret != ETIMEDOUT) {
                 traceError("error (%s): pthread_cond_timedwait failed with code %d\n", __func__,
                            ret);
-                goto quit;
+                handle_release(pq_target);
+                return NULL;
             }
 
             struct timespec now;
             clock_gettime(CLOCK_REALTIME, &now);
             pqData = handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
-            if (!pqData)
-                goto quit;
+            if (!pqData) {
+                handle_release(pq_target);
+                return NULL;
+            }
             if (pqData->thread_state == 1) {
                 pqData->thread_state = 2;
+                handle_release(pq_target);
                 handle_release(presentation_queue);
-                goto quit;
+                return NULL;
             }
             if (pqData->queue.head != -1) {
                 struct timespec ht = vdptime2timespec(pqData->queue.item[pqData->queue.head].t);
@@ -316,10 +321,6 @@ presentation_thread(void *param)
         // do event processing
         do_presentation_queue_display(pqData);
     }
-
-quit:
-    pthread_mutex_unlock(cond_mutex);
-    return NULL;
 }
 
 VdpStatus
@@ -348,7 +349,8 @@ vdpPresentationQueueCreate(VdpDevice device, VdpPresentationQueueTarget presenta
 
     data->type = HANDLETYPE_PRESENTATION_QUEUE;
     data->device = deviceData;
-    data->target = targetData;
+    data->target = presentation_queue_target;
+    data->targetData = targetData;
     data->bg_color.red = 0.0;
     data->bg_color.green = 0.0;
     data->bg_color.blue = 0.0;
@@ -395,6 +397,9 @@ vdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
         return VDP_STATUS_INVALID_HANDLE;
 
     pqData->thread_state = 1;   // send termination request
+    handle_acquire(HANDLETYPE_PRESENTATION_QUEUE_TARGET, pqData->target);
+    pthread_cond_broadcast(&pqData->new_work_available);
+    handle_release(pqData->target);
     do {
         handle_release(presentation_queue);
         usleep(10*1000);
@@ -406,7 +411,7 @@ vdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
     pthread_cond_destroy(&pqData->new_work_available);
     handle_expunge(presentation_queue);
     pqData->device->refcount --;
-    pqData->target->refcount --;
+    pqData->targetData->refcount --;
 
     free(pqData);
     return VDP_STATUS_OK;
@@ -528,9 +533,9 @@ vdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSu
         surfData->queued_at = timespec2vdptime(now);
     }
 
-    pthread_mutex_lock(&pqData->target->lock);
+    handle_acquire(HANDLETYPE_PRESENTATION_QUEUE_TARGET, pqData->target);
     pthread_cond_broadcast(&pqData->new_work_available);
-    pthread_mutex_unlock(&pqData->target->lock);
+    handle_release(pqData->target);
 
     handle_release(presentation_queue);
     handle_release(surface);

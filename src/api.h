@@ -96,7 +96,8 @@ typedef struct {
     HandleType                      type;       ///< handle type
     VdpDeviceData                  *device;     ///< link to parent
     pthread_mutex_t                 lock;
-    VdpPresentationQueueTargetData *target;
+    VdpPresentationQueueTargetData *targetData;
+    VdpPresentationQueueTarget      target;
     VdpColor                        bg_color;   ///< background color
 
     struct {
