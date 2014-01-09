@@ -101,7 +101,7 @@ static
 void
 free_glx_pixmaps(VdpPresentationQueueTargetData *pqTargetData)
 {
-    Display *dpy = pqTargetData->device->display;
+    Display *dpy = pqTargetData->deviceData->display;
 
     // if pixmap is None, nothing was allocated
     if (None == pqTargetData->pixmap)
@@ -122,7 +122,7 @@ recreate_pixmaps_if_geometry_changed(VdpPresentationQueueTargetData *pqTargetDat
     Window          root_wnd;
     int             xpos, ypos;
     unsigned int    width, height, border_width, depth;
-    Display        *dpy = pqTargetData->device->display;
+    Display        *dpy = pqTargetData->deviceData->display;
 
     XGetGeometry(dpy, pqTargetData->drawable, &root_wnd, &xpos, &ypos, &width, &height,
                  &border_width, &depth);
@@ -131,7 +131,7 @@ recreate_pixmaps_if_geometry_changed(VdpPresentationQueueTargetData *pqTargetDat
         pqTargetData->drawable_width = width;
         pqTargetData->drawable_height = height;
 
-        pqTargetData->pixmap = XCreatePixmap(dpy, pqTargetData->device->root,
+        pqTargetData->pixmap = XCreatePixmap(dpy, pqTargetData->deviceData->root,
                                              pqTargetData->drawable_width,
                                              pqTargetData->drawable_height, depth);
         XGCValues gc_values = {.function = GXcopy, .graphics_exposures = True };
@@ -149,7 +149,7 @@ do_presentation_queue_display(VdpPresentationQueueData *pqData)
     assert(pqData->queue.used > 0);
 
     const int entry = pqData->queue.head;
-    VdpDeviceData *deviceData = pqData->device;
+    VdpDeviceData *deviceData = pqData->deviceData;
     VdpOutputSurface surface = pqData->queue.item[entry].surface;
     const uint32_t clip_width = pqData->queue.item[entry].clip_width;
     const uint32_t clip_height = pqData->queue.item[entry].clip_height;
@@ -348,7 +348,7 @@ vdpPresentationQueueCreate(VdpDevice device, VdpPresentationQueueTarget presenta
     }
 
     data->type = HANDLETYPE_PRESENTATION_QUEUE;
-    data->device = deviceData;
+    data->deviceData = deviceData;
     data->target = presentation_queue_target;
     data->targetData = targetData;
     data->bg_color.red = 0.0;
@@ -410,7 +410,7 @@ vdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 
     pthread_cond_destroy(&pqData->new_work_available);
     handle_expunge(presentation_queue);
-    pqData->device->refcount --;
+    pqData->deviceData->refcount --;
     pqData->targetData->refcount --;
 
     free(pqData);
@@ -492,7 +492,7 @@ vdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSu
         handle_release(presentation_queue);
         return VDP_STATUS_INVALID_HANDLE;
     }
-    if (pqData->device != surfData->device) {
+    if (pqData->deviceData != surfData->deviceData) {
         handle_release(surface);
         handle_release(presentation_queue);
         return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
@@ -561,7 +561,7 @@ vdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
 
     glx_context_lock();
     data->type = HANDLETYPE_PRESENTATION_QUEUE_TARGET;
-    data->device = deviceData;
+    data->deviceData = deviceData;
     data->drawable = drawable;
     data->refcount = 0;
 
@@ -599,7 +599,7 @@ vdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_
         handle_acquire(presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET);
     if (NULL == pqTargetData)
         return VDP_STATUS_INVALID_HANDLE;
-    VdpDeviceData *deviceData = pqTargetData->device;
+    VdpDeviceData *deviceData = pqTargetData->deviceData;
 
     if (0 != pqTargetData->refcount) {
         traceError("warning (%s): non-zero reference count (%d)\n", __func__,

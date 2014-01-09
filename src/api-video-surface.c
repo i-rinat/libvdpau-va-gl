@@ -46,7 +46,7 @@ vdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t widt
     }
 
     data->type = HANDLETYPE_VIDEO_SURFACE;
-    data->device = deviceData;
+    data->deviceData = deviceData;
     data->chroma_type = chroma_type;
     data->width = width;
     data->height = height;
@@ -130,7 +130,7 @@ vdpVideoSurfaceDestroy(VdpVideoSurface surface)
     VdpVideoSurfaceData *videoSurfData = handle_acquire(surface, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == videoSurfData)
         return VDP_STATUS_INVALID_HANDLE;
-    VdpDeviceData *deviceData = videoSurfData->device;
+    VdpDeviceData *deviceData = videoSurfData->deviceData;
 
     glx_context_push_thread_local(deviceData);
     glDeleteTextures(1, &videoSurfData->tex_id);
@@ -183,7 +183,7 @@ vdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destination_
     VdpVideoSurfaceData *srcSurfData = handle_acquire(surface, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == srcSurfData)
         return VDP_STATUS_INVALID_HANDLE;
-    VdpDeviceData *deviceData = srcSurfData->device;
+    VdpDeviceData *deviceData = srcSurfData->deviceData;
     VADisplay va_dpy = deviceData->va_dpy;
 
     if (deviceData->va_available) {
@@ -363,7 +363,6 @@ vdpVideoSurfacePutBitsYCbCr_swscale(VdpVideoSurface surface, VdpYCbCrFormat sour
 
     if (NULL == dstSurfData)
         return VDP_STATUS_INVALID_HANDLE;
-    VdpDeviceData *deviceData = dstSurfData->device;
 
     // sanity check
     switch (source_ycbcr_format) {
@@ -435,7 +434,7 @@ vdpVideoSurfacePutBitsYCbCr_glsl(VdpVideoSurface surface, VdpYCbCrFormat source_
     VdpVideoSurfaceData *dstSurfData = handle_acquire(surface, HANDLETYPE_VIDEO_SURFACE);
     if (NULL == dstSurfData)
         return VDP_STATUS_INVALID_HANDLE;
-    VdpDeviceData *deviceData = dstSurfData->device;
+    VdpDeviceData *deviceData = dstSurfData->deviceData;
 
     switch (source_ycbcr_format) {
     case VDP_YCBCR_FORMAT_NV12:

@@ -265,7 +265,7 @@ vdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t wid
     data->type = HANDLETYPE_OUTPUT_SURFACE;
     data->width = width;
     data->height = height;
-    data->device = deviceData;
+    data->deviceData = deviceData;
     data->rgba_format = rgba_format;
 
     glx_context_push_thread_local(deviceData);
@@ -321,7 +321,7 @@ vdpOutputSurfaceDestroy(VdpOutputSurface surface)
     VdpOutputSurfaceData *data = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
-    VdpDeviceData *deviceData = data->device;
+    VdpDeviceData *deviceData = data->deviceData;
 
     glx_context_push_thread_local(deviceData);
     glDeleteTextures(1, &data->tex_id);
@@ -355,7 +355,7 @@ vdpOutputSurfaceGetBitsNative(VdpOutputSurface surface, VdpRect const *source_re
     VdpOutputSurfaceData *srcSurfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == srcSurfData)
         return VDP_STATUS_INVALID_HANDLE;
-    VdpDeviceData *deviceData = srcSurfData->device;
+    VdpDeviceData *deviceData = srcSurfData->deviceData;
 
     VdpRect srcRect = {0, 0, srcSurfData->width, srcSurfData->height};
     if (source_rect)
@@ -419,7 +419,7 @@ vdpOutputSurfacePutBitsIndexed(VdpOutputSurface surface, VdpIndexedFormat source
     VdpOutputSurfaceData *surfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == surfData)
         return VDP_STATUS_INVALID_HANDLE;
-    VdpDeviceData *deviceData = surfData->device;
+    VdpDeviceData *deviceData = surfData->deviceData;
 
     VdpRect dstRect = {0, 0, surfData->width, surfData->height};
     if (destination_rect)
@@ -498,7 +498,7 @@ vdpOutputSurfacePutBitsNative(VdpOutputSurface surface, void const *const *sourc
     VdpOutputSurfaceData *dstSurfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == dstSurfData)
         return VDP_STATUS_INVALID_HANDLE;
-    VdpDeviceData *deviceData = dstSurfData->device;
+    VdpDeviceData *deviceData = dstSurfData->deviceData;
 
     VdpRect dstRect = {0, 0, dstSurfData->width, dstSurfData->height};
     if (destination_rect)
@@ -640,11 +640,11 @@ vdpOutputSurfaceRenderBitmapSurface(VdpOutputSurface destination_surface,
         err_code = VDP_STATUS_INVALID_HANDLE;
         goto quit;
     }
-    if (srcSurfData && srcSurfData->device != dstSurfData->device) {
+    if (srcSurfData && srcSurfData->deviceData != dstSurfData->deviceData) {
         err_code = VDP_STATUS_HANDLE_DEVICE_MISMATCH;
         goto quit;
     }
-    VdpDeviceData *deviceData = dstSurfData->device;
+    VdpDeviceData *deviceData = dstSurfData->deviceData;
 
     VdpRect s_rect = {0, 0, 0, 0};
     VdpRect d_rect = {0, 0, dstSurfData->width, dstSurfData->height};
@@ -746,11 +746,11 @@ vdpOutputSurfaceRenderOutputSurface(VdpOutputSurface destination_surface,
         err_code = VDP_STATUS_INVALID_HANDLE;
         goto quit;
     }
-    if (srcSurfData && srcSurfData->device != dstSurfData->device) {
+    if (srcSurfData && srcSurfData->deviceData != dstSurfData->deviceData) {
         err_code = VDP_STATUS_HANDLE_DEVICE_MISMATCH;
         goto quit;
     }
-    VdpDeviceData *deviceData = dstSurfData->device;
+    VdpDeviceData *deviceData = dstSurfData->deviceData;
 
     VdpRect s_rect = {0, 0, 0, 0};
     VdpRect d_rect = {0, 0, dstSurfData->width, dstSurfData->height};

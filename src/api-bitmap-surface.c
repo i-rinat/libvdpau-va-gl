@@ -72,7 +72,7 @@ vdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t wid
     }
 
     data->type = HANDLETYPE_BITMAP_SURFACE;
-    data->device = deviceData;
+    data->deviceData = deviceData;
     data->rgba_format = rgba_format;
     data->width = width;
     data->height = height;
@@ -137,7 +137,7 @@ vdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
     VdpBitmapSurfaceData *data = handle_acquire(surface, HANDLETYPE_BITMAP_SURFACE);
     if (NULL == data)
         return VDP_STATUS_INVALID_HANDLE;
-    VdpDeviceData *deviceData = data->device;
+    VdpDeviceData *deviceData = data->deviceData;
 
     if (data->frequently_accessed) {
         free(data->bitmap_data);
@@ -193,7 +193,7 @@ vdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *sourc
     VdpBitmapSurfaceData *dstSurfData = handle_acquire(surface, HANDLETYPE_BITMAP_SURFACE);
     if (NULL == dstSurfData)
         return VDP_STATUS_INVALID_HANDLE;
-    VdpDeviceData *deviceData = dstSurfData->device;
+    VdpDeviceData *deviceData = dstSurfData->deviceData;
 
     VdpRect d_rect = {0, 0, dstSurfData->width, dstSurfData->height};
     if (destination_rect)

@@ -52,14 +52,14 @@ typedef struct {
 /** @brief VdpVideoMixer object parameters */
 typedef struct {
     HandleType      type;       ///< handle type
-    VdpDeviceData  *device;     ///< link to parent
+    VdpDeviceData  *deviceData; ///< link to parent
     pthread_mutex_t lock;
 } VdpVideoMixerData;
 
 /** @brief VdpOutputSurface object parameters */
 typedef struct {
     HandleType      type;               ///< handle type
-    VdpDeviceData  *device;             ///< link to parent
+    VdpDeviceData  *deviceData;         ///< link to parent
     pthread_mutex_t lock;
     VdpRGBAFormat   rgba_format;        ///< RGBA format of data stored
     GLuint          tex_id;             ///< associated GL texture id
@@ -78,7 +78,7 @@ typedef struct {
 /** @brief VdpPresentationQueueTarget object parameters */
 typedef struct {
     HandleType      type;           ///< handle type
-    VdpDeviceData  *device;         ///< link to parent
+    VdpDeviceData  *deviceData;     ///< link to parent
     pthread_mutex_t lock;
     int             refcount;
     Drawable        drawable;       ///< X drawable to output to
@@ -94,7 +94,7 @@ typedef struct {
 /** @brief VdpPresentationQueue object parameters */
 typedef struct {
     HandleType                      type;       ///< handle type
-    VdpDeviceData                  *device;     ///< link to parent
+    VdpDeviceData                  *deviceData; ///< link to parent
     pthread_mutex_t                 lock;
     VdpPresentationQueueTargetData *targetData;
     VdpPresentationQueueTarget      target;
@@ -122,7 +122,7 @@ typedef struct {
 /** @brief VdpVideoSurface object parameters */
 typedef struct {
     HandleType      type;           ///< handle type
-    VdpDeviceData  *device;         ///< link to parent
+    VdpDeviceData  *deviceData;     ///< link to parent
     pthread_mutex_t lock;
     VdpChromaType   chroma_type;    ///< video chroma type
     VdpYCbCrFormat  format;         ///< current data format
@@ -147,7 +147,7 @@ typedef struct {
 /** @brief VdpBitmapSurface object parameters */
 typedef struct {
     HandleType      type;               ///< handle type
-    VdpDeviceData  *device;             ///< link to parent
+    VdpDeviceData  *deviceData;         ///< link to parent
     pthread_mutex_t lock;
     VdpRGBAFormat   rgba_format;        ///< RGBA format of data stored
     GLuint          tex_id;             ///< GL texture id
@@ -166,7 +166,7 @@ typedef struct {
 /** @brief VdpDecoder object parameters */
 typedef struct {
     HandleType          type;           ///< handle type
-    VdpDeviceData      *device;         ///< link to parent
+    VdpDeviceData      *deviceData;     ///< link to parent
     pthread_mutex_t     lock;
     VdpDecoderProfile   profile;        ///< decoder profile
     uint32_t            width;

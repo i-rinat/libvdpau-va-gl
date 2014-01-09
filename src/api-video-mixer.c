@@ -39,7 +39,7 @@ vdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
     }
 
     data->type = HANDLETYPE_VIDEO_MIXER;
-    data->device = deviceData;
+    data->deviceData = deviceData;
 
     deviceData->refcount ++;
     *mixer = handle_insert(data);
@@ -56,7 +56,7 @@ vdpVideoMixerDestroy(VdpVideoMixer mixer)
     VdpVideoMixerData *videoMixerData = handle_acquire(mixer, HANDLETYPE_VIDEO_MIXER);
     if (NULL == videoMixerData)
         return VDP_STATUS_INVALID_HANDLE;
-    VdpDeviceData *deviceData = videoMixerData->device;
+    VdpDeviceData *deviceData = videoMixerData->deviceData;
 
     deviceData->refcount --;
     handle_expunge(mixer);
@@ -169,11 +169,11 @@ vdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface,
         err_code = VDP_STATUS_INVALID_HANDLE;
         goto quit;
     }
-    if (srcSurfData->device != dstSurfData->device) {
+    if (srcSurfData->deviceData != dstSurfData->deviceData) {
         err_code = VDP_STATUS_HANDLE_DEVICE_MISMATCH;
         goto quit;
     }
-    VdpDeviceData *deviceData = srcSurfData->device;
+    VdpDeviceData *deviceData = srcSurfData->deviceData;
 
     VdpRect srcVideoRect = {0, 0, srcSurfData->width, srcSurfData->height};
     if (video_source_rect)

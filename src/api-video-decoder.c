@@ -37,7 +37,7 @@ vdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width, ui
     }
 
     data->type = HANDLETYPE_DECODER;
-    data->device = deviceData;
+    data->deviceData = deviceData;
     data->profile = profile;
     data->width = width;
     data->height = height;
@@ -135,7 +135,7 @@ vdpDecoderDestroy(VdpDecoder decoder)
     VdpDecoderData *decoderData = handle_acquire(decoder, HANDLETYPE_DECODER);
     if (NULL == decoderData)
         return VDP_STATUS_INVALID_HANDLE;
-    VdpDeviceData *deviceData = decoderData->device;
+    VdpDeviceData *deviceData = decoderData->deviceData;
 
     if (deviceData->va_available) {
         VADisplay va_dpy = deviceData->va_dpy;
@@ -471,7 +471,7 @@ vdpDecoderRender_h264(VdpDecoder decoder, VdpDecoderData *decoderData,
                       uint32_t bitstream_buffer_count,
                       VdpBitstreamBuffer const *bitstream_buffers)
 {
-    VdpDeviceData *deviceData = decoderData->device;
+    VdpDeviceData *deviceData = decoderData->deviceData;
     VADisplay va_dpy = deviceData->va_dpy;
     VAStatus status;
     VdpStatus vs, err_code;
