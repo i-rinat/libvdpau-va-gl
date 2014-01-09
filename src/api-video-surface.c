@@ -357,8 +357,66 @@ VdpStatus
 vdpVideoSurfacePutBitsYCbCr_swscale(VdpVideoSurface surface, VdpYCbCrFormat source_ycbcr_format,
                                     void const *const *source_data, uint32_t const *source_pitches)
 {
+    VdpStatus err_code;
     // TODO: implement this
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    VdpVideoSurfaceData *dstSurfData = handle_acquire(surface, HANDLETYPE_VIDEO_SURFACE);
+
+    if (NULL == dstSurfData)
+        return VDP_STATUS_INVALID_HANDLE;
+    VdpDeviceData *deviceData = dstSurfData->device;
+
+    // sanity check
+    switch (source_ycbcr_format) {
+    case VDP_YCBCR_FORMAT_NV12:
+        // fall through
+    case VDP_YCBCR_FORMAT_YV12:
+        if (dstSurfData->chroma_type != VDP_CHROMA_TYPE_420) {
+            err_code = VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
+            goto err;
+        }
+        break;
+    case VDP_YCBCR_FORMAT_UYVY:
+        // fall through
+    case VDP_YCBCR_FORMAT_YUYV:
+        if (dstSurfData->chroma_type != VDP_CHROMA_TYPE_422) {
+            err_code = VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
+            goto err;
+        }
+        break;
+    case VDP_YCBCR_FORMAT_Y8U8V8A8:
+        // fall through
+    case VDP_YCBCR_FORMAT_V8U8Y8A8:
+        if (dstSurfData->chroma_type != VDP_CHROMA_TYPE_444) {
+            err_code = VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
+            goto err;
+        }
+        break;
+    default:
+        err_code = VDP_STATUS_INVALID_Y_CB_CR_FORMAT;
+        goto err;
+    }
+
+    _video_surface_ensure_allocated(dstSurfData);
+    dstSurfData->format = source_ycbcr_format;
+    switch (source_ycbcr_format) {
+    case VDP_YCBCR_FORMAT_NV12:
+
+    case VDP_YCBCR_FORMAT_YV12:   // 420
+
+    case VDP_YCBCR_FORMAT_UYVY:   // 422
+    case VDP_YCBCR_FORMAT_YUYV:   // 422
+    case VDP_YCBCR_FORMAT_Y8U8V8A8:   // 444
+    case VDP_YCBCR_FORMAT_V8U8Y8A8:   // 444
+        break;
+    }
+
+
+
+
+    err_code = VDP_STATUS_OK;
+err:
+    handle_release(surface);
+    return err_code;
 }
 
 static
