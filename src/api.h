@@ -39,7 +39,7 @@ typedef struct VdpDeviceData VdpDeviceData;
 */
 typedef struct {
     VDP_GENERIC_HANDLE_FIELDS;      ///< base struct
-} VdpGenericHandle;
+} VdpGenericData;
 
 /** @brief VdpDevice object parameters */
 typedef struct VdpDeviceData {

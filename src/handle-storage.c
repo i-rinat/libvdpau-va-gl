@@ -54,7 +54,7 @@ static
 int
 _is_valid(int handle, HandleType type)
 {
-    VdpGenericHandle *gh;
+    VdpGenericData *gh;
 
     gh = g_hash_table_lookup(vdp_handles, GINT_TO_POINTER(handle));
     if (!gh)
@@ -74,7 +74,7 @@ _is_valid(int handle, HandleType type)
 void *
 handle_acquire(int handle, HandleType type)
 {
-    VdpGenericHandle *res = NULL;
+    VdpGenericData *res = NULL;
 
     while (1) {
         pthread_mutex_lock(&lock);
@@ -97,7 +97,7 @@ void
 handle_release(int handle)
 {
     pthread_mutex_lock(&lock);
-    VdpGenericHandle *gh = g_hash_table_lookup(vdp_handles, GINT_TO_POINTER(handle));
+    VdpGenericData *gh = g_hash_table_lookup(vdp_handles, GINT_TO_POINTER(handle));
     if (gh)
         pthread_mutex_unlock(&gh->lock);
     pthread_mutex_unlock(&lock);
@@ -108,7 +108,7 @@ handle_expunge(int handle)
 {
     pthread_mutex_lock(&lock);
     if (_is_valid(handle, HANDLETYPE_ANY)) {
-        VdpGenericHandle *gh = g_hash_table_lookup(vdp_handles, GINT_TO_POINTER(handle));
+        VdpGenericData *gh = g_hash_table_lookup(vdp_handles, GINT_TO_POINTER(handle));
         if (gh)
             pthread_mutex_unlock(&gh->lock);
         g_hash_table_remove(vdp_handles, GINT_TO_POINTER(handle));

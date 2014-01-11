@@ -26,7 +26,7 @@ implemetation_description_string = "OpenGL/VAAPI/libswscale backend for VDPAU";
 void
 print_handle_type(int handle, void *item, void *p)
 {
-    VdpGenericHandle *gh = item;
+    VdpGenericData *gh = item;
     struct {
         int cnt;
         int total_cnt;
@@ -47,7 +47,7 @@ void
 destroy_child_objects(int handle, void *item, void *p)
 {
     const void *parent = p;
-    VdpGenericHandle *gh = item;
+    VdpGenericData *gh = item;
     if (gh) {
         if (parent == gh->deviceData) {
             switch (gh->type) {
