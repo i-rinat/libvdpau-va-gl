@@ -39,6 +39,7 @@ vdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
     }
 
     data->type = HANDLETYPE_VIDEO_MIXER;
+    data->device = device;
     data->deviceData = deviceData;
 
     deviceData->refcount ++;

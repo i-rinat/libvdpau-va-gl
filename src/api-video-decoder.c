@@ -37,6 +37,7 @@ vdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width, ui
     }
 
     data->type = HANDLETYPE_DECODER;
+    data->device = device;
     data->deviceData = deviceData;
     data->profile = profile;
     data->width = width;

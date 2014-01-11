@@ -72,6 +72,7 @@ vdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t wid
     }
 
     data->type = HANDLETYPE_BITMAP_SURFACE;
+    data->device = device;
     data->deviceData = deviceData;
     data->rgba_format = rgba_format;
     data->width = width;

@@ -348,6 +348,7 @@ vdpPresentationQueueCreate(VdpDevice device, VdpPresentationQueueTarget presenta
     }
 
     data->type = HANDLETYPE_PRESENTATION_QUEUE;
+    data->device = device;
     data->deviceData = deviceData;
     data->target = presentation_queue_target;
     data->targetData = targetData;
@@ -561,6 +562,7 @@ vdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
 
     glx_context_lock();
     data->type = HANDLETYPE_PRESENTATION_QUEUE_TARGET;
+    data->device = device;
     data->deviceData = deviceData;
     data->drawable = drawable;
     data->refcount = 0;

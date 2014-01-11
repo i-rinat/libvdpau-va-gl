@@ -46,6 +46,7 @@ vdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t widt
     }
 
     data->type = HANDLETYPE_VIDEO_SURFACE;
+    data->device = device;
     data->deviceData = deviceData;
     data->chroma_type = chroma_type;
     data->width = width;

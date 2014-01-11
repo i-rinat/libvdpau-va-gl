@@ -23,11 +23,12 @@
 
 #define PRESENTATION_QUEUE_LENGTH   10
 
-#define VDP_GENERIC_HANDLE_FIELDS                           \
-    struct {                                                \
-        HandleType              type;   /**< handle type */ \
-        VdpDeviceData   *deviceData;                 \
-        pthread_mutex_t lock;                               \
+#define VDP_GENERIC_HANDLE_FIELDS                   \
+    struct {                                        \
+        HandleType      type;   /**< handle type */ \
+        VdpDevice       device;                     \
+        VdpDeviceData  *deviceData;                 \
+        pthread_mutex_t lock;                       \
     }
 
 typedef struct VdpDeviceData VdpDeviceData;

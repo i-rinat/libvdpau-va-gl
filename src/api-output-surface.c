@@ -265,6 +265,7 @@ vdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t wid
     data->type = HANDLETYPE_OUTPUT_SURFACE;
     data->width = width;
     data->height = height;
+    data->device = device;
     data->deviceData = deviceData;
     data->rgba_format = rgba_format;
 
