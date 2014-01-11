@@ -116,7 +116,7 @@ vdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t widt
     // no VA surface creation here. Actual pool of VA surfaces should be allocated already
     // by VdpDecoderCreate. VdpDecoderCreate will update ->va_surf field as needed.
 
-    deviceData->refcount ++;
+    ref_device(deviceData);
     *surface = handle_insert(data);
 
     err_code = VDP_STATUS_OK;
@@ -168,7 +168,7 @@ vdpVideoSurfaceDestroy(VdpVideoSurface surface)
     // do not free videoSurfData->v_plane, it's just pointer into the middle of u_plane
 
     glx_context_pop();
-    deviceData->refcount --;
+    unref_device(deviceData);
     handle_expunge(surface);
     free(videoSurfData);
     return VDP_STATUS_OK;

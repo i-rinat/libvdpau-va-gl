@@ -42,7 +42,7 @@ vdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
     data->device = device;
     data->deviceData = deviceData;
 
-    deviceData->refcount ++;
+    ref_device(deviceData);
     *mixer = handle_insert(data);
 
     err_code = VDP_STATUS_OK;
@@ -59,7 +59,7 @@ vdpVideoMixerDestroy(VdpVideoMixer mixer)
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = videoMixerData->deviceData;
 
-    deviceData->refcount --;
+    unref_device(deviceData);
     handle_expunge(mixer);
     free(videoMixerData);
     return VDP_STATUS_OK;

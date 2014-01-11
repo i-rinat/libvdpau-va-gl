@@ -358,8 +358,8 @@ vdpPresentationQueueCreate(VdpDevice device, VdpPresentationQueueTarget presenta
     data->bg_color.alpha = 0.0;
     data->thread_state = 0;
 
-    deviceData->refcount ++;
-    targetData->refcount ++;
+    ref_device(deviceData);
+    ref_pq_target(targetData);
     *presentation_queue = handle_insert(data);
 
     // initialize queue
@@ -411,8 +411,8 @@ vdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 
     pthread_cond_destroy(&pqData->new_work_available);
     handle_expunge(presentation_queue);
-    pqData->deviceData->refcount --;
-    pqData->targetData->refcount --;
+    unref_device(pqData->deviceData);
+    unref_pq_target(pqData->targetData);
 
     free(pqData);
     return VDP_STATUS_OK;
@@ -566,6 +566,7 @@ vdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
     data->deviceData = deviceData;
     data->drawable = drawable;
     data->refcount = 0;
+    pthread_mutex_init(&data->refcount_mutex, NULL);
 
     // emulate geometry change. Hope there will be no drawables of such size
     data->drawable_width = (unsigned int)(-1);
@@ -586,7 +587,7 @@ vdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
 
     // create context for dislaying result (can share display lists with deviceData->glc
     data->glc = glXCreateContext(deviceData->display, data->xvi, deviceData->root_glc, GL_TRUE);
-    deviceData->refcount ++;
+    ref_device(deviceData);
     *target = handle_insert(data);
     glx_context_unlock();
 
@@ -623,8 +624,9 @@ vdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_
         return VDP_STATUS_ERROR;
     }
 
-    deviceData->refcount --;
+    unref_device(deviceData);
     XFree(pqTargetData->xvi);
+    pthread_mutex_destroy(&pqTargetData->refcount_mutex);
     handle_expunge(presentation_queue_target);
     free(pqTargetData);
     return VDP_STATUS_OK;

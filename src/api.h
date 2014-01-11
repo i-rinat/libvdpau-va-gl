@@ -46,6 +46,7 @@ typedef struct {
 typedef struct VdpDeviceData {
     VDP_GENERIC_HANDLE_FIELDS;      ///< base struct
     int             refcount;
+    pthread_mutex_t refcount_mutex;
     Display        *display;        ///< own X display connection
     Display        *display_orig;   ///< supplied X display connection
     int             screen;         ///< X screen
@@ -92,6 +93,7 @@ typedef struct {
 typedef struct {
     VDP_GENERIC_HANDLE_FIELDS;      ///< base struct
     int             refcount;
+    pthread_mutex_t refcount_mutex;
     Drawable        drawable;       ///< X drawable to output to
     unsigned int    drawable_width; ///< last seen drawable width
     unsigned int    drawable_height;///< last seen drawable height
@@ -183,6 +185,46 @@ typedef struct {
     VAContextID         context_id;     ///< VA-API context id
 } VdpDecoderData;
 
+
+static inline
+int
+ref_device(VdpDeviceData *deviceData)
+{
+    pthread_mutex_lock(&deviceData->refcount_mutex);
+    int retval = ++deviceData->refcount;
+    pthread_mutex_unlock(&deviceData->refcount_mutex);
+    return retval;
+}
+
+static inline
+int
+unref_device(VdpDeviceData *deviceData)
+{
+    pthread_mutex_lock(&deviceData->refcount_mutex);
+    int retval = --deviceData->refcount;
+    pthread_mutex_unlock(&deviceData->refcount_mutex);
+    return retval;
+}
+
+static inline
+int
+ref_pq_target(VdpPresentationQueueTargetData *pqTargetData)
+{
+    pthread_mutex_lock(&pqTargetData->refcount_mutex);
+    int retval = ++pqTargetData->refcount;
+    pthread_mutex_unlock(&pqTargetData->refcount_mutex);
+    return retval;
+}
+
+static inline
+int
+unref_pq_target(VdpPresentationQueueTargetData *pqTargetData)
+{
+    pthread_mutex_lock(&pqTargetData->refcount_mutex);
+    int retval = --pqTargetData->refcount;
+    pthread_mutex_unlock(&pqTargetData->refcount_mutex);
+    return retval;
+}
 
 VdpStatus
 vdpDeviceCreateX11(Display *display, int screen, VdpDevice *device,

@@ -117,7 +117,7 @@ vdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width, ui
         goto quit_free_data;
     }
 
-    deviceData->refcount ++;
+    ref_device(deviceData);
     *decoder = handle_insert(data);
 
     err_code = VDP_STATUS_OK;
@@ -146,7 +146,7 @@ vdpDecoderDestroy(VdpDecoder decoder)
     }
 
     handle_expunge(decoder);
-    deviceData->refcount --;
+    unref_device(deviceData);
     free(decoderData);
     return VDP_STATUS_OK;
 }

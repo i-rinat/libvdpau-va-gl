@@ -187,6 +187,7 @@ vdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
     data->display_orig = display_orig;   // save supplied pointer too
     data->screen = screen;
     data->refcount = 0;
+    pthread_mutex_init(&data->refcount_mutex, NULL);
     data->root = DefaultRootWindow(display);
 
     // create master GLX context to share data between further created ones
@@ -313,6 +314,7 @@ vdpDeviceDestroy(VdpDevice device)
 
     handle_xdpy_unref(data->display_orig);
     handle_expunge(device);
+    pthread_mutex_destroy(&data->refcount_mutex);
     free(data);
 
     GLenum gl_error = glGetError();

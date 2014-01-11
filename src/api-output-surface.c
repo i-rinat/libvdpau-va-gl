@@ -306,7 +306,7 @@ vdpOutputSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t wid
         goto quit;
     }
 
-    deviceData->refcount ++;
+    ref_device(deviceData);
     *surface = handle_insert(data);
 
     err_code = VDP_STATUS_OK;
@@ -337,7 +337,7 @@ vdpOutputSurfaceDestroy(VdpOutputSurface surface)
     }
 
     handle_expunge(surface);
-    deviceData->refcount --;
+    unref_device(deviceData);
     free(data);
     return VDP_STATUS_OK;
 
