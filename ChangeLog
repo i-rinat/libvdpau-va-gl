@@ -1,3 +1,16 @@
+2014-01-11  Rinat Ibragimov  <ibragimovrinat@mail.ru>
+
+	* doc: add known-issues.md
+	* core: use glsl shaders for colorspace conversion and texture
+	components reordering
+	* core: split large source code file into smaller pieces relevant
+	to various parts of API
+	* tests: use static linking with core code. `make check` now
+	checks current source, not current VDPAU driver.
+	* core: render to pixmap with bitblitting afterwards
+	* core: mitigate GLX context leaks from per thread context pool
+	* core: fix some concurrency bugs
+
 2013-11-15  Rinat Ibragimov  <ibragimovrinat@mail.ru>
 
 	* tag: v0.2.1
