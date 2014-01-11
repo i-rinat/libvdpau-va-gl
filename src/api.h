@@ -126,6 +126,7 @@ typedef struct {
     } queue;
 
     pthread_t           worker_thread;
+    pthread_barrier_t   thread_start_barrier;
     pthread_cond_t      new_work_available;
     pthread_mutex_t     queue_mutex;
     int                 thread_state;   ///< 0 -- running, 1 -- terminating, 2 -- terminated

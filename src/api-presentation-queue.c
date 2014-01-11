@@ -266,6 +266,7 @@ presentation_thread(void *param)
     VdpPresentationQueueData *pqData = (VdpPresentationQueueData *)param;
 
     pthread_mutex_lock(&pqData->queue_mutex);
+    pthread_barrier_wait(&pqData->thread_start_barrier);
     while (1) {
         struct timespec now;
         clock_gettime(CLOCK_REALTIME, &now);
@@ -365,6 +366,7 @@ vdpPresentationQueueCreate(VdpDevice device, VdpPresentationQueueTarget presenta
 
     pthread_cond_init(&data->new_work_available, NULL);
     pthread_mutex_init(&data->queue_mutex, NULL);
+    pthread_barrier_init(&data->thread_start_barrier, NULL, 2);
 
     // launch worker thread
     pthread_mutex_lock(&data->queue_mutex);
@@ -375,7 +377,10 @@ vdpPresentationQueueCreate(VdpDevice device, VdpPresentationQueueTarget presenta
     pthread_mutex_unlock(&data->queue_mutex);
     pthread_yield();
 
-    // wait till worker thread starts listen to the conditional variable
+    // wait till worker thread passes first lock
+    pthread_barrier_wait(&data->thread_start_barrier);
+    // wait till worker thread unlocks queue_mutex. That means, it started listening to
+    // conditional variable
     pthread_mutex_lock(&data->queue_mutex);
     pthread_mutex_unlock(&data->queue_mutex);
 
@@ -398,6 +403,7 @@ vdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
     pthread_join(pqData->worker_thread, NULL);
 
     pthread_cond_destroy(&pqData->new_work_available);
+    pthread_barrier_destroy(&pqData->thread_start_barrier);
     handle_expunge(presentation_queue);
     unref_device(pqData->deviceData);
     unref_pq_target(pqData->targetData);
