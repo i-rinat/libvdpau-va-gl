@@ -11,6 +11,7 @@
 #include <pthread.h>
 #include <glib.h>
 #include <unistd.h>
+#include "api.h"
 
 static GHashTable *vdp_handles;
 static GHashTable *xdpy_copies;            //< Copies of X Display connections

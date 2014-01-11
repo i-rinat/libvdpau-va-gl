@@ -35,7 +35,7 @@ print_handle_type(int handle, void *item, void *p)
     pp->total_cnt ++;
 
     if (gh) {
-        if (pp->deviceData == gh->parent) {
+        if (pp->deviceData == gh->deviceData) {
             traceError("handle %d type = %d\n", handle, gh->type);
             pp->cnt ++;
         }
@@ -49,7 +49,7 @@ destroy_child_objects(int handle, void *item, void *p)
     const void *parent = p;
     VdpGenericHandle *gh = item;
     if (gh) {
-        if (parent == gh->parent) {
+        if (parent == gh->deviceData) {
             switch (gh->type) {
             case HANDLETYPE_DEVICE:
                 // do nothing

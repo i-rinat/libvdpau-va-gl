@@ -23,11 +23,27 @@
 
 #define PRESENTATION_QUEUE_LENGTH   10
 
-/** @brief VdpDevice object parameters */
+#define VDP_GENERIC_HANDLE_FIELDS                           \
+    struct {                                                \
+        HandleType              type;   /**< handle type */ \
+        VdpDeviceData   *deviceData;                 \
+        pthread_mutex_t lock;                               \
+    }
+
+typedef struct VdpDeviceData VdpDeviceData;
+
+/** @brief Generic handle struct.
+
+    Every other handle struct has same members at same place so it's possible
+    to use type casting to determine handle type and parent.
+*/
 typedef struct {
-    HandleType      type;           ///< common type field
-    void           *self;           ///< link to device. For VdpDeviceData this is link to itself
-    pthread_mutex_t lock;
+    VDP_GENERIC_HANDLE_FIELDS;      ///< base struct
+} VdpGenericHandle;
+
+/** @brief VdpDevice object parameters */
+typedef struct VdpDeviceData {
+    VDP_GENERIC_HANDLE_FIELDS;      ///< base struct
     int             refcount;
     Display        *display;        ///< own X display connection
     Display        *display_orig;   ///< supplied X display connection
@@ -51,16 +67,12 @@ typedef struct {
 
 /** @brief VdpVideoMixer object parameters */
 typedef struct {
-    HandleType      type;       ///< handle type
-    VdpDeviceData  *deviceData; ///< link to parent
-    pthread_mutex_t lock;
+    VDP_GENERIC_HANDLE_FIELDS;
 } VdpVideoMixerData;
 
 /** @brief VdpOutputSurface object parameters */
 typedef struct {
-    HandleType      type;               ///< handle type
-    VdpDeviceData  *deviceData;         ///< link to parent
-    pthread_mutex_t lock;
+    VDP_GENERIC_HANDLE_FIELDS;          ///< base struct
     VdpRGBAFormat   rgba_format;        ///< RGBA format of data stored
     GLuint          tex_id;             ///< associated GL texture id
     GLuint          fbo_id;             ///< framebuffer object id
@@ -77,9 +89,7 @@ typedef struct {
 
 /** @brief VdpPresentationQueueTarget object parameters */
 typedef struct {
-    HandleType      type;           ///< handle type
-    VdpDeviceData  *deviceData;     ///< link to parent
-    pthread_mutex_t lock;
+    VDP_GENERIC_HANDLE_FIELDS;      ///< base struct
     int             refcount;
     Drawable        drawable;       ///< X drawable to output to
     unsigned int    drawable_width; ///< last seen drawable width
@@ -93,9 +103,7 @@ typedef struct {
 
 /** @brief VdpPresentationQueue object parameters */
 typedef struct {
-    HandleType                      type;       ///< handle type
-    VdpDeviceData                  *deviceData; ///< link to parent
-    pthread_mutex_t                 lock;
+    VDP_GENERIC_HANDLE_FIELDS;                  ///< base struct
     VdpPresentationQueueTargetData *targetData;
     VdpPresentationQueueTarget      target;
     VdpColor                        bg_color;   ///< background color
@@ -121,9 +129,7 @@ typedef struct {
 
 /** @brief VdpVideoSurface object parameters */
 typedef struct {
-    HandleType      type;           ///< handle type
-    VdpDeviceData  *deviceData;     ///< link to parent
-    pthread_mutex_t lock;
+    VDP_GENERIC_HANDLE_FIELDS;      ///< base struct
     VdpChromaType   chroma_type;    ///< video chroma type
     VdpYCbCrFormat  format;         ///< current data format
     uint32_t        width;
@@ -146,9 +152,7 @@ typedef struct {
 
 /** @brief VdpBitmapSurface object parameters */
 typedef struct {
-    HandleType      type;               ///< handle type
-    VdpDeviceData  *deviceData;         ///< link to parent
-    pthread_mutex_t lock;
+    VDP_GENERIC_HANDLE_FIELDS;          ///< base struct
     VdpRGBAFormat   rgba_format;        ///< RGBA format of data stored
     GLuint          tex_id;             ///< GL texture id
     uint32_t        width;
@@ -165,9 +169,7 @@ typedef struct {
 
 /** @brief VdpDecoder object parameters */
 typedef struct {
-    HandleType          type;           ///< handle type
-    VdpDeviceData      *deviceData;     ///< link to parent
-    pthread_mutex_t     lock;
+    VDP_GENERIC_HANDLE_FIELDS;          ///< base struct
     VdpDecoderProfile   profile;        ///< decoder profile
     uint32_t            width;
     uint32_t            height;
