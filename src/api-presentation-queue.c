@@ -7,6 +7,7 @@
  */
 
 #define GL_GLEXT_PROTOTYPES
+#define _GNU_SOURCE
 #define _XOPEN_SOURCE 500
 #include <assert.h>
 #include <errno.h>
@@ -262,15 +263,9 @@ static
 void *
 presentation_thread(void *param)
 {
-    VdpPresentationQueue presentation_queue = (VdpPresentationQueue)(size_t)param;
-    VdpPresentationQueueData *pqData =
-        handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
-    if (NULL == pqData)
-        return NULL;
-    pthread_mutex_t *cond_mutex = &pqData->targetData->lock;
-    int pq_target = pqData->target;
+    VdpPresentationQueueData *pqData = (VdpPresentationQueueData *)param;
 
-    handle_acquire(HANDLETYPE_PRESENTATION_QUEUE_TARGET, pqData->target);
+    pthread_mutex_lock(&pqData->queue_mutex);
     while (1) {
         struct timespec now;
         clock_gettime(CLOCK_REALTIME, &now);
@@ -278,26 +273,20 @@ presentation_thread(void *param)
 
         while (1) {
             int ret;
-            handle_release(presentation_queue);
-            ret = pthread_cond_timedwait(&pqData->new_work_available, cond_mutex, &target_time);
+            ret = pthread_cond_timedwait(&pqData->new_work_available,
+                                         &pqData->queue_mutex, &target_time);
             if (ret != 0 && ret != ETIMEDOUT) {
                 traceError("error (%s): pthread_cond_timedwait failed with code %d\n", __func__,
                            ret);
-                handle_release(pq_target);
+                pthread_mutex_unlock(&pqData->queue_mutex);
                 return NULL;
             }
 
             struct timespec now;
             clock_gettime(CLOCK_REALTIME, &now);
-            pqData = handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
-            if (!pqData) {
-                handle_release(pq_target);
-                return NULL;
-            }
             if (pqData->thread_state == 1) {
                 pqData->thread_state = 2;
-                handle_release(pq_target);
-                handle_release(presentation_queue);
+                pthread_mutex_unlock(&pqData->queue_mutex);
                 return NULL;
             }
             if (pqData->queue.head != -1) {
@@ -375,16 +364,20 @@ vdpPresentationQueueCreate(VdpDevice device, VdpPresentationQueueTarget presenta
     data->queue.firstfree = 0;
 
     pthread_cond_init(&data->new_work_available, NULL);
+    pthread_mutex_init(&data->queue_mutex, NULL);
 
     // launch worker thread
-    pthread_create(&data->worker_thread, NULL, presentation_thread,
-                   (void *)(size_t)(*presentation_queue));
+    pthread_mutex_lock(&data->queue_mutex);
+    pthread_create(&data->worker_thread, NULL, presentation_thread, data);
     handle_release(device);
     handle_release(presentation_queue_target);
 
+    pthread_mutex_unlock(&data->queue_mutex);
+    pthread_yield();
+
     // wait till worker thread starts listen to the conditional variable
-    handle_acquire(presentation_queue_target, HANDLETYPE_PRESENTATION_QUEUE_TARGET);
-    handle_release(presentation_queue_target);
+    pthread_mutex_lock(&data->queue_mutex);
+    pthread_mutex_unlock(&data->queue_mutex);
 
     return VDP_STATUS_OK;
 }
@@ -397,17 +390,12 @@ vdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
     if (NULL == pqData)
         return VDP_STATUS_INVALID_HANDLE;
 
+    pthread_mutex_lock(&pqData->queue_mutex);
     pqData->thread_state = 1;   // send termination request
-    handle_acquire(HANDLETYPE_PRESENTATION_QUEUE_TARGET, pqData->target);
     pthread_cond_broadcast(&pqData->new_work_available);
-    handle_release(pqData->target);
-    do {
-        handle_release(presentation_queue);
-        usleep(10*1000);
-        pqData = handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
-        if (NULL == pqData)
-            return VDP_STATUS_INVALID_HANDLE;
-    } while (pqData->thread_state != 2);
+    pthread_mutex_unlock(&pqData->queue_mutex);
+
+    pthread_join(pqData->worker_thread, NULL);
 
     pthread_cond_destroy(&pqData->new_work_available);
     handle_expunge(presentation_queue);
@@ -499,6 +487,7 @@ vdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSu
         return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     }
 
+    pthread_mutex_lock(&pqData->queue_mutex);
     pqData->queue.used ++;
     int new_item = pqData->queue.firstfree;
     assert(new_item != -1);
@@ -527,6 +516,7 @@ vdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSu
         pqData->queue.item[new_item].next = ptr;
         pqData->queue.item[prev].next = new_item;
     }
+    pthread_mutex_unlock(&pqData->queue_mutex);
 
     if (global.quirks.log_pq_delay) {
         struct timespec now;
@@ -534,9 +524,9 @@ vdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSu
         surfData->queued_at = timespec2vdptime(now);
     }
 
-    handle_acquire(HANDLETYPE_PRESENTATION_QUEUE_TARGET, pqData->target);
+    pthread_mutex_lock(&pqData->queue_mutex);
     pthread_cond_broadcast(&pqData->new_work_available);
-    handle_release(pqData->target);
+    pthread_mutex_unlock(&pqData->queue_mutex);
 
     handle_release(presentation_queue);
     handle_release(surface);
