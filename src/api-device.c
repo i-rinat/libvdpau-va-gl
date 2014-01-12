@@ -14,7 +14,7 @@
 #include "api.h"
 #include <stdlib.h>
 #include "trace.h"
-#include <va/va_glx.h>
+#include <va/va_x11.h>
 #include <vdpau/vdpau.h>
 #include "watermark.h"
 
@@ -190,6 +190,21 @@ vdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
     pthread_mutex_init(&data->refcount_mutex, NULL);
     data->root = DefaultRootWindow(display);
 
+    XWindowAttributes wnd_attrs;
+    XGetWindowAttributes(display, data->root, &wnd_attrs);
+    data->color_depth = wnd_attrs.depth;
+
+    data->fn.glXBindTexImageEXT =
+        (PFNGLXBINDTEXIMAGEEXTPROC)glXGetProcAddress((GLubyte *)"glXBindTexImageEXT");
+    data->fn.glXReleaseTexImageEXT =
+        (PFNGLXRELEASETEXIMAGEEXTPROC)glXGetProcAddress((GLubyte *)"glXReleaseTexImageEXT");
+
+    if (!data->fn.glXBindTexImageEXT || !data->fn.glXReleaseTexImageEXT) {
+        traceError("error (%s): can't get glXBindTexImageEXT address\n");
+        free(data);
+        return VDP_STATUS_RESOURCES;
+    }
+
     // create master GLX context to share data between further created ones
     glx_context_ref_glc_hash_table(display, screen);
     data->root_glc = glx_context_get_root_context();
@@ -209,7 +224,7 @@ vdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
         // pretend there is no VA-API available
         data->va_available = 0;
     } else {
-        data->va_dpy = vaGetDisplayGLX(display);
+        data->va_dpy = vaGetDisplay(display);
         data->va_available = 0;
 
         VAStatus status = vaInitialize(data->va_dpy, &data->va_version_major,

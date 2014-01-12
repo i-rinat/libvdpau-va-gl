@@ -72,7 +72,6 @@ vdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t widt
     data->chroma_stride = (data->chroma_width + 0xfu) & (~0xfu);
 
     data->va_surf = VA_INVALID_SURFACE;
-    data->va_glx = NULL;
     data->tex_id = 0;
     data->sync_va_to_glx = 0;
     data->decoder = VDP_INVALID_HANDLE;
@@ -143,10 +142,6 @@ vdpVideoSurfaceDestroy(VdpVideoSurface surface)
         glx_context_pop();
         handle_release(surface);
         return VDP_STATUS_ERROR;
-    }
-
-    if (videoSurfData->va_glx) {
-        vaDestroySurfaceGLX(deviceData->va_dpy, videoSurfData->va_glx);
     }
 
     if (deviceData->va_available) {

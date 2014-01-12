@@ -6,7 +6,7 @@ find_package(PkgConfig REQUIRED)
 find_package(X11 REQUIRED)
 pkg_check_modules(VDPAU      vdpau      REQUIRED)
 pkg_check_modules(GLIB20     glib-2.0   REQUIRED)
-pkg_check_modules(LIBVA      libva-glx  REQUIRED)
+pkg_check_modules(LIBVA      libva-x11  REQUIRED)
 pkg_check_modules(LIBSWSCALE libswscale REQUIRED)
 pkg_check_modules(GL         gl glu     REQUIRED)
 

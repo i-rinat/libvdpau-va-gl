@@ -11,11 +11,101 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <stdlib.h>
-#include <va/va_glx.h>
+#include <va/va_x11.h>
 #include <vdpau/vdpau.h>
 #include "api.h"
 #include "trace.h"
 
+
+static
+void
+_free_video_mixer_pixmaps(VdpVideoMixerData *mixerData)
+{
+    Display *dpy = mixerData->deviceData->display;
+
+    if (mixerData->glx_pixmap != None) {
+        glXDestroyGLXPixmap(dpy, mixerData->glx_pixmap);
+        mixerData->glx_pixmap = None;
+    }
+    if (mixerData->pixmap != None) {
+        XFreePixmap(dpy, mixerData->pixmap);
+        mixerData->pixmap = None;
+    }
+}
+
+static
+void
+_render_va_surf_to_texture(VdpVideoMixerData *videoMixerData, VdpVideoSurfaceData *srcSurfData)
+{
+    VdpDeviceData *deviceData = videoMixerData->deviceData;
+    Display *dpy = deviceData->display;
+
+    if (srcSurfData->width != videoMixerData->pixmap_width ||
+        srcSurfData->height != videoMixerData->pixmap_height)
+    {
+        _free_video_mixer_pixmaps(videoMixerData);
+        videoMixerData->pixmap = XCreatePixmap(dpy, deviceData->root, srcSurfData->width,
+                                               srcSurfData->height, deviceData->color_depth);
+
+        int fbconfig_attrs[] = {
+            GLX_DRAWABLE_TYPE,  GLX_PIXMAP_BIT,
+            GLX_RENDER_TYPE,    GLX_RGBA_BIT,
+            GLX_X_RENDERABLE,   GL_TRUE,
+            GLX_Y_INVERTED_EXT, GL_TRUE,
+            GLX_RED_SIZE,       8,
+            GLX_GREEN_SIZE,     8,
+            GLX_BLUE_SIZE,      8,
+            GLX_ALPHA_SIZE,     8,
+            GLX_BIND_TO_TEXTURE_RGBA_EXT,     GL_TRUE,
+            GL_NONE
+        };
+
+        int nconfigs;
+        GLXFBConfig *fbconfig = glXChooseFBConfig(deviceData->display, deviceData->screen,
+                                                  fbconfig_attrs, &nconfigs);
+        int pixmap_attrs[] = {
+            GLX_TEXTURE_TARGET_EXT, GLX_TEXTURE_2D_EXT,
+            GLX_MIPMAP_TEXTURE_EXT, GL_FALSE,
+            GLX_TEXTURE_FORMAT_EXT, GLX_TEXTURE_FORMAT_RGBA_EXT,
+            GL_NONE
+        };
+
+        videoMixerData->glx_pixmap = glXCreatePixmap(dpy, fbconfig[0], videoMixerData->pixmap,
+                                                     pixmap_attrs);
+        free(fbconfig);
+    }
+
+    glBindTexture(GL_TEXTURE_2D, videoMixerData->tex_id);
+    deviceData->fn.glXBindTexImageEXT(deviceData->display, videoMixerData->glx_pixmap,
+                                      GLX_FRONT_EXT, NULL);
+    XSync(deviceData->display, False);
+
+    vaPutSurface(deviceData->va_dpy, srcSurfData->va_surf, videoMixerData->pixmap,
+                 0, 0, srcSurfData->width, srcSurfData->height,
+                 0, 0, srcSurfData->width, srcSurfData->height,
+                 NULL, 0, VA_FRAME_PICTURE);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, srcSurfData->fbo_id);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, srcSurfData->width, 0, srcSurfData->height, -1.0, 1.0);
+    glViewport(0, 0, srcSurfData->width, srcSurfData->height);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
+    glBegin(GL_QUADS);
+        glTexCoord2f(0, 0); glVertex2f(0, 0);
+        glTexCoord2f(1, 0); glVertex2f(srcSurfData->width, 0);
+        glTexCoord2f(1, 1); glVertex2f(srcSurfData->width, srcSurfData->height);
+        glTexCoord2f(0, 1); glVertex2f(0, srcSurfData->height);
+    glEnd();
+    glFinish();
+
+    deviceData->fn.glXReleaseTexImageEXT(deviceData->display, videoMixerData->glx_pixmap,
+                                         GLX_FRONT_EXT);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
 
 VdpStatus
 vdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
@@ -41,6 +131,27 @@ vdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
     data->type = HANDLETYPE_VIDEO_MIXER;
     data->device = device;
     data->deviceData = deviceData;
+    data->pixmap = None;
+    data->glx_pixmap = None;
+    data->pixmap_width = (uint32_t)(-1);    // set knowingly invalid geometry
+    data->pixmap_height = (uint32_t)(-1);   // to force pixmap recreation
+
+    glx_context_push_thread_local(deviceData);
+    glGenTextures(1, &data->tex_id);
+    glBindTexture(GL_TEXTURE_2D, data->tex_id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    GLenum gl_error = glGetError();
+    glx_context_pop();
+
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
+        err_code = VDP_STATUS_ERROR;
+        free(data);
+        goto quit;
+    }
 
     ref_device(deviceData);
     *mixer = handle_insert(data);
@@ -54,15 +165,30 @@ quit:
 VdpStatus
 vdpVideoMixerDestroy(VdpVideoMixer mixer)
 {
+    VdpStatus err_code;
     VdpVideoMixerData *videoMixerData = handle_acquire(mixer, HANDLETYPE_VIDEO_MIXER);
     if (NULL == videoMixerData)
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = videoMixerData->deviceData;
 
+    _free_video_mixer_pixmaps(videoMixerData);
+    glx_context_push_thread_local(deviceData);
+    glDeleteTextures(1, &videoMixerData->tex_id);
+    GLenum gl_error = glGetError();
+    glx_context_pop();
+
+    if (GL_NO_ERROR != gl_error) {
+        traceError("error (%s): gl error %d\n", __func__, gl_error);
+        err_code = VDP_STATUS_ERROR;
+        goto quit;
+    }
+
+    err_code = VDP_STATUS_OK;
+quit:
     unref_device(deviceData);
     handle_expunge(mixer);
     free(videoMixerData);
-    return VDP_STATUS_OK;
+    return err_code;
 }
 
 VdpStatus
@@ -162,15 +288,18 @@ vdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface,
     (void)video_surface_future_count; (void)video_surface_future;
     (void)layer_count; (void)layers;
 
+    VdpVideoMixerData *mixerData = handle_acquire(mixer, HANDLETYPE_VIDEO_MIXER);
     VdpVideoSurfaceData *srcSurfData =
         handle_acquire(video_surface_current, HANDLETYPE_VIDEO_SURFACE);
     VdpOutputSurfaceData *dstSurfData =
         handle_acquire(destination_surface, HANDLETYPE_OUTPUT_SURFACE);
-    if (NULL == srcSurfData || NULL == dstSurfData) {
+    if (NULL == mixerData || NULL == srcSurfData || NULL == dstSurfData) {
         err_code = VDP_STATUS_INVALID_HANDLE;
         goto quit;
     }
-    if (srcSurfData->deviceData != dstSurfData->deviceData) {
+    if (srcSurfData->deviceData != dstSurfData->deviceData ||
+        srcSurfData->deviceData != mixerData->deviceData)
+    {
         err_code = VDP_STATUS_HANDLE_DEVICE_MISMATCH;
         goto quit;
     }
@@ -193,19 +322,7 @@ vdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface,
     glx_context_push_thread_local(deviceData);
 
     if (srcSurfData->sync_va_to_glx) {
-        VAStatus status;
-        if (NULL == srcSurfData->va_glx) {
-            status = vaCreateSurfaceGLX(deviceData->va_dpy, GL_TEXTURE_2D, srcSurfData->tex_id,
-                                        &srcSurfData->va_glx);
-            if (VA_STATUS_SUCCESS != status) {
-                glx_context_pop();
-                err_code = VDP_STATUS_ERROR;
-                goto quit;
-            }
-        }
-
-        status = vaCopySurfaceGLX(deviceData->va_dpy, srcSurfData->va_glx, srcSurfData->va_surf, 0);
-        // TODO: check result of previous call
+        _render_va_surf_to_texture(mixerData, srcSurfData);
         srcSurfData->sync_va_to_glx = 0;
     }
 
@@ -264,6 +381,7 @@ vdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface,
 quit:
     handle_release(video_surface_current);
     handle_release(destination_surface);
+    handle_release(mixer);
     return err_code;
 }
 

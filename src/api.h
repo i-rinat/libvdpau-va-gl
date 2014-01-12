@@ -50,6 +50,7 @@ typedef struct VdpDeviceData {
     Display        *display;        ///< own X display connection
     Display        *display_orig;   ///< supplied X display connection
     int             screen;         ///< X screen
+    int             color_depth;    ///< screen color depth
     GLXContext      root_glc;       ///< master GL context
     Window          root;           ///< X drawable (root window) used for offscreen drawing
     VADisplay       va_dpy;         ///< VA display
@@ -65,11 +66,20 @@ typedef struct VdpDeviceData {
             int     tex_1;
         } uniform;
     } shaders[SHADER_COUNT];
+    struct {
+        PFNGLXBINDTEXIMAGEEXTPROC       glXBindTexImageEXT;
+        PFNGLXRELEASETEXIMAGEEXTPROC    glXReleaseTexImageEXT;
+    } fn;
 } VdpDeviceData;
 
 /** @brief VdpVideoMixer object parameters */
 typedef struct {
     VDP_GENERIC_HANDLE_FIELDS;
+    uint32_t        pixmap_width;       ///< last seen width
+    uint32_t        pixmap_height;      ///< last seen height
+    Pixmap          pixmap;             ///< target pixmap for vaPutSurface
+    GLXPixmap       glx_pixmap;         ///< associated glx pixmap for texture-from-pixmap
+    GLuint          tex_id;             ///< texture for texture-from-pixmap
 } VdpVideoMixerData;
 
 /** @brief VdpOutputSurface object parameters */
@@ -144,7 +154,6 @@ typedef struct {
     uint32_t        chroma_height;
     uint32_t        chroma_stride;
     VASurfaceID     va_surf;        ///< VA-API surface
-    void           *va_glx;         ///< handle for VA-API/GLX interaction
     int             sync_va_to_glx; ///< whenever VA-API surface should be converted to GL texture
     GLuint          tex_id;         ///< GL texture id (RGBA)
     GLuint          fbo_id;         ///< framebuffer object id
