@@ -12,7 +12,7 @@
 
 // force linking library constructor
 void va_gl_library_constructor();
-static void *dummy_ptr = va_gl_library_constructor;
+void *dummy_ptr = va_gl_library_constructor;
 
 int
 main(int argc, char *argv[])

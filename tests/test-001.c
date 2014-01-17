@@ -13,7 +13,6 @@ int main(void)
 {
     VdpDevice device;
     Display *dpy = get_dpy();
-    Window wnd = get_wnd();
 
     ASSERT_OK(vdpDeviceCreateX11(dpy, 0, &device, NULL));
 

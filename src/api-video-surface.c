@@ -356,6 +356,10 @@ vdpVideoSurfacePutBitsYCbCr_swscale(VdpVideoSurface surface, VdpYCbCrFormat sour
     VdpStatus err_code;
     // TODO: implement this
     VdpVideoSurfaceData *dstSurfData = handle_acquire(surface, HANDLETYPE_VIDEO_SURFACE);
+    // TODO: remove following (void)'s
+    (void)vdpau_ycbcr_to_av_pixfmt;
+    (void)source_pitches;
+    (void)source_data;
 
     if (NULL == dstSurfData)
         return VDP_STATUS_INVALID_HANDLE;

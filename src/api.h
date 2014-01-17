@@ -43,7 +43,7 @@ typedef struct {
 } VdpGenericData;
 
 /** @brief VdpDevice object parameters */
-typedef struct VdpDeviceData {
+struct VdpDeviceData {
     VDP_GENERIC_HANDLE_FIELDS;      ///< base struct
     int             refcount;
     pthread_mutex_t refcount_mutex;
@@ -70,7 +70,7 @@ typedef struct VdpDeviceData {
         PFNGLXBINDTEXIMAGEEXTPROC       glXBindTexImageEXT;
         PFNGLXRELEASETEXIMAGEEXTPROC    glXReleaseTexImageEXT;
     } fn;
-} VdpDeviceData;
+};
 
 /** @brief VdpVideoMixer object parameters */
 typedef struct {

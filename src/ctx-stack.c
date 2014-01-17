@@ -182,6 +182,7 @@ static
 int
 x11_error_handler(Display *dpy, XErrorEvent *ee)
 {
+    (void)dpy;
     x11_error_code = ee->error_code;
     return 0;
 }
