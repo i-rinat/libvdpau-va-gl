@@ -19,9 +19,7 @@
 #include <vdpau/vdpau.h>
 #include "api.h"
 #include "trace.h"
-#include "libavutil/avassert.h"
 #include "libavutil/pixfmt.h"
-#include "libavutil/pixdesc.h"
 
 VdpStatus
 vdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t width, uint32_t height,
