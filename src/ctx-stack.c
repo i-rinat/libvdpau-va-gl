@@ -21,17 +21,24 @@
 #include <string.h>
 
 
-static __thread Display    *glx_ctx_stack_display;
-static __thread Drawable    glx_ctx_stack_wnd;
-static __thread GLXContext  glx_ctx_stack_glc;
-static __thread int         glx_ctx_stack_element_count = 0;
-static          GHashTable *glc_hash_table = NULL;
-static          int         glc_hash_table_ref_count = 0;
-static          GLXContext  root_glc = NULL;
-static          XVisualInfo *root_vi = NULL;
-static          int         x11_error_code = 0;
-static          void       *x11_prev_handler = NULL;
-static          pthread_mutex_t glx_ctx_stack_mutex = PTHREAD_MUTEX_INITIALIZER;
+static __thread struct {
+    Display        *dpy;
+    Drawable        wnd;
+    GLXContext      glc;
+    int             element_count;
+} ctx_stack = {
+    .dpy = NULL,
+    .wnd = None,
+    .glc = NULL,
+};
+
+static  GHashTable *glc_hash_table = NULL;
+static  int         glc_hash_table_ref_count = 0;
+static  GLXContext  root_glc = NULL;
+static  XVisualInfo *root_vi = NULL;
+static  int         x11_error_code = 0;
+static  void       *x11_prev_handler = NULL;
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 struct val_s {
     Display    *dpy;
@@ -41,13 +48,13 @@ struct val_s {
 void
 glx_context_lock(void)
 {
-    pthread_mutex_lock(&glx_ctx_stack_mutex);
+    pthread_mutex_lock(&lock);
 }
 
 void
 glx_context_unlock(void)
 {
-    pthread_mutex_unlock(&glx_ctx_stack_mutex);
+    pthread_mutex_unlock(&lock);
 }
 
 static
@@ -88,14 +95,14 @@ void
 glx_context_push_global(Display *dpy, Drawable wnd, GLXContext glc)
 {
     glx_context_lock();
-    assert(0 == glx_ctx_stack_element_count);
+    assert(0 == ctx_stack.element_count);
 
-    glx_ctx_stack_display = glXGetCurrentDisplay();
-    if (!glx_ctx_stack_display)
-        glx_ctx_stack_display = dpy;
-    glx_ctx_stack_wnd =     glXGetCurrentDrawable();
-    glx_ctx_stack_glc =     glXGetCurrentContext();
-    glx_ctx_stack_element_count ++;
+    ctx_stack.dpy = glXGetCurrentDisplay();
+    if (!ctx_stack.dpy)
+        ctx_stack.dpy = dpy;
+    ctx_stack.wnd =     glXGetCurrentDrawable();
+    ctx_stack.glc =     glXGetCurrentContext();
+    ctx_stack.element_count ++;
 
     glXMakeCurrent(dpy, wnd, glc);
 }
@@ -108,12 +115,12 @@ glx_context_push_thread_local(VdpDeviceData *deviceData)
     const Window wnd = deviceData->root;
     int thread_id = (int)syscall(__NR_gettid);
 
-    glx_ctx_stack_display = glXGetCurrentDisplay();
-    if (!glx_ctx_stack_display)
-        glx_ctx_stack_display = dpy;
-    glx_ctx_stack_wnd =     glXGetCurrentDrawable();
-    glx_ctx_stack_glc =     glXGetCurrentContext();
-    glx_ctx_stack_element_count ++;
+    ctx_stack.dpy = glXGetCurrentDisplay();
+    if (!ctx_stack.dpy)
+        ctx_stack.dpy = dpy;
+    ctx_stack.wnd =     glXGetCurrentDrawable();
+    ctx_stack.glc =     glXGetCurrentContext();
+    ctx_stack.element_count ++;
 
     struct val_s *val = g_hash_table_lookup(glc_hash_table, GINT_TO_POINTER(thread_id));
     if (!val) {
@@ -133,9 +140,9 @@ glx_context_push_thread_local(VdpDeviceData *deviceData)
 void
 glx_context_pop()
 {
-    assert(1 == glx_ctx_stack_element_count);
-    glXMakeCurrent(glx_ctx_stack_display, glx_ctx_stack_wnd, glx_ctx_stack_glc);
-    glx_ctx_stack_element_count --;
+    assert(1 == ctx_stack.element_count);
+    glXMakeCurrent(ctx_stack.dpy, ctx_stack.wnd, ctx_stack.glc);
+    ctx_stack.element_count --;
     glx_context_unlock();
 }
 
