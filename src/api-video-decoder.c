@@ -500,11 +500,11 @@ vdpDecoderRender_h264(VdpDecoder decoder, VdpDecoderData *decoderData,
     h264_translate_pic_param(&pic_param, decoderData->width, decoderData->height, vdppi, level);
     h264_translate_iq_matrix(&iq_matrix, vdppi);
 
-    glx_context_lock();
+    glx_ctx_lock();
     status = vaCreateBuffer(va_dpy, decoderData->context_id, VAPictureParameterBufferType,
         sizeof(VAPictureParameterBufferH264), 1, &pic_param, &pic_param_buf);
     if (VA_STATUS_SUCCESS != status) {
-        glx_context_unlock();
+        glx_ctx_unlock();
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
@@ -512,7 +512,7 @@ vdpDecoderRender_h264(VdpDecoder decoder, VdpDecoderData *decoderData,
     status = vaCreateBuffer(va_dpy, decoderData->context_id, VAIQMatrixBufferType,
         sizeof(VAIQMatrixBufferH264), 1, &iq_matrix, &iq_matrix_buf);
     if (VA_STATUS_SUCCESS != status) {
-        glx_context_unlock();
+        glx_ctx_unlock();
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
@@ -520,26 +520,26 @@ vdpDecoderRender_h264(VdpDecoder decoder, VdpDecoderData *decoderData,
     // send data to decoding hardware
     status = vaBeginPicture(va_dpy, decoderData->context_id, dstSurfData->va_surf);
     if (VA_STATUS_SUCCESS != status) {
-        glx_context_unlock();
+        glx_ctx_unlock();
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
     status = vaRenderPicture(va_dpy, decoderData->context_id, &pic_param_buf, 1);
     if (VA_STATUS_SUCCESS != status) {
-        glx_context_unlock();
+        glx_ctx_unlock();
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
     status = vaRenderPicture(va_dpy, decoderData->context_id, &iq_matrix_buf, 1);
     if (VA_STATUS_SUCCESS != status) {
-        glx_context_unlock();
+        glx_ctx_unlock();
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
 
     vaDestroyBuffer(va_dpy, pic_param_buf);
     vaDestroyBuffer(va_dpy, iq_matrix_buf);
-    glx_context_unlock();
+    glx_ctx_unlock();
 
     // merge bitstream buffers
     int total_bitstream_bytes = 0;
@@ -601,17 +601,17 @@ vdpDecoderRender_h264(VdpDecoder decoder, VdpDecoderData *decoderData,
                            vdppi->num_ref_idx_l1_active_minus1, &sp_h264);
 
         VABufferID slice_parameters_buf;
-        glx_context_lock();
+        glx_ctx_lock();
         status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceParameterBufferType,
             sizeof(VASliceParameterBufferH264), 1, &sp_h264, &slice_parameters_buf);
         if (VA_STATUS_SUCCESS != status) {
-            glx_context_unlock();
+            glx_ctx_unlock();
             err_code = VDP_STATUS_ERROR;
             goto quit;
         }
         status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_parameters_buf, 1);
         if (VA_STATUS_SUCCESS != status) {
-            glx_context_unlock();
+            glx_ctx_unlock();
             err_code = VDP_STATUS_ERROR;
             goto quit;
         }
@@ -620,30 +620,30 @@ vdpDecoderRender_h264(VdpDecoder decoder, VdpDecoderData *decoderData,
         status = vaCreateBuffer(va_dpy, decoderData->context_id, VASliceDataBufferType,
             sp_h264.slice_data_size, 1, merged_bitstream + nal_offset, &slice_buf);
         if (VA_STATUS_SUCCESS != status) {
-            glx_context_unlock();
+            glx_ctx_unlock();
             err_code = VDP_STATUS_ERROR;
             goto quit;
         }
 
         status = vaRenderPicture(va_dpy, decoderData->context_id, &slice_buf, 1);
         if (VA_STATUS_SUCCESS != status) {
-            glx_context_unlock();
+            glx_ctx_unlock();
             err_code = VDP_STATUS_ERROR;
             goto quit;
         }
 
         vaDestroyBuffer(va_dpy, slice_parameters_buf);
         vaDestroyBuffer(va_dpy, slice_buf);
-        glx_context_unlock();
+        glx_ctx_unlock();
 
         if (nal_offset_next < 0)        // nal_offset_next equals -1 when there is no slice
             break;                      // start code found. Thus that was the final slice.
         nal_offset = nal_offset_next;
     } while (1);
 
-    glx_context_lock();
+    glx_ctx_lock();
     status = vaEndPicture(va_dpy, decoderData->context_id);
-    glx_context_unlock();
+    glx_ctx_unlock();
     if (VA_STATUS_SUCCESS != status) {
         err_code = VDP_STATUS_ERROR;
         goto quit;

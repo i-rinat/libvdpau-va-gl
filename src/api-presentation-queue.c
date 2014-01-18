@@ -165,11 +165,11 @@ do_presentation_queue_display(VdpPresentationQueueData *pqData)
     if (surfData == NULL)
         return;
 
-    glx_context_lock();
+    glx_ctx_lock();
     recreate_pixmaps_if_geometry_changed(pqData->targetData);
-    glx_context_unlock();
-    glx_context_push_global(deviceData->display, pqData->targetData->glx_pixmap,
-                            pqData->targetData->glc);
+    glx_ctx_unlock();
+    glx_ctx_push_global(deviceData->display, pqData->targetData->glx_pixmap,
+                        pqData->targetData->glc);
 
     const uint32_t target_width  = (clip_width > 0)  ? clip_width  : surfData->width;
     const uint32_t target_height = (clip_height > 0) ? clip_height : surfData->height;
@@ -224,16 +224,16 @@ do_presentation_queue_display(VdpPresentationQueueData *pqData)
 
     glFinish();
     GLenum gl_error = glGetError();
-    glx_context_pop();
+    glx_ctx_pop();
 
     x11_push_eh();
-    glx_context_lock();
+    glx_ctx_lock();
     XSync(deviceData->display, False);
     XCopyArea(deviceData->display, pqData->targetData->pixmap, pqData->targetData->drawable,
               pqData->targetData->plain_copy_gc, 0, 0, target_width, target_height, 0, 0);
     XSync(deviceData->display, False);
     int x11_err = x11_pop_eh();
-    glx_context_unlock();
+    glx_ctx_unlock();
     if (x11_err != Success) {
         char buf[200] = { 0 };
         XGetErrorText(deviceData->display, x11_err, buf, sizeof(buf));
@@ -556,7 +556,7 @@ vdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
         return VDP_STATUS_RESOURCES;
     }
 
-    glx_context_lock();
+    glx_ctx_lock();
     data->type = HANDLETYPE_PRESENTATION_QUEUE_TARGET;
     data->device = device;
     data->deviceData = deviceData;
@@ -575,7 +575,7 @@ vdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
     if (NULL == data->xvi) {
         traceError("error (%s): glXChooseVisual failed\n", __func__);
         free(data);
-        glx_context_unlock();
+        glx_ctx_unlock();
         handle_release(device);
         return VDP_STATUS_ERROR;
     }
@@ -585,7 +585,7 @@ vdpPresentationQueueTargetCreateX11(VdpDevice device, Drawable drawable,
     data->glc = glXCreateContext(deviceData->display, data->xvi, deviceData->root_glc, GL_TRUE);
     ref_device(deviceData);
     *target = handle_insert(data);
-    glx_context_unlock();
+    glx_ctx_unlock();
 
     handle_release(device);
     return VDP_STATUS_OK;
@@ -608,12 +608,12 @@ vdpPresentationQueueTargetDestroy(VdpPresentationQueueTarget presentation_queue_
     }
 
     // drawable may be destroyed already, so one should activate global context
-    glx_context_push_thread_local(deviceData);
+    glx_ctx_push_thread_local(deviceData);
     glXDestroyContext(deviceData->display, pqTargetData->glc);
     free_glx_pixmaps(pqTargetData);
 
     GLenum gl_error = glGetError();
-    glx_context_pop();
+    glx_ctx_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (%s): gl error %d\n", __func__, gl_error);
         handle_release(presentation_queue_target);

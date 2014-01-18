@@ -46,13 +46,13 @@ struct val_s {
 };
 
 void
-glx_context_lock(void)
+glx_ctx_lock(void)
 {
     pthread_mutex_lock(&lock);
 }
 
 void
-glx_context_unlock(void)
+glx_ctx_unlock(void)
 {
     pthread_mutex_unlock(&lock);
 }
@@ -92,9 +92,9 @@ is_thread_expired(gpointer key, gpointer value, gpointer user_data)
 }
 
 void
-glx_context_push_global(Display *dpy, Drawable wnd, GLXContext glc)
+glx_ctx_push_global(Display *dpy, Drawable wnd, GLXContext glc)
 {
-    glx_context_lock();
+    glx_ctx_lock();
     assert(0 == ctx_stack.element_count);
 
     ctx_stack.dpy = glXGetCurrentDisplay();
@@ -108,9 +108,9 @@ glx_context_push_global(Display *dpy, Drawable wnd, GLXContext glc)
 }
 
 void
-glx_context_push_thread_local(VdpDeviceData *deviceData)
+glx_ctx_push_thread_local(VdpDeviceData *deviceData)
 {
-    glx_context_lock();
+    glx_ctx_lock();
     Display *dpy = deviceData->display;
     const Window wnd = deviceData->root;
     int thread_id = (int)syscall(__NR_gettid);
@@ -138,18 +138,18 @@ glx_context_push_thread_local(VdpDeviceData *deviceData)
 }
 
 void
-glx_context_pop()
+glx_ctx_pop()
 {
     assert(1 == ctx_stack.element_count);
     glXMakeCurrent(ctx_stack.dpy, ctx_stack.wnd, ctx_stack.glc);
     ctx_stack.element_count --;
-    glx_context_unlock();
+    glx_ctx_unlock();
 }
 
 void
-glx_context_ref_glc_hash_table(Display *dpy, int screen)
+glx_ctx_ref_glc_hash_table(Display *dpy, int screen)
 {
-    glx_context_lock();
+    glx_ctx_lock();
     if (0 == glc_hash_table_ref_count) {
         glc_hash_table = g_hash_table_new_full(g_direct_hash, g_direct_equal,
                                                NULL, value_destroy_func);
@@ -165,13 +165,13 @@ glx_context_ref_glc_hash_table(Display *dpy, int screen)
     } else {
         glc_hash_table_ref_count ++;
     }
-    glx_context_unlock();
+    glx_ctx_unlock();
 }
 
 void
-glx_context_unref_glc_hash_table(Display *dpy)
+glx_ctx_unref_glc_hash_table(Display *dpy)
 {
-    glx_context_lock();
+    glx_ctx_lock();
     glc_hash_table_ref_count --;
     if (0 == glc_hash_table_ref_count) {
         g_hash_table_unref(glc_hash_table);
@@ -180,11 +180,11 @@ glx_context_unref_glc_hash_table(Display *dpy)
         glXDestroyContext(dpy, root_glc);
         XFree(root_vi);
     }
-    glx_context_unlock();
+    glx_ctx_unlock();
 }
 
 GLXContext
-glx_context_get_root_context(void)
+glx_ctx_get_root_context(void)
 {
     return root_glc;
 }

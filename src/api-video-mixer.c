@@ -136,7 +136,7 @@ vdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
     data->pixmap_width = (uint32_t)(-1);    // set knowingly invalid geometry
     data->pixmap_height = (uint32_t)(-1);   // to force pixmap recreation
 
-    glx_context_push_thread_local(deviceData);
+    glx_ctx_push_thread_local(deviceData);
     glGenTextures(1, &data->tex_id);
     glBindTexture(GL_TEXTURE_2D, data->tex_id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -144,7 +144,7 @@ vdpVideoMixerCreate(VdpDevice device, uint32_t feature_count,
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     GLenum gl_error = glGetError();
-    glx_context_pop();
+    glx_ctx_pop();
 
     if (GL_NO_ERROR != gl_error) {
         traceError("error (%s): gl error %d\n", __func__, gl_error);
@@ -172,10 +172,10 @@ vdpVideoMixerDestroy(VdpVideoMixer mixer)
     VdpDeviceData *deviceData = videoMixerData->deviceData;
 
     _free_video_mixer_pixmaps(videoMixerData);
-    glx_context_push_thread_local(deviceData);
+    glx_ctx_push_thread_local(deviceData);
     glDeleteTextures(1, &videoMixerData->tex_id);
     GLenum gl_error = glGetError();
-    glx_context_pop();
+    glx_ctx_pop();
 
     if (GL_NO_ERROR != gl_error) {
         traceError("error (%s): gl error %d\n", __func__, gl_error);
@@ -319,7 +319,7 @@ vdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface,
 
     // TODO: dstRect should clip dstVideoRect
 
-    glx_context_push_thread_local(deviceData);
+    glx_ctx_push_thread_local(deviceData);
 
     if (srcSurfData->sync_va_to_glx) {
         _render_va_surf_to_texture(mixerData, srcSurfData);
@@ -370,7 +370,7 @@ vdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface,
     glFinish();
 
     GLenum gl_error = glGetError();
-    glx_context_pop();
+    glx_ctx_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (%s): gl error %d\n", __func__, gl_error);
         err_code = VDP_STATUS_ERROR;

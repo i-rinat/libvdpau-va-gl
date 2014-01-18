@@ -206,10 +206,10 @@ vdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
     }
 
     // create master GLX context to share data between further created ones
-    glx_context_ref_glc_hash_table(display, screen);
-    data->root_glc = glx_context_get_root_context();
+    glx_ctx_ref_glc_hash_table(display, screen);
+    data->root_glc = glx_ctx_get_root_context();
 
-    glx_context_push_thread_local(data);
+    glx_ctx_push_thread_local(data);
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
@@ -268,7 +268,7 @@ vdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
         *get_proc_address = &vdpGetProcAddress;
 
     GLenum gl_error = glGetError();
-    glx_context_pop();
+    glx_ctx_pop();
 
     if (GL_NO_ERROR != gl_error) {
         traceError("error (%s): gl error %d\n", __func__, gl_error);
@@ -315,17 +315,17 @@ vdpDeviceDestroy(VdpDevice device)
     if (data->va_available)
         vaTerminate(data->va_dpy);
 
-    glx_context_push_thread_local(data);
+    glx_ctx_push_thread_local(data);
     glDeleteTextures(1, &data->watermark_tex_id);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     destroy_shaders(data);
-    glx_context_pop();
+    glx_ctx_pop();
 
-    glx_context_lock();
+    glx_ctx_lock();
     glXMakeCurrent(data->display, None, NULL);
-    glx_context_unlock();
+    glx_ctx_unlock();
 
-    glx_context_unref_glc_hash_table(data->display);
+    glx_ctx_unref_glc_hash_table(data->display);
 
     handle_xdpy_unref(data->display_orig);
     handle_expunge(device);

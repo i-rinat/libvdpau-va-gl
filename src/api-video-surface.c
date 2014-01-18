@@ -79,7 +79,7 @@ vdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t widt
     data->u_plane = NULL;
     data->v_plane = NULL;
 
-    glx_context_push_thread_local(deviceData);
+    glx_ctx_push_thread_local(deviceData);
     glGenTextures(1, &data->tex_id);
     glBindTexture(GL_TEXTURE_2D, data->tex_id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -96,7 +96,7 @@ vdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t widt
     if (GL_FRAMEBUFFER_COMPLETE != gl_status) {
         traceError("error (%s): framebuffer not ready, %d, %s\n", __func__, gl_status,
                    gluErrorString(gl_status));
-        glx_context_pop();
+        glx_ctx_pop();
         free(data);
         err_code = VDP_STATUS_ERROR;
         goto quit;
@@ -104,7 +104,7 @@ vdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t widt
     glFinish();
 
     GLenum gl_error = glGetError();
-    glx_context_pop();
+    glx_ctx_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (%s): gl error %d\n", __func__, gl_error);
         free(data);
@@ -132,14 +132,14 @@ vdpVideoSurfaceDestroy(VdpVideoSurface surface)
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = videoSurfData->deviceData;
 
-    glx_context_push_thread_local(deviceData);
+    glx_ctx_push_thread_local(deviceData);
     glDeleteTextures(1, &videoSurfData->tex_id);
 
     GLenum gl_error = glGetError();
 
     if (GL_NO_ERROR != gl_error) {
         traceError("error (%s): gl error %d\n", __func__, gl_error);
-        glx_context_pop();
+        glx_ctx_pop();
         handle_release(surface);
         return VDP_STATUS_ERROR;
     }
@@ -162,7 +162,7 @@ vdpVideoSurfaceDestroy(VdpVideoSurface surface)
         free(videoSurfData->u_plane);
     // do not free videoSurfData->v_plane, it's just pointer into the middle of u_plane
 
-    glx_context_pop();
+    glx_ctx_pop();
     unref_device(deviceData);
     handle_expunge(surface);
     free(videoSurfData);
@@ -452,7 +452,7 @@ vdpVideoSurfacePutBitsYCbCr_glsl(VdpVideoSurface surface, VdpYCbCrFormat source_
         goto err;
     }
 
-    glx_context_push_thread_local(deviceData);
+    glx_ctx_push_thread_local(deviceData);
     glBindFramebuffer(GL_FRAMEBUFFER, dstSurfData->fbo_id);
 
     GLuint tex_id[2];
@@ -558,7 +558,7 @@ vdpVideoSurfacePutBitsYCbCr_glsl(VdpVideoSurface surface, VdpYCbCrFormat source_
     glDeleteTextures(2, tex_id);
 
     GLenum gl_error = glGetError();
-    glx_context_pop();
+    glx_ctx_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (%s): gl error %d\n", __func__, gl_error);
         err_code = VDP_STATUS_ERROR;

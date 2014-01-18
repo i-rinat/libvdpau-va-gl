@@ -93,7 +93,7 @@ vdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t wid
         data->bitmap_data = NULL;
     }
 
-    glx_context_push_thread_local(deviceData);
+    glx_ctx_push_thread_local(deviceData);
     glGenTextures(1, &data->tex_id);
     glBindTexture(GL_TEXTURE_2D, data->tex_id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -109,13 +109,13 @@ vdpBitmapSurfaceCreate(VdpDevice device, VdpRGBAFormat rgba_format, uint32_t wid
         traceError("error (%s): texture failure, gl error (%d, %s)\n", __func__, gl_error,
                    gluErrorString(gl_error));
         free(data);
-        glx_context_pop();
+        glx_ctx_pop();
         err_code = VDP_STATUS_ERROR;
         goto quit;
     }
 
     gl_error = glGetError();
-    glx_context_pop();
+    glx_ctx_pop();
     if (GL_NO_ERROR != gl_error) {
         free(data);
         traceError("error (%s): gl error %d\n", __func__, gl_error);
@@ -145,11 +145,11 @@ vdpBitmapSurfaceDestroy(VdpBitmapSurface surface)
         data->bitmap_data = NULL;
     }
 
-    glx_context_push_thread_local(deviceData);
+    glx_ctx_push_thread_local(deviceData);
     glDeleteTextures(1, &data->tex_id);
 
     GLenum gl_error = glGetError();
-    glx_context_pop();
+    glx_ctx_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (%s): gl error %d\n", __func__, gl_error);
         handle_release(surface);
@@ -219,7 +219,7 @@ vdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *sourc
         }
         dstSurfData->dirty = 1;
     } else {
-        glx_context_push_thread_local(deviceData);
+        glx_ctx_push_thread_local(deviceData);
 
         glBindTexture(GL_TEXTURE_2D, dstSurfData->tex_id);
         glPixelStorei(GL_UNPACK_ROW_LENGTH, source_pitches[0]/dstSurfData->bytes_per_pixel);
@@ -234,7 +234,7 @@ vdpBitmapSurfacePutBitsNative(VdpBitmapSurface surface, void const *const *sourc
         glFinish();
 
         GLenum gl_error = glGetError();
-        glx_context_pop();
+        glx_ctx_pop();
         if (GL_NO_ERROR != gl_error) {
             traceError("error (%s): gl error %d\n", __func__, gl_error);
             err_code = VDP_STATUS_ERROR;
@@ -275,12 +275,12 @@ vdpBitmapSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba_f
         break;
     }
 
-    glx_context_push_thread_local(deviceData);
+    glx_ctx_push_thread_local(deviceData);
     GLint max_texture_size;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
 
     GLenum gl_error = glGetError();
-    glx_context_pop();
+    glx_ctx_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (%s): gl error %d\n", __func__, gl_error);
         err_code = VDP_STATUS_ERROR;
