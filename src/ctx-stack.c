@@ -91,6 +91,8 @@ glx_context_push_global(Display *dpy, Drawable wnd, GLXContext glc)
     assert(0 == glx_ctx_stack_element_count);
 
     glx_ctx_stack_display = glXGetCurrentDisplay();
+    if (!glx_ctx_stack_display)
+        glx_ctx_stack_display = dpy;
     glx_ctx_stack_wnd =     glXGetCurrentDrawable();
     glx_ctx_stack_glc =     glXGetCurrentContext();
     glx_ctx_stack_element_count ++;
@@ -107,6 +109,8 @@ glx_context_push_thread_local(VdpDeviceData *deviceData)
     int thread_id = (int)syscall(__NR_gettid);
 
     glx_ctx_stack_display = glXGetCurrentDisplay();
+    if (!glx_ctx_stack_display)
+        glx_ctx_stack_display = dpy;
     glx_ctx_stack_wnd =     glXGetCurrentDrawable();
     glx_ctx_stack_glc =     glXGetCurrentContext();
     glx_ctx_stack_element_count ++;
