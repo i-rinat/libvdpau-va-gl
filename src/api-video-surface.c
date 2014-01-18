@@ -19,7 +19,9 @@
 #include <vdpau/vdpau.h>
 #include "api.h"
 #include "trace.h"
-
+#include "libavutil/avassert.h"
+#include "libavutil/pixfmt.h"
+#include "libavutil/pixdesc.h"
 
 VdpStatus
 vdpVideoSurfaceCreate(VdpDevice device, VdpChromaType chroma_type, uint32_t width, uint32_t height,
@@ -297,13 +299,13 @@ int
 vdpau_ycbcr_to_av_pixfmt(int fmt)
 {
     switch (fmt) {
-    case VDP_YCBCR_FORMAT_NV12:     return AV_PIX_FMT_NV12;
-    case VDP_YCBCR_FORMAT_YV12:     return AV_PIX_FMT_YUV420P;
-    case VDP_YCBCR_FORMAT_UYVY:     return AV_PIX_FMT_UYVY422;
-    case VDP_YCBCR_FORMAT_YUYV:     return AV_PIX_FMT_YUYV422;
-    case VDP_YCBCR_FORMAT_Y8U8V8A8: return AV_PIX_FMT_NONE;
-    case VDP_YCBCR_FORMAT_V8U8Y8A8: return AV_PIX_FMT_NONE;
-    default:                        return AV_PIX_FMT_NONE;
+    case VDP_YCBCR_FORMAT_NV12:     return PIX_FMT_NV12;
+    case VDP_YCBCR_FORMAT_YV12:     return PIX_FMT_YUV420P;
+    case VDP_YCBCR_FORMAT_UYVY:     return PIX_FMT_UYVY422;
+    case VDP_YCBCR_FORMAT_YUYV:     return PIX_FMT_YUYV422;
+    case VDP_YCBCR_FORMAT_Y8U8V8A8: return PIX_FMT_NONE;
+    case VDP_YCBCR_FORMAT_V8U8Y8A8: return PIX_FMT_NONE;
+    default:                        return PIX_FMT_NONE;
     }
 }
 
