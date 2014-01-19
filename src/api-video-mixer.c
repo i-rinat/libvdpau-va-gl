@@ -73,6 +73,8 @@ _render_va_surf_to_texture(VdpVideoMixerData *videoMixerData, VdpVideoSurfaceDat
         videoMixerData->glx_pixmap = glXCreatePixmap(dpy, fbconfig[0], videoMixerData->pixmap,
                                                      pixmap_attrs);
         free(fbconfig);
+        videoMixerData->pixmap_width = srcSurfData->width;
+        videoMixerData->pixmap_height = srcSurfData->height;
     }
 
     glBindTexture(GL_TEXTURE_2D, videoMixerData->tex_id);
