@@ -474,13 +474,16 @@ vdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSu
         return VDP_STATUS_INVALID_HANDLE;
 
     // push work to queue
-    while (pqData->queue.used >= PRESENTATION_QUEUE_LENGTH) {
+    while (pqData && pqData->queue.used >= PRESENTATION_QUEUE_LENGTH) {
         // wait while queue is full
         // TODO: check for deadlock here
         handle_release(presentation_queue);
         usleep(10*1000);
         pqData = handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
     }
+
+    if (NULL == pqData)
+        return VDP_STATUS_INVALID_HANDLE;
 
     VdpOutputSurfaceData *surfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == surfData) {

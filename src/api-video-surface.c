@@ -194,8 +194,9 @@ vdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destination_
             if (destination_pitches[0] == q.pitches[0] &&
                 destination_pitches[1] == q.pitches[1])
             {
-                memcpy(destination_data[0], img_data + q.offsets[0], q.width * q.height);
-                memcpy(destination_data[1], img_data + q.offsets[1], q.width * q.height / 2);
+                const uint32_t sz = (uint32_t)q.width * (uint32_t)q.height;
+                memcpy(destination_data[0], img_data + q.offsets[0], sz);
+                memcpy(destination_data[1], img_data + q.offsets[1], sz / 2);
             } else {
                 uint8_t *src = img_data + q.offsets[0];
                 uint8_t *dst = destination_data[0];
@@ -221,7 +222,8 @@ vdpVideoSurfaceGetBitsYCbCr(VdpVideoSurface surface, VdpYCbCrFormat destination_
 
             // Y plane
             if (destination_pitches[0] == q.pitches[0]) {
-                memcpy(destination_data[0], img_data + q.offsets[0], q.width * q.height);
+                const uint32_t sz = (uint32_t)q.width * (uint32_t)q.height;
+                memcpy(destination_data[0], img_data + q.offsets[0], sz);
             } else {
                 uint8_t *src = img_data + q.offsets[0];
                 uint8_t *dst = destination_data[0];
@@ -505,13 +507,6 @@ vdpVideoSurfacePutBitsYCbCr_glsl(VdpVideoSurface surface, VdpYCbCrFormat source_
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dstSurfData->width, dstSurfData->height, 0, GL_RED,
                      GL_UNSIGNED_BYTE, source_data[0]);
         break;
-    case VDP_YCBCR_FORMAT_UYVY:
-    case VDP_YCBCR_FORMAT_YUYV:
-    case VDP_YCBCR_FORMAT_Y8U8V8A8:
-    case VDP_YCBCR_FORMAT_V8U8Y8A8:
-    default:
-        /* never reached */
-        break;
     }
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 
@@ -536,13 +531,6 @@ vdpVideoSurfacePutBitsYCbCr_glsl(VdpVideoSurface surface, VdpYCbCrFormat source_
         glUseProgram(deviceData->shaders[glsl_YV12_RGBA].program);
         glUniform1i(deviceData->shaders[glsl_YV12_RGBA].uniform.tex_0, 0);
         glUniform1i(deviceData->shaders[glsl_YV12_RGBA].uniform.tex_1, 1);
-        break;
-    case VDP_YCBCR_FORMAT_UYVY:
-    case VDP_YCBCR_FORMAT_YUYV:
-    case VDP_YCBCR_FORMAT_Y8U8V8A8:
-    case VDP_YCBCR_FORMAT_V8U8Y8A8:
-    default:
-        /* do nothing */
         break;
     }
 

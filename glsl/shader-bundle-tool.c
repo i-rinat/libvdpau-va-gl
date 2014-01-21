@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -5,6 +6,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <libgen.h>
+
 
 int
 main(int argc, char *argv[])
@@ -73,13 +75,19 @@ main(int argc, char *argv[])
         }
 
         struct stat sb;
-        fstat(fileno(fp_tmp), &sb);
+        if (fstat(fileno(fp_tmp), &sb) != 0) {
+            printf("can't fstat, errno = %d\n", errno);
+            return 4;
+        }
         char *buf = malloc(sb.st_size);
         if (!buf) {
             printf("not enough memory\n");
             return 3;
         }
-        fread(buf, sb.st_size, 1, fp_tmp);
+        if (fread(buf, sb.st_size, 1, fp_tmp) != 1) {
+            printf("can't read data from file\n");
+            return 5;
+        }
         fclose(fp_tmp);
 
         fprintf(fp_c, "  {\n");

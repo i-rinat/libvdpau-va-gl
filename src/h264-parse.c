@@ -263,7 +263,7 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
                    const int ChromaArrayType, unsigned int p_num_ref_idx_l0_active_minus1,
                    unsigned int p_num_ref_idx_l1_active_minus1, VASliceParameterBufferH264 *vasp)
 {
-    struct slice_parameters sp;
+    struct slice_parameters sp = { 0 };
 
     for (int k = 0; k < 32; k ++) {
         reset_va_picture_h264(&sp.RefPicList0[k]);

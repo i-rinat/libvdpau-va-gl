@@ -508,7 +508,8 @@ reverse_output_surface_render_rotate(int flags)
     case VDP_OUTPUT_SURFACE_RENDER_ROTATE_0: return "VDP_OUTPUT_SURFACE_RENDER_ROTATE_0";
     case VDP_OUTPUT_SURFACE_RENDER_ROTATE_90: return "VDP_OUTPUT_SURFACE_RENDER_ROTATE_90";
     case VDP_OUTPUT_SURFACE_RENDER_ROTATE_180: return "VDP_OUTPUT_SURFACE_RENDER_ROTATE_180";
-    case VDP_OUTPUT_SURFACE_RENDER_ROTATE_270: return "VDP_OUTPUT_SURFACE_RENDER_ROTATE_270";
-    default: return "Unknown render rotate";
+    default:
+        // The only possible case execution get here is VDP_OUTPUT_SURFACE_RENDER_ROTATE_270 case.
+        return "VDP_OUTPUT_SURFACE_RENDER_ROTATE_270";
     }
 }
