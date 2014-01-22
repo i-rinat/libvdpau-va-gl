@@ -42,6 +42,7 @@ set(LINK_LIBRARIES
 	${LIBSWSCALE_LIBRARIES}
 	${GL_LIBRARIES}
 	-lpthread
+	-lrt
 	shader-bundle
 )
 
