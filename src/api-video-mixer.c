@@ -66,7 +66,7 @@ _render_va_surf_to_texture(VdpVideoMixerData *videoMixerData, VdpVideoSurfaceDat
         int pixmap_attrs[] = {
             GLX_TEXTURE_TARGET_EXT, GLX_TEXTURE_2D_EXT,
             GLX_MIPMAP_TEXTURE_EXT, GL_FALSE,
-            GLX_TEXTURE_FORMAT_EXT, GLX_TEXTURE_FORMAT_RGBA_EXT,
+            GLX_TEXTURE_FORMAT_EXT, GLX_TEXTURE_FORMAT_RGB_EXT,
             GL_NONE
         };
 
