@@ -16,7 +16,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <va/va.h>
-#include <va/va_glx.h>
 #include <vdpau/vdpau.h>
 #include "api.h"
 #include "trace.h"
