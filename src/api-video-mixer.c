@@ -56,6 +56,7 @@ _render_va_surf_to_texture(VdpVideoMixerData *videoMixerData, VdpVideoSurfaceDat
             GLX_GREEN_SIZE,     8,
             GLX_BLUE_SIZE,      8,
             GLX_ALPHA_SIZE,     8,
+            GLX_DEPTH_SIZE,     16,
             GLX_BIND_TO_TEXTURE_RGBA_EXT,     GL_TRUE,
             GL_NONE
         };
