@@ -486,6 +486,7 @@ vdpDecoderRender_h264(VdpDecoder decoder, VdpDecoderData *decoderData,
     VAPictureParameterBufferH264 pic_param;
     VAIQMatrixBufferH264 iq_matrix;
 
+    memset(&pic_param, 0, sizeof(pic_param));
     vs = h264_translate_reference_frames(dstSurfData, decoder, decoderData, &pic_param, vdppi);
     if (VDP_STATUS_OK != vs) {
         if (VDP_STATUS_RESOURCES == vs) {
