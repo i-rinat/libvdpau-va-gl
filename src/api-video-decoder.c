@@ -428,7 +428,7 @@ h264_translate_pic_param(VAPictureParameterBufferH264 *pic_param, uint32_t width
         SEQ_FIELDS(pic_order_cnt_type)                  = vdppi->pic_order_cnt_type;
         SEQ_FIELDS(log2_max_pic_order_cnt_lsb_minus4)   = vdppi->log2_max_pic_order_cnt_lsb_minus4;
         SEQ_FIELDS(delta_pic_order_always_zero_flag)    = vdppi->delta_pic_order_always_zero_flag;
-        pic_param->num_slice_groups_minus1              = vdppi->slice_count - 1; // ???
+        pic_param->num_slice_groups_minus1              = 0; // TODO: vdppi->slice_count - 1; ???
 
         pic_param->slice_group_map_type                 = 0; // ???
         pic_param->slice_group_change_rate_minus1       = 0; // ???
