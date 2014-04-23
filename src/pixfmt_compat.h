@@ -11,7 +11,8 @@
 
 #include <libavutil/pixfmt.h>
 
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51, 42, 0)
+#if (LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51, 42, 0)) || \
+    (LIBAVUTIL_VERSION_INT == AV_VERSION_INT(51, 73, 101))
 
 #define AV_PIX_FMT_NONE         PIX_FMT_NONE
 #define AV_PIX_FMT_NV12         PIX_FMT_NV12
