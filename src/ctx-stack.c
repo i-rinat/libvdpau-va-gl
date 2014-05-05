@@ -159,6 +159,7 @@ glx_ctx_ref_glc_hash_table(Display *dpy, int screen)
         root_vi = glXChooseVisual(dpy, screen, att);
         if (NULL == root_vi) {
             traceError("error (%s): glXChooseVisual failed\n", __func__);
+            glx_ctx_unlock();
             return;
         }
         root_glc = glXCreateContext(dpy, root_vi, NULL, GL_TRUE);
