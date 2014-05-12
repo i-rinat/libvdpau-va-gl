@@ -17,6 +17,7 @@
 #include "api.h"
 #include "trace.h"
 #include "globals.h"
+#include <sys/time.h>
 
 #include <sys/syscall.h>
 #include <unistd.h>
