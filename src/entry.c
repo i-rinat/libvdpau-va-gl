@@ -52,7 +52,11 @@ trc_hk(void *longterm_param, void *shortterm_param, int origin, int after)
     }
 
     if (before && global.quirks.log_thread_id) {
+#ifdef __linux__
         printf("[%5d] ", (pid_t)syscall(__NR_gettid));
+#else
+        printf("[%p] ", (gconstpointer)pthread_self());
+#endif
     }
 }
 
