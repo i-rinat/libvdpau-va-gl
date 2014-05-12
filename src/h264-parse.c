@@ -131,7 +131,11 @@ reset_va_picture_h264(VAPictureH264 *p)
 
 static
 int
+#ifdef __FreeBSD__
+comparison_function_1(void *context, const void *p1, const void *p2)
+#else
 comparison_function_1(const void *p1, const void *p2, void *context)
+#endif
 {
     const int idx_1 = *(const int *)p1;
     const int idx_2 = *(const int *)p2;
@@ -201,9 +205,17 @@ fill_ref_pic_list(struct slice_parameters *sp, const VAPictureParameterBufferH26
         // TODO: implement interlaced P slices
         ctx.what = 1;
         ctx.descending = 0;
+#ifdef __FreeBSD__
+        qsort_r(idcs_asc, frame_count, sizeof(idcs_asc[0]), &ctx, &comparison_function_1);
+#else
         qsort_r(idcs_asc, frame_count, sizeof(idcs_asc[0]), &comparison_function_1, &ctx);
+#endif
         ctx.descending = 1;
+#ifdef __FreeBSD__
+        qsort_r(idcs_desc, frame_count, sizeof(idcs_desc[0]), &ctx, &comparison_function_1);
+#else
         qsort_r(idcs_desc, frame_count, sizeof(idcs_desc[0]), &comparison_function_1, &ctx);
+#endif
 
         int ptr = 0;
         for (int k = 0; k < frame_count; k ++)
@@ -217,9 +229,17 @@ fill_ref_pic_list(struct slice_parameters *sp, const VAPictureParameterBufferH26
     } else if (SLICE_TYPE_B == sp->slice_type && !vapp->pic_fields.bits.field_pic_flag) {
         ctx.what = 1;
         ctx.descending = 0;
+#ifdef __FreeBSD__
+        qsort_r(idcs_asc, frame_count, sizeof(idcs_asc[0]), &ctx, &comparison_function_1);
+#else
         qsort_r(idcs_asc, frame_count, sizeof(idcs_asc[0]), &comparison_function_1, &ctx);
+#endif
         ctx.descending = 1;
+#ifdef __FreeBSD__
+        qsort_r(idcs_desc, frame_count, sizeof(idcs_desc[0]), &ctx, &comparison_function_1);
+#else
         qsort_r(idcs_desc, frame_count, sizeof(idcs_desc[0]), &comparison_function_1, &ctx);
+#endif
 
         int ptr0 = 0;
         int ptr1 = 0;
