@@ -375,7 +375,6 @@ vdpPresentationQueueCreate(VdpDevice device, VdpPresentationQueueTarget presenta
     handle_release(presentation_queue_target);
 
     pthread_mutex_unlock(&data->queue_mutex);
-    pthread_yield();
 
     // wait till worker thread passes first lock
     pthread_barrier_wait(&data->thread_start_barrier);
