@@ -15,10 +15,9 @@
 #include "globals.h"
 #include <assert.h>
 #include "trace.h"
-#include <sys/syscall.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include "compat.h"
 
 
 static __thread struct {
@@ -81,10 +80,10 @@ static
 gboolean
 is_thread_expired(gpointer key, gpointer value, gpointer user_data)
 {
-    int thread_id = GPOINTER_TO_INT(key);
+    thread_id_t thread_id = GPOINTER_TO_SIZE(key);
     (void)value;
     (void)user_data;
-    if (kill(thread_id, 0) == 0) {
+    if (thread_is_alive(thread_id)) {
         // thread still exists, do not delete element
         return FALSE;
     }
@@ -113,7 +112,7 @@ glx_ctx_push_thread_local(VdpDeviceData *deviceData)
     glx_ctx_lock();
     Display *dpy = deviceData->display;
     const Window wnd = deviceData->root;
-    int thread_id = (int)syscall(__NR_gettid);
+    thread_id_t thread_id = get_current_thread_id();
 
     ctx_stack.dpy = glXGetCurrentDisplay();
     if (!ctx_stack.dpy)
@@ -122,12 +121,12 @@ glx_ctx_push_thread_local(VdpDeviceData *deviceData)
     ctx_stack.glc =     glXGetCurrentContext();
     ctx_stack.element_count ++;
 
-    struct val_s *val = g_hash_table_lookup(glc_hash_table, GINT_TO_POINTER(thread_id));
+    struct val_s *val = g_hash_table_lookup(glc_hash_table, GSIZE_TO_POINTER(thread_id));
     if (!val) {
         GLXContext glc = glXCreateContext(dpy, root_vi, root_glc, GL_TRUE);
         assert(glc);
         val = make_val(dpy, glc);
-        g_hash_table_insert(glc_hash_table, GINT_TO_POINTER(thread_id), val);
+        g_hash_table_insert(glc_hash_table, GSIZE_TO_POINTER(thread_id), val);
 
         // try cleanup expired entries
         g_hash_table_foreach_remove(glc_hash_table, is_thread_expired, NULL);

@@ -13,13 +13,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 #include "handle-storage.h"
 #include "api.h"
 #include "trace.h"
 #include "globals.h"
+#include "compat.h"
 
-#include <sys/syscall.h>
-#include <unistd.h>
 
 void
 trc_hk(void *longterm_param, void *shortterm_param, int origin, int after)
@@ -51,7 +51,7 @@ trc_hk(void *longterm_param, void *shortterm_param, int origin, int after)
     }
 
     if (before && global.quirks.log_thread_id) {
-        printf("[%5d] ", (pid_t)syscall(__NR_gettid));
+        printf("[%5ld] ", (long)get_current_thread_id());
     }
 }
 
