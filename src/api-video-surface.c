@@ -520,6 +520,8 @@ vdpVideoSurfacePutBitsYCbCr_glsl(VdpVideoSurface surface, VdpYCbCrFormat source_
     glMatrixMode(GL_TEXTURE);
     glLoadIdentity();
 
+    glDisable(GL_BLEND);
+
     switch (source_ycbcr_format) {
     case VDP_YCBCR_FORMAT_NV12:
         glUseProgram(deviceData->shaders[glsl_NV12_RGBA].program);

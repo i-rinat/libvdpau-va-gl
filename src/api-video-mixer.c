@@ -97,6 +97,9 @@ _render_va_surf_to_texture(VdpVideoMixerData *videoMixerData, VdpVideoSurfaceDat
     glLoadIdentity();
     glMatrixMode(GL_TEXTURE);
     glLoadIdentity();
+
+    glDisable(GL_BLEND);
+
     glBegin(GL_QUADS);
         glTexCoord2f(0, 0); glVertex2f(0, 0);
         glTexCoord2f(1, 0); glVertex2f(srcSurfData->width, 0);
