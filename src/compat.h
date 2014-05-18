@@ -6,8 +6,8 @@
  * libvdpau-va-gl is distributed under the terms of the LGPLv3. See COPYING for details.
  */
 
-#ifndef VA_GL_SRC_PIXFMT_COMPAT_H
-#define VA_GL_SRC_PIXFMT_COMPAT_H
+#ifndef VA_GL_SRC_COMPAT_H
+#define VA_GL_SRC_COMPAT_H
 
 #include <libavutil/pixfmt.h>
 
@@ -22,4 +22,4 @@
 
 #endif // old libavutil version
 
-#endif // VA_GL_SRC_PIXFMT_COMPAT_H
+#endif // VA_GL_SRC_COMPAT_H

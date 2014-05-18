@@ -11,7 +11,7 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <libswscale/swscale.h>
-#include "pixfmt_compat.h"
+#include "compat.h"
 #include "shaders.h"
 #include <stdlib.h>
 #include <string.h>
