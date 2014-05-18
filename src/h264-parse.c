@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <glib.h>
 #include "h264-parse.h"
 
 #define NOT_IMPLEMENTED(str)        assert(0 && "not implemented" && str)
@@ -130,8 +131,8 @@ reset_va_picture_h264(VAPictureH264 *p)
 }
 
 static
-int
-comparison_function_1(const void *p1, const void *p2, void *context)
+gint
+comparison_fcn_1(gconstpointer p1, gconstpointer p2, gpointer context)
 {
     const int idx_1 = *(const int *)p1;
     const int idx_2 = *(const int *)p2;
@@ -201,9 +202,9 @@ fill_ref_pic_list(struct slice_parameters *sp, const VAPictureParameterBufferH26
         // TODO: implement interlaced P slices
         ctx.what = 1;
         ctx.descending = 0;
-        qsort_r(idcs_asc, frame_count, sizeof(idcs_asc[0]), &comparison_function_1, &ctx);
+        g_qsort_with_data(idcs_asc, frame_count, sizeof(idcs_asc[0]), &comparison_fcn_1, &ctx);
         ctx.descending = 1;
-        qsort_r(idcs_desc, frame_count, sizeof(idcs_desc[0]), &comparison_function_1, &ctx);
+        g_qsort_with_data(idcs_desc, frame_count, sizeof(idcs_desc[0]), &comparison_fcn_1, &ctx);
 
         int ptr = 0;
         for (int k = 0; k < frame_count; k ++)
@@ -217,9 +218,9 @@ fill_ref_pic_list(struct slice_parameters *sp, const VAPictureParameterBufferH26
     } else if (SLICE_TYPE_B == sp->slice_type && !vapp->pic_fields.bits.field_pic_flag) {
         ctx.what = 1;
         ctx.descending = 0;
-        qsort_r(idcs_asc, frame_count, sizeof(idcs_asc[0]), &comparison_function_1, &ctx);
+        g_qsort_with_data(idcs_asc, frame_count, sizeof(idcs_asc[0]), &comparison_fcn_1, &ctx);
         ctx.descending = 1;
-        qsort_r(idcs_desc, frame_count, sizeof(idcs_desc[0]), &comparison_function_1, &ctx);
+        g_qsort_with_data(idcs_desc, frame_count, sizeof(idcs_desc[0]), &comparison_fcn_1, &ctx);
 
         int ptr0 = 0;
         int ptr1 = 0;
