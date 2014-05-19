@@ -19,6 +19,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef __FreeBSD__
+#include <sys/thr.h>
+#endif
 
 
 static __thread struct {
@@ -81,10 +84,18 @@ static
 gboolean
 is_thread_expired(gpointer key, gpointer value, gpointer user_data)
 {
+#ifdef __linux__
     int thread_id = GPOINTER_TO_INT(key);
+#elif __FreeBSD__
+    long thread_id = (long)key;
+#endif
     (void)value;
     (void)user_data;
+#ifdef __linux__
     if (kill(thread_id, 0) == 0) {
+#elif __FreeBSD__
+    if (thr_kill(thread_id, 0) == 0) {
+#endif
         // thread still exists, do not delete element
         return FALSE;
     }
@@ -113,7 +124,12 @@ glx_ctx_push_thread_local(VdpDeviceData *deviceData)
     glx_ctx_lock();
     Display *dpy = deviceData->display;
     const Window wnd = deviceData->root;
+#ifdef __linux__
     int thread_id = (int)syscall(__NR_gettid);
+#elif __FreeBSD__
+    long thread_id;
+    thr_self(&thread_id);
+#endif
 
     ctx_stack.dpy = glXGetCurrentDisplay();
     if (!ctx_stack.dpy)
@@ -122,12 +138,20 @@ glx_ctx_push_thread_local(VdpDeviceData *deviceData)
     ctx_stack.glc =     glXGetCurrentContext();
     ctx_stack.element_count ++;
 
+#ifdef __linux__
     struct val_s *val = g_hash_table_lookup(glc_hash_table, GINT_TO_POINTER(thread_id));
+#elif __FreeBSD__
+    struct val_s *val = g_hash_table_lookup(glc_hash_table, (gconstpointer)thread_id);
+#endif
     if (!val) {
         GLXContext glc = glXCreateContext(dpy, root_vi, root_glc, GL_TRUE);
         assert(glc);
         val = make_val(dpy, glc);
+#ifdef __linux__
         g_hash_table_insert(glc_hash_table, GINT_TO_POINTER(thread_id), val);
+#elif __FreeBSD__
+        g_hash_table_insert(glc_hash_table, (gpointer)thread_id, val);
+#endif
 
         // try cleanup expired entries
         g_hash_table_foreach_remove(glc_hash_table, is_thread_expired, NULL);

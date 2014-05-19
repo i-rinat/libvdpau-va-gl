@@ -9,6 +9,9 @@
 #define GL_GLEXT_PROTOTYPES
 #define _GNU_SOURCE
 #define _XOPEN_SOURCE 500
+#ifdef __FreeBSD__
+#define __BSD_VISIBLE 1
+#endif
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>

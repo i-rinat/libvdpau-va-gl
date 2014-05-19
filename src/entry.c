@@ -17,6 +17,10 @@
 #include "api.h"
 #include "trace.h"
 #include "globals.h"
+#include <sys/time.h>
+#ifdef __FreeBSD__
+#include <sys/thr.h>
+#endif
 
 #include <sys/syscall.h>
 #include <unistd.h>
@@ -51,7 +55,13 @@ trc_hk(void *longterm_param, void *shortterm_param, int origin, int after)
     }
 
     if (before && global.quirks.log_thread_id) {
+#ifdef __linux__
         printf("[%5d] ", (pid_t)syscall(__NR_gettid));
+#elif __FreeBSD__
+        long thr_id;
+        thr_self(&thr_id);
+        printf("[%6ld] ", thr_id);
+#endif
     }
 }
 
