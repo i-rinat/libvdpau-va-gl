@@ -206,7 +206,7 @@ do_presentation_queue_display(VdpPresentationQueueData *pqData)
         glMatrixMode(GL_TEXTURE);
         glLoadIdentity();
 
-        glColor3f(0.8, 0.08, 0.35);
+        glColor4f(1.0, 1.0, 1.0, 0.2);
         glBegin(GL_QUADS);
             glTexCoord2i(0, 0);
             glVertex2i(target_width - watermark_width, target_height - watermark_height);
