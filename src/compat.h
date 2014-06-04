@@ -9,6 +9,7 @@
 #ifndef VA_GL_SRC_COMPAT_H
 #define VA_GL_SRC_COMPAT_H
 
+#include <libavutil/version.h>
 #include <libavutil/pixfmt.h>
 #include <unistd.h>
 #include <sys/syscall.h>
