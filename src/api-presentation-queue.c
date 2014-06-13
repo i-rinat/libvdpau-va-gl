@@ -167,9 +167,7 @@ do_presentation_queue_display(VdpPresentationQueueData *pqData, struct task_s *t
 
     glx_ctx_lock();
     recreate_pixmaps_if_geometry_changed(pqData->targetData);
-    glx_ctx_unlock();
-    glx_ctx_push_global(deviceData->display, pqData->targetData->glx_pixmap,
-                        pqData->targetData->glc);
+    glXMakeCurrent(deviceData->display, pqData->targetData->glx_pixmap, pqData->targetData->glc);
 
     const uint32_t target_width  = (clip_width > 0)  ? clip_width  : surfData->width;
     const uint32_t target_height = (clip_height > 0) ? clip_height : surfData->height;
@@ -224,21 +222,18 @@ do_presentation_queue_display(VdpPresentationQueueData *pqData, struct task_s *t
 
     glFinish();
     GLenum gl_error = glGetError();
-    glx_ctx_pop();
 
     x11_push_eh();
-    glx_ctx_lock();
-    XSync(deviceData->display, False);
     XCopyArea(deviceData->display, pqData->targetData->pixmap, pqData->targetData->drawable,
               pqData->targetData->plain_copy_gc, 0, 0, target_width, target_height, 0, 0);
     XSync(deviceData->display, False);
     int x11_err = x11_pop_eh();
-    glx_ctx_unlock();
     if (x11_err != Success) {
         char buf[200] = { 0 };
         XGetErrorText(deviceData->display, x11_err, buf, sizeof(buf));
         traceError("warning (%s): caught X11 error %s\n", __func__, buf);
     }
+    glx_ctx_unlock();
 
     struct timespec now;
     clock_gettime(CLOCK_REALTIME, &now);
@@ -300,12 +295,6 @@ presentation_thread(void *param)
                 // task is ready to go
                 g_queue_pop_head(int_q); // remove it from queue
 
-                if (task->terminate) {
-                    g_slice_free(struct task_s, task);
-                    // jump out of the loop
-                    break;
-                }
-
                 // run the task
                 do_presentation_queue_display(pqData, task);
                 g_slice_free(struct task_s, task);
@@ -317,8 +306,13 @@ presentation_thread(void *param)
         }
 
         task = g_async_queue_timeout_pop(async_q, timeout);
-        if (task)
+        if (task) {
+            if (task->terminate) {
+                g_slice_free(struct task_s, task);
+                break;
+            }
             g_queue_insert_sorted(int_q, task, compare_func, NULL);
+        }
     }
 
     g_queue_free(int_q);
