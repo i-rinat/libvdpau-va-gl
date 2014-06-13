@@ -21,8 +21,6 @@
 #define MAX_RENDER_TARGETS          21
 #define NUM_RENDER_TARGETS_H264     21
 
-#define PRESENTATION_QUEUE_LENGTH   10
-
 #define VDP_GENERIC_HANDLE_FIELDS                   \
     struct {                                        \
         HandleType      type;   /**< handle type */ \
@@ -120,26 +118,9 @@ typedef struct {
     VdpPresentationQueueTargetData *targetData;
     VdpPresentationQueueTarget      target;
     VdpColor                        bg_color;   ///< background color
-
-    struct {
-        int head;
-        int used;
-        int firstfree;
-        int freelist[PRESENTATION_QUEUE_LENGTH];
-        struct {
-            VdpTime             t;      ///< earliest_presentation_time
-            int                 next;
-            uint32_t            clip_width;
-            uint32_t            clip_height;
-            VdpOutputSurface    surface;
-        } item[PRESENTATION_QUEUE_LENGTH];
-    } queue;
-
-    pthread_t           worker_thread;
-    pthread_barrier_t   thread_start_barrier;
-    pthread_cond_t      new_work_available;
-    pthread_mutex_t     queue_mutex;
-    int                 thread_state;   ///< 0 -- running, 1 -- terminating, 2 -- terminated
+    GAsyncQueue                    *async_q;
+    pthread_t                       worker_thread;
+    pthread_barrier_t               thread_start_barrier;
 } VdpPresentationQueueData;
 
 /** @brief VdpVideoSurface object parameters */

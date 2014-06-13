@@ -23,6 +23,15 @@
 #include "trace.h"
 #include "watermark.h"
 
+
+struct task_s {
+    struct timespec     when;
+    uint32_t            clip_width;
+    uint32_t            clip_height;
+    VdpOutputSurface    surface;
+    unsigned int        terminate;
+};
+
 static
 VdpTime
 timespec2vdptime(struct timespec t)
@@ -145,21 +154,12 @@ recreate_pixmaps_if_geometry_changed(VdpPresentationQueueTargetData *pqTargetDat
 
 static
 void
-do_presentation_queue_display(VdpPresentationQueueData *pqData)
+do_presentation_queue_display(VdpPresentationQueueData *pqData, struct task_s *task)
 {
-    assert(pqData->queue.used > 0);
-
-    const int entry = pqData->queue.head;
     VdpDeviceData *deviceData = pqData->deviceData;
-    VdpOutputSurface surface = pqData->queue.item[entry].surface;
-    const uint32_t clip_width = pqData->queue.item[entry].clip_width;
-    const uint32_t clip_height = pqData->queue.item[entry].clip_height;
-
-    // remove first entry from queue
-    pqData->queue.used --;
-    pqData->queue.freelist[pqData->queue.head] = pqData->queue.firstfree;
-    pqData->queue.firstfree = pqData->queue.head;
-    pqData->queue.head = pqData->queue.item[pqData->queue.head].next;
+    const VdpOutputSurface surface = task->surface;
+    const uint32_t clip_width = task->clip_width;
+    const uint32_t clip_height = task->clip_height;
 
     VdpOutputSurfaceData *surfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (surfData == NULL)
@@ -259,58 +259,70 @@ do_presentation_queue_display(VdpPresentationQueueData *pqData)
     }
 }
 
+gint
+compare_func(gconstpointer a, gconstpointer b, gpointer user_data)
+{
+    const struct task_s *task_a = a;
+    const struct task_s *task_b = b;
+
+    if (task_a->when.tv_sec < task_b->when.tv_sec)
+        return -1;
+    else if (task_a->when.tv_sec > task_b->when.tv_sec)
+        return 1;
+    else if (task_a->when.tv_nsec < task_b->when.tv_nsec)
+        return -1;
+    else if (task_a->when.tv_nsec > task_b->when.tv_nsec)
+        return 1;
+    else
+        return 0;
+}
+
 static
 void *
 presentation_thread(void *param)
 {
     VdpPresentationQueueData *pqData = (VdpPresentationQueueData *)param;
+    GAsyncQueue *async_q = pqData->async_q; // used to accept tasks from other threads
+    GQueue *int_q = g_queue_new();          // internal queue of task, always sorted
 
-    pthread_mutex_lock(&pqData->queue_mutex);
     pthread_barrier_wait(&pqData->thread_start_barrier);
     while (1) {
-        struct timespec now;
-        clock_gettime(CLOCK_REALTIME, &now);
-        struct timespec target_time = now;
+        gint64 timeout;
+        struct task_s *task = g_queue_peek_head(int_q);
 
-        while (1) {
-            int ret;
-            ret = pthread_cond_timedwait(&pqData->new_work_available,
-                                         &pqData->queue_mutex, &target_time);
-            if (ret != 0 && ret != ETIMEDOUT) {
-                traceError("error (%s): pthread_cond_timedwait failed with code %d\n", __func__,
-                           ret);
-                pthread_mutex_unlock(&pqData->queue_mutex);
-                return NULL;
-            }
-
+        if (task) {
+            // internal queue have a task
             struct timespec now;
             clock_gettime(CLOCK_REALTIME, &now);
-            if (pqData->thread_state == 1) {
-                pqData->thread_state = 2;
-                pthread_mutex_unlock(&pqData->queue_mutex);
-                return NULL;
-            }
-            if (pqData->queue.head != -1) {
-                struct timespec ht = vdptime2timespec(pqData->queue.item[pqData->queue.head].t);
-                if (now.tv_sec > ht.tv_sec ||
-                    (now.tv_sec == ht.tv_sec && now.tv_nsec > ht.tv_nsec))
-                {
-                    // break loop and process event
+            timeout = (task->when.tv_sec - now.tv_sec) * 1000 * 1000 +
+                      (task->when.tv_nsec - now.tv_nsec) / 1000;
+            if (timeout <= 0) {
+                // task is ready to go
+                g_queue_pop_head(int_q); // remove it from queue
+
+                if (task->terminate) {
+                    g_slice_free(struct task_s, task);
+                    // jump out of the loop
                     break;
-                } else {
-                    // sleep until next event
-                    target_time = ht;
                 }
-            } else {
-                // queue empty, no work to do. Wait for next event
-                target_time = now;
-                target_time.tv_sec += 1;
+
+                // run the task
+                do_presentation_queue_display(pqData, task);
+                g_slice_free(struct task_s, task);
+                continue;
             }
+        } else {
+            // no tasks in queue, sleep for a while
+            timeout = 1000 * 1000; // one second
         }
 
-        // do event processing
-        do_presentation_queue_display(pqData);
+        task = g_async_queue_timeout_pop(async_q, timeout);
+        if (task)
+            g_queue_insert_sorted(int_q, task, compare_func, NULL);
     }
+
+    g_queue_free(int_q);
+    return NULL;
 }
 
 VdpStatus
@@ -346,42 +358,25 @@ vdpPresentationQueueCreate(VdpDevice device, VdpPresentationQueueTarget presenta
     data->bg_color.green = 0.0;
     data->bg_color.blue = 0.0;
     data->bg_color.alpha = 0.0;
-    data->thread_state = 0;
 
     ref_device(deviceData);
     ref_pq_target(targetData);
     *presentation_queue = handle_insert(data);
 
     // initialize queue
-    data->queue.head = -1;
-    data->queue.used = 0;
-    for (unsigned int k = 0; k < PRESENTATION_QUEUE_LENGTH; k ++) {
-        data->queue.item[k].next = -1;
-        // other fields are zero due to calloc
-    }
-    for (unsigned int k = 0; k < PRESENTATION_QUEUE_LENGTH - 1; k ++)
-        data->queue.freelist[k] = k + 1;
-    data->queue.freelist[PRESENTATION_QUEUE_LENGTH - 1] = -1;
-    data->queue.firstfree = 0;
+    data->async_q = g_async_queue_new();
 
-    pthread_cond_init(&data->new_work_available, NULL);
-    pthread_mutex_init(&data->queue_mutex, NULL);
+    // initialize startup barrier
     pthread_barrier_init(&data->thread_start_barrier, NULL, 2);
 
     // launch worker thread
-    pthread_mutex_lock(&data->queue_mutex);
     pthread_create(&data->worker_thread, NULL, presentation_thread, data);
     handle_release(device);
     handle_release(presentation_queue_target);
 
-    pthread_mutex_unlock(&data->queue_mutex);
-
-    // wait till worker thread passes first lock
+    // wait till worker thread passes startup barrier
     pthread_barrier_wait(&data->thread_start_barrier);
-    // wait till worker thread unlocks queue_mutex. That means, it started listening to
-    // conditional variable
-    pthread_mutex_lock(&data->queue_mutex);
-    pthread_mutex_unlock(&data->queue_mutex);
+    pthread_barrier_destroy(&data->thread_start_barrier);
 
     return VDP_STATUS_OK;
 }
@@ -394,15 +389,13 @@ vdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
     if (NULL == pqData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    pthread_mutex_lock(&pqData->queue_mutex);
-    pqData->thread_state = 1;   // send termination request
-    pthread_cond_broadcast(&pqData->new_work_available);
-    pthread_mutex_unlock(&pqData->queue_mutex);
+    struct task_s *task = g_slice_new0(struct task_s);
+    task->when = vdptime2timespec(0);   // as early as possible
+    task->terminate = 1;
 
+    g_async_queue_push(pqData->async_q, task);
     pthread_join(pqData->worker_thread, NULL);
 
-    pthread_cond_destroy(&pqData->new_work_available);
-    pthread_barrier_destroy(&pqData->thread_start_barrier);
     handle_expunge(presentation_queue);
     unref_device(pqData->deviceData);
     unref_pq_target(pqData->targetData);
@@ -472,18 +465,6 @@ vdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSu
     if (NULL == pqData)
         return VDP_STATUS_INVALID_HANDLE;
 
-    // push work to queue
-    while (pqData && pqData->queue.used >= PRESENTATION_QUEUE_LENGTH) {
-        // wait while queue is full
-        // TODO: check for deadlock here
-        handle_release(presentation_queue);
-        usleep(10*1000);
-        pqData = handle_acquire(presentation_queue, HANDLETYPE_PRESENTATION_QUEUE);
-    }
-
-    if (NULL == pqData)
-        return VDP_STATUS_INVALID_HANDLE;
-
     VdpOutputSurfaceData *surfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
     if (NULL == surfData) {
         handle_release(presentation_queue);
@@ -495,36 +476,15 @@ vdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSu
         return VDP_STATUS_HANDLE_DEVICE_MISMATCH;
     }
 
-    pthread_mutex_lock(&pqData->queue_mutex);
-    pqData->queue.used ++;
-    int new_item = pqData->queue.firstfree;
-    assert(new_item != -1);
-    pqData->queue.firstfree = pqData->queue.freelist[new_item];
+    struct task_s *task = g_slice_new0(struct task_s);
 
-    pqData->queue.item[new_item].t = earliest_presentation_time;
-    pqData->queue.item[new_item].clip_width = clip_width;
-    pqData->queue.item[new_item].clip_height = clip_height;
-    pqData->queue.item[new_item].surface = surface;
+    task->when = vdptime2timespec(earliest_presentation_time);
+    task->clip_width = clip_width;
+    task->clip_height = clip_height;
+    task->surface = surface;
+
     surfData->first_presentation_time = 0;
     surfData->status = VDP_PRESENTATION_QUEUE_STATUS_QUEUED;
-
-    // keep queue sorted
-    if (pqData->queue.head == -1 ||
-        earliest_presentation_time < pqData->queue.item[pqData->queue.head].t)
-    {
-        pqData->queue.item[new_item].next = pqData->queue.head;
-        pqData->queue.head = new_item;
-    } else {
-        int ptr = pqData->queue.head;
-        int prev = ptr;
-        while (ptr != -1 && pqData->queue.item[ptr].t <= earliest_presentation_time) {
-            prev = ptr;
-            ptr = pqData->queue.item[ptr].next;
-        }
-        pqData->queue.item[new_item].next = ptr;
-        pqData->queue.item[prev].next = new_item;
-    }
-    pthread_mutex_unlock(&pqData->queue_mutex);
 
     if (global.quirks.log_pq_delay) {
         struct timespec now;
@@ -532,9 +492,7 @@ vdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSu
         surfData->queued_at = timespec2vdptime(now);
     }
 
-    pthread_mutex_lock(&pqData->queue_mutex);
-    pthread_cond_broadcast(&pqData->new_work_available);
-    pthread_mutex_unlock(&pqData->queue_mutex);
+    g_async_queue_push(pqData->async_q, task);
 
     handle_release(presentation_queue);
     handle_release(surface);
