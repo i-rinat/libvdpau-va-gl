@@ -118,8 +118,6 @@ typedef struct {
     VdpPresentationQueueTargetData *targetData;
     VdpPresentationQueueTarget      target;
     VdpColor                        bg_color;   ///< background color
-    GAsyncQueue                    *async_q;
-    pthread_t                       worker_thread;
 } VdpPresentationQueueData;
 
 /** @brief VdpVideoSurface object parameters */

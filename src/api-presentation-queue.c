@@ -25,12 +25,17 @@
 
 
 struct task_s {
-    struct timespec     when;
-    uint32_t            clip_width;
-    uint32_t            clip_height;
-    VdpOutputSurface    surface;
-    unsigned int        terminate;
+    struct timespec         when;
+    uint32_t                clip_width;
+    uint32_t                clip_height;
+    VdpOutputSurface        surface;
+    unsigned int            wipe_tasks;
+    VdpPresentationQueue    queue_id;
 };
+
+static GAsyncQueue *async_q = NULL;
+static pthread_t    presentation_thread_id;
+
 
 static
 VdpTime
@@ -154,16 +159,22 @@ recreate_pixmaps_if_geometry_changed(VdpPresentationQueueTargetData *pqTargetDat
 
 static
 void
-do_presentation_queue_display(VdpPresentationQueueData *pqData, struct task_s *task)
+do_presentation_queue_display(struct task_s *task)
 {
+    VdpPresentationQueueData *pqData =
+        handle_acquire(task->queue_id, HANDLETYPE_PRESENTATION_QUEUE);
+    if (!pqData)
+        return;
     VdpDeviceData *deviceData = pqData->deviceData;
     const VdpOutputSurface surface = task->surface;
     const uint32_t clip_width = task->clip_width;
     const uint32_t clip_height = task->clip_height;
 
     VdpOutputSurfaceData *surfData = handle_acquire(surface, HANDLETYPE_OUTPUT_SURFACE);
-    if (surfData == NULL)
+    if (surfData == NULL) {
+        handle_release(task->queue_id);
         return;
+    }
 
     glx_ctx_lock();
     recreate_pixmaps_if_geometry_changed(pqData->targetData);
@@ -248,6 +259,7 @@ do_presentation_queue_display(VdpPresentationQueueData *pqData, struct task_s *t
     }
 
     handle_release(surface);
+    handle_release(task->queue_id);
 
     if (GL_NO_ERROR != gl_error) {
         traceError("error (%s): gl error %d\n", __func__, gl_error);
@@ -276,8 +288,6 @@ static
 void *
 presentation_thread(void *param)
 {
-    VdpPresentationQueueData *pqData = (VdpPresentationQueueData *)param;
-    GAsyncQueue *async_q = pqData->async_q; // used to accept tasks from other threads
     GQueue *int_q = g_queue_new();          // internal queue of task, always sorted
 
     while (1) {
@@ -295,7 +305,7 @@ presentation_thread(void *param)
                 g_queue_pop_head(int_q); // remove it from queue
 
                 // run the task
-                do_presentation_queue_display(pqData, task);
+                do_presentation_queue_display(task);
                 g_slice_free(struct task_s, task);
                 continue;
             }
@@ -306,9 +316,19 @@ presentation_thread(void *param)
 
         task = g_async_queue_timeout_pop(async_q, timeout);
         if (task) {
-            if (task->terminate) {
+            if (task->wipe_tasks) {
+                // create new internal queue by filtering old
+                GQueue *new_q = g_queue_new();
+                while (!g_queue_is_empty(int_q)) {
+                    struct task_s *t = g_queue_pop_head(int_q);
+                    if (t->queue_id != task->queue_id)
+                        g_queue_push_tail(new_q, t);
+                }
+                g_queue_free(int_q);
+                int_q = new_q;
+
                 g_slice_free(struct task_s, task);
-                break;
+                continue;
             }
             g_queue_insert_sorted(int_q, task, compare_func, NULL);
         }
@@ -356,11 +376,12 @@ vdpPresentationQueueCreate(VdpDevice device, VdpPresentationQueueTarget presenta
     ref_pq_target(targetData);
     *presentation_queue = handle_insert(data);
 
-    // initialize queue
-    data->async_q = g_async_queue_new();
+    // initialize queue and launch worker thread
+    if (!async_q) {
+        async_q = g_async_queue_new();
+        pthread_create(&presentation_thread_id, NULL, presentation_thread, data);
+    }
 
-    // launch worker thread
-    pthread_create(&data->worker_thread, NULL, presentation_thread, data);
     handle_release(device);
     handle_release(presentation_queue_target);
 
@@ -377,10 +398,9 @@ vdpPresentationQueueDestroy(VdpPresentationQueue presentation_queue)
 
     struct task_s *task = g_slice_new0(struct task_s);
     task->when = vdptime2timespec(0);   // as early as possible
-    task->terminate = 1;
-
-    g_async_queue_push(pqData->async_q, task);
-    pthread_join(pqData->worker_thread, NULL);
+    task->queue_id = presentation_queue;
+    task->wipe_tasks = 1;
+    g_async_queue_push(async_q, task);
 
     handle_expunge(presentation_queue);
     unref_device(pqData->deviceData);
@@ -468,6 +488,7 @@ vdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSu
     task->clip_width = clip_width;
     task->clip_height = clip_height;
     task->surface = surface;
+    task->queue_id = presentation_queue;
 
     surfData->first_presentation_time = 0;
     surfData->status = VDP_PRESENTATION_QUEUE_STATUS_QUEUED;
@@ -478,11 +499,10 @@ vdpPresentationQueueDisplay(VdpPresentationQueue presentation_queue, VdpOutputSu
         surfData->queued_at = timespec2vdptime(now);
     }
 
-    g_async_queue_push(pqData->async_q, task);
+    g_async_queue_push(async_q, task);
 
     handle_release(presentation_queue);
     handle_release(surface);
-
     return VDP_STATUS_OK;
 }
 
