@@ -280,7 +280,6 @@ presentation_thread(void *param)
     GAsyncQueue *async_q = pqData->async_q; // used to accept tasks from other threads
     GQueue *int_q = g_queue_new();          // internal queue of task, always sorted
 
-    pthread_barrier_wait(&pqData->thread_start_barrier);
     while (1) {
         gint64 timeout;
         struct task_s *task = g_queue_peek_head(int_q);
@@ -360,17 +359,10 @@ vdpPresentationQueueCreate(VdpDevice device, VdpPresentationQueueTarget presenta
     // initialize queue
     data->async_q = g_async_queue_new();
 
-    // initialize startup barrier
-    pthread_barrier_init(&data->thread_start_barrier, NULL, 2);
-
     // launch worker thread
     pthread_create(&data->worker_thread, NULL, presentation_thread, data);
     handle_release(device);
     handle_release(presentation_queue_target);
-
-    // wait till worker thread passes startup barrier
-    pthread_barrier_wait(&data->thread_start_barrier);
-    pthread_barrier_destroy(&data->thread_start_barrier);
 
     return VDP_STATUS_OK;
 }

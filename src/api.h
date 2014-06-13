@@ -120,7 +120,6 @@ typedef struct {
     VdpColor                        bg_color;   ///< background color
     GAsyncQueue                    *async_q;
     pthread_t                       worker_thread;
-    pthread_barrier_t               thread_start_barrier;
 } VdpPresentationQueueData;
 
 /** @brief VdpVideoSurface object parameters */
