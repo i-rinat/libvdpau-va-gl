@@ -567,10 +567,12 @@ vdpOutputSurfaceQueryCapabilities(VdpDevice device, VdpRGBAFormat surface_rgba_f
         break;
     }
 
+    glx_ctx_push_thread_local(deviceData);
     GLint max_texture_size;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
 
     GLenum gl_error = glGetError();
+    glx_ctx_pop();
     if (GL_NO_ERROR != gl_error) {
         traceError("error (%s): gl error %d\n", __func__, gl_error);
         err_code = VDP_STATUS_ERROR;
