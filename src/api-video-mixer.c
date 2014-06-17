@@ -177,7 +177,9 @@ vdpVideoMixerDestroy(VdpVideoMixer mixer)
         return VDP_STATUS_INVALID_HANDLE;
     VdpDeviceData *deviceData = videoMixerData->deviceData;
 
+    glx_ctx_lock();
     _free_video_mixer_pixmaps(videoMixerData);
+    glx_ctx_unlock();
     glx_ctx_push_thread_local(deviceData);
     glDeleteTextures(1, &videoMixerData->tex_id);
     GLenum gl_error = glGetError();

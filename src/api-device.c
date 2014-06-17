@@ -179,6 +179,7 @@ vdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
     if (NULL == data)
         return VDP_STATUS_RESOURCES;
 
+    glx_ctx_lock(); // use glx lock to serialize X calls
     data->type = HANDLETYPE_DEVICE;
     data->display = display;
     data->display_orig = display_orig;   // save supplied pointer too
@@ -195,6 +196,7 @@ vdpDeviceCreateX11(Display *display_orig, int screen, VdpDevice *device,
         (PFNGLXBINDTEXIMAGEEXTPROC)glXGetProcAddress((GLubyte *)"glXBindTexImageEXT");
     data->fn.glXReleaseTexImageEXT =
         (PFNGLXRELEASETEXIMAGEEXTPROC)glXGetProcAddress((GLubyte *)"glXReleaseTexImageEXT");
+    glx_ctx_unlock();
 
     if (!data->fn.glXBindTexImageEXT || !data->fn.glXReleaseTexImageEXT) {
         traceError("error (%s): can't get glXBindTexImageEXT address\n");
