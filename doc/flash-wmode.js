@@ -38,6 +38,7 @@ function nodeInserted()
 	}
 
 	for (var embeds = document.getElementsByTagName("embed"), i = 0, embed; embed = embeds[i]; i++) {
+		if (embed.type != 'application/x-shockwave-flash') continue;
 		if ((embed.getAttribute('wmode') && embed.getAttribute('wmode') == 'direct')) continue;
 		embed.setAttribute('wmode', 'direct');
 		var html = embed.outerHTML;
