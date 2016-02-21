@@ -36,13 +36,19 @@ handle_initialize_storage(void)
 int
 handle_insert(void *data)
 {
-    int id;
+    pthread_mutexattr_t mattr;
+    pthread_mutexattr_init(&mattr);
+    pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_RECURSIVE);
+
+    VdpGenericData *gh = data;
+    pthread_mutex_init(&gh->lock, &mattr);
+    pthread_mutexattr_destroy(&mattr);
 
     pthread_mutex_lock(&lock);
     while (g_hash_table_lookup(vdp_handles, GINT_TO_POINTER(next_handle_id)))
         next_handle_id ++;
 
-    id = next_handle_id ++;
+    int id = next_handle_id ++;
     g_hash_table_insert(vdp_handles, GINT_TO_POINTER(id), data);
 
     pthread_mutex_unlock(&lock);
