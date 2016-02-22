@@ -143,6 +143,12 @@ reset_va_picture_h264(VAPictureH264 *p)
     p->BottomFieldOrderCnt  = 0;
 }
 
+struct comparison_fcn1_context {
+    int                  descending;
+    int                  what;
+    const VAPictureH264 *ReferenceFrames;
+};
+
 static
 gint
 comparison_fcn_1(gconstpointer p1, gconstpointer p2, gpointer context)
@@ -150,11 +156,7 @@ comparison_fcn_1(gconstpointer p1, gconstpointer p2, gpointer context)
     const int idx_1 = *(const int *)p1;
     const int idx_2 = *(const int *)p2;
 
-    struct {
-        int descending;
-        int what;
-        const VAPictureH264 *ReferenceFrames;
-    } *ctx = context;
+    struct comparison_fcn1_context *ctx = context;
 
     int value1 = 0, value2 = 0;
     switch (ctx->what) {
@@ -191,11 +193,7 @@ void
 fill_ref_pic_list(struct slice_parameters *sp, const VAPictureParameterBufferH264 *vapp)
 {
     int idcs_asc[32], idcs_desc[32];
-    struct {
-        int descending;
-        int what;
-        const VAPictureH264 *ReferenceFrames;
-    } ctx;
+    struct comparison_fcn1_context ctx;
 
     if (SLICE_TYPE_I == sp->slice_type || SLICE_TYPE_SI == sp->slice_type)
         return;
