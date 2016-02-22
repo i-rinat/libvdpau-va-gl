@@ -59,22 +59,31 @@ vdpDecoderCreate(VdpDevice device, VdpDecoderProfile profile, uint32_t width, ui
     while (! final_try) {
         profile = next_profile;
         switch (profile) {
+        case VDP_DECODER_PROFILE_H264_CONSTRAINED_BASELINE:
+            va_profile = VAProfileH264ConstrainedBaseline;
+            data->num_render_targets = NUM_RENDER_TARGETS_H264;
+            next_profile = VDP_DECODER_PROFILE_H264_BASELINE;
+            break;
+
         case VDP_DECODER_PROFILE_H264_BASELINE:
             va_profile = VAProfileH264Baseline;
             data->num_render_targets = NUM_RENDER_TARGETS_H264;
             next_profile = VDP_DECODER_PROFILE_H264_MAIN;
             break;
+
         case VDP_DECODER_PROFILE_H264_MAIN:
             va_profile = VAProfileH264Main;
             data->num_render_targets = NUM_RENDER_TARGETS_H264;
             next_profile = VDP_DECODER_PROFILE_H264_HIGH;
             break;
+
         case VDP_DECODER_PROFILE_H264_HIGH:
             va_profile = VAProfileH264High;
             data->num_render_targets = NUM_RENDER_TARGETS_H264;
             // there is no more advanced profile, so it's final try
             final_try = 1;
             break;
+
         default:
             traceError("error (%s): decoder %s not implemented\n", __func__,
                        reverse_decoder_profile(profile));
@@ -349,9 +358,15 @@ vdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, VdpBool
         *is_supported = available_profiles.mpeg2_simple;
         *max_level = VDP_DECODER_LEVEL_MPEG2_HL;
         break;
+
     case VDP_DECODER_PROFILE_MPEG2_MAIN:
         *is_supported = available_profiles.mpeg2_main;
         *max_level = VDP_DECODER_LEVEL_MPEG2_HL;
+        break;
+
+    case VDP_DECODER_PROFILE_H264_CONSTRAINED_BASELINE:
+        *is_supported = available_profiles.h264_baseline || available_profiles.h264_main;
+        *max_level = VDP_DECODER_LEVEL_H264_5_1;
         break;
 
     case VDP_DECODER_PROFILE_H264_BASELINE:
@@ -359,10 +374,12 @@ vdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, VdpBool
         // TODO: Do underlying libva really support 5.1?
         *max_level = VDP_DECODER_LEVEL_H264_5_1;
         break;
+
     case VDP_DECODER_PROFILE_H264_MAIN:
         *is_supported = available_profiles.h264_main;
         *max_level = VDP_DECODER_LEVEL_H264_5_1;
         break;
+
     case VDP_DECODER_PROFILE_H264_HIGH:
         *is_supported = available_profiles.h264_high;
         *max_level = VDP_DECODER_LEVEL_H264_5_1;
@@ -372,10 +389,12 @@ vdpDecoderQueryCapabilities(VdpDevice device, VdpDecoderProfile profile, VdpBool
         *is_supported = available_profiles.vc1_simple;
         *max_level = VDP_DECODER_LEVEL_VC1_SIMPLE_MEDIUM;
         break;
+
     case VDP_DECODER_PROFILE_VC1_MAIN:
         *is_supported = available_profiles.vc1_main;
         *max_level = VDP_DECODER_LEVEL_VC1_MAIN_HIGH;
         break;
+
     case VDP_DECODER_PROFILE_VC1_ADVANCED:
         *is_supported = available_profiles.vc1_advanced;
         *max_level = VDP_DECODER_LEVEL_VC1_ADVANCED_L4;
@@ -673,9 +692,10 @@ vdpDecoderRender(VdpDecoder decoder, VdpVideoSurface target,
         goto quit;
     }
 
-    if (VDP_DECODER_PROFILE_H264_BASELINE == decoderData->profile ||
-        VDP_DECODER_PROFILE_H264_MAIN ==     decoderData->profile ||
-        VDP_DECODER_PROFILE_H264_HIGH ==     decoderData->profile)
+    if (decoderData->profile == VDP_DECODER_PROFILE_H264_CONSTRAINED_BASELINE ||
+        decoderData->profile == VDP_DECODER_PROFILE_H264_BASELINE ||
+        decoderData->profile == VDP_DECODER_PROFILE_H264_MAIN ||
+        decoderData->profile == VDP_DECODER_PROFILE_H264_HIGH)
     {
         // TODO: check exit code
         vdpDecoderRender_h264(decoder, decoderData, dstSurfData, picture_info,
