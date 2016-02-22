@@ -115,22 +115,44 @@ do_fill_va_slice_parameter_buffer(struct slice_parameters const * const sp,
     vasp->chroma_log2_weight_denom = sp->chroma_log2_weight_denom;
 
     vasp->luma_weight_l0_flag = sp->luma_weight_l0_flag;
-    for (int k = 0; k < 32; k ++) vasp->luma_weight_l0[k] = sp->luma_weight_l0[k];
-    for (int k = 0; k < 32; k ++) vasp->luma_offset_l0[k] = sp->luma_offset_l0[k];
+    for (int k = 0; k < 32; k ++)
+        vasp->luma_weight_l0[k] = sp->luma_weight_l0[k];
+
+    for (int k = 0; k < 32; k ++)
+        vasp->luma_offset_l0[k] = sp->luma_offset_l0[k];
+
     vasp->chroma_weight_l0_flag = sp->chroma_weight_l0_flag;
-    for (int k = 0; k < 32; k ++) vasp->chroma_weight_l0[k][0] = sp->chroma_weight_l0[k][0];
-    for (int k = 0; k < 32; k ++) vasp->chroma_weight_l0[k][1] = sp->chroma_weight_l0[k][1];
-    for (int k = 0; k < 32; k ++) vasp->chroma_offset_l0[k][0] = sp->chroma_offset_l0[k][0];
-    for (int k = 0; k < 32; k ++) vasp->chroma_offset_l0[k][1] = sp->chroma_offset_l0[k][1];
+    for (int k = 0; k < 32; k ++)
+        vasp->chroma_weight_l0[k][0] = sp->chroma_weight_l0[k][0];
+
+    for (int k = 0; k < 32; k ++)
+        vasp->chroma_weight_l0[k][1] = sp->chroma_weight_l0[k][1];
+
+    for (int k = 0; k < 32; k ++)
+        vasp->chroma_offset_l0[k][0] = sp->chroma_offset_l0[k][0];
+
+    for (int k = 0; k < 32; k ++)
+        vasp->chroma_offset_l0[k][1] = sp->chroma_offset_l0[k][1];
 
     vasp->luma_weight_l1_flag = sp->luma_weight_l1_flag;
-    for (int k = 0; k < 32; k ++) vasp->luma_weight_l1[k] = sp->luma_weight_l1[k];
-    for (int k = 0; k < 32; k ++) vasp->luma_offset_l1[k] = sp->luma_offset_l1[k];
+    for (int k = 0; k < 32; k ++)
+        vasp->luma_weight_l1[k] = sp->luma_weight_l1[k];
+
+    for (int k = 0; k < 32; k ++)
+        vasp->luma_offset_l1[k] = sp->luma_offset_l1[k];
+
     vasp->chroma_weight_l1_flag = sp->chroma_weight_l1_flag;
-    for (int k = 0; k < 32; k ++) vasp->chroma_weight_l1[k][0] = sp->chroma_weight_l1[k][0];
-    for (int k = 0; k < 32; k ++) vasp->chroma_weight_l1[k][1] = sp->chroma_weight_l1[k][1];
-    for (int k = 0; k < 32; k ++) vasp->chroma_offset_l1[k][0] = sp->chroma_offset_l1[k][0];
-    for (int k = 0; k < 32; k ++) vasp->chroma_offset_l1[k][1] = sp->chroma_offset_l1[k][1];
+    for (int k = 0; k < 32; k ++)
+        vasp->chroma_weight_l1[k][0] = sp->chroma_weight_l1[k][0];
+
+    for (int k = 0; k < 32; k ++)
+        vasp->chroma_weight_l1[k][1] = sp->chroma_weight_l1[k][1];
+
+    for (int k = 0; k < 32; k ++)
+        vasp->chroma_offset_l1[k][0] = sp->chroma_offset_l1[k][0];
+
+    for (int k = 0; k < 32; k ++)
+        vasp->chroma_offset_l1[k][1] = sp->chroma_offset_l1[k][1];
 }
 
 void
@@ -195,7 +217,7 @@ fill_ref_pic_list(struct slice_parameters *sp, const VAPictureParameterBufferH26
     int idcs_asc[32], idcs_desc[32];
     struct comparison_fcn1_context ctx;
 
-    if (SLICE_TYPE_I == sp->slice_type || SLICE_TYPE_SI == sp->slice_type)
+    if (sp->slice_type == SLICE_TYPE_I || sp->slice_type == SLICE_TYPE_SI)
         return;
 
     ctx.ReferenceFrames = vapp->ReferenceFrames;
@@ -209,7 +231,7 @@ fill_ref_pic_list(struct slice_parameters *sp, const VAPictureParameterBufferH26
         frame_count ++;
     }
 
-    if (SLICE_TYPE_P == sp->slice_type || SLICE_TYPE_SP == sp->slice_type) {
+    if (sp->slice_type == SLICE_TYPE_P || sp->slice_type == SLICE_TYPE_SP) {
         // TODO: implement interlaced P slices
         ctx.what = 1;
         ctx.descending = 0;
@@ -226,7 +248,7 @@ fill_ref_pic_list(struct slice_parameters *sp, const VAPictureParameterBufferH26
             if (vapp->ReferenceFrames[idcs_asc[k]].flags & VA_PICTURE_H264_LONG_TERM_REFERENCE)
                 sp->RefPicList0[ptr++] = vapp->ReferenceFrames[idcs_asc[k]];
 
-    } else if (SLICE_TYPE_B == sp->slice_type && !vapp->pic_fields.bits.field_pic_flag) {
+    } else if (sp->slice_type == SLICE_TYPE_B && !vapp->pic_fields.bits.field_pic_flag) {
         ctx.what = 1;
         ctx.descending = 0;
         g_qsort_with_data(idcs_asc, frame_count, sizeof(idcs_asc[0]), &comparison_fcn_1, &ctx);
@@ -286,13 +308,15 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
     sp.nal_ref_idc = rbsp_get_u(st, 2);
     sp.nal_unit_type = rbsp_get_u(st, 5);
 
-    if (14 == sp.nal_unit_type || 20 == sp.nal_unit_type) {
+    if (sp.nal_unit_type == 14 || sp.nal_unit_type == 20) {
         NOT_IMPLEMENTED("nal unit types 14 and 20");
     }
 
     sp.first_mb_in_slice = rbsp_get_uev(st);
     sp.slice_type = rbsp_get_uev(st);
-    if (sp.slice_type > 4) sp.slice_type -= 5;    // wrap 5-9 to 0-4
+
+    if (sp.slice_type > 4)
+        sp.slice_type -= 5;     // wrap 5-9 to 0-4
 
     // as now we know slice_type, time to fill RefPicListX
     fill_ref_pic_list(&sp, vapp);
@@ -312,12 +336,12 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
         }
     }
     sp.idr_pic_id = 0;
-    if (NAL_IDR_SLICE == sp.nal_unit_type)    // IDR picture
+    if (sp.nal_unit_type == NAL_IDR_SLICE)    // IDR picture
         sp.idr_pic_id = rbsp_get_uev(st);
 
     sp.pic_order_cnt_lsb = 0;
     sp.delta_pic_order_cnt_bottom = 0;
-    if (0 == vapp->seq_fields.bits.pic_order_cnt_type) {
+    if (vapp->seq_fields.bits.pic_order_cnt_type == 0) {
         sp.pic_order_cnt_lsb =
             rbsp_get_u(st, vapp->seq_fields.bits.log2_max_pic_order_cnt_lsb_minus4 + 4);
         if (vapp->pic_fields.bits.pic_order_present_flag &&
@@ -327,8 +351,9 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
         }
     }
 
-    sp.delta_pic_order_cnt[0] = sp.delta_pic_order_cnt[1] = 0;
-    if (1 == vapp->seq_fields.bits.pic_order_cnt_type &&
+    sp.delta_pic_order_cnt[0] = 0;
+    sp.delta_pic_order_cnt[1] = 0;
+    if (vapp->seq_fields.bits.pic_order_cnt_type == 1 &&
         !vapp->seq_fields.bits.delta_pic_order_always_zero_flag)
     {
         sp.delta_pic_order_cnt[0] = rbsp_get_sev(st);
@@ -341,28 +366,28 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
         sp.redundant_pic_cnt = rbsp_get_uev(st);
 
     sp.direct_spatial_mv_pred_flag = 0;
-    if (SLICE_TYPE_B == sp.slice_type)
+    if (sp.slice_type == SLICE_TYPE_B)
         sp.direct_spatial_mv_pred_flag = rbsp_get_u(st, 1);
 
     sp.num_ref_idx_active_override_flag = 0;
     sp.num_ref_idx_l0_active_minus1 = 0;
     sp.num_ref_idx_l1_active_minus1 = 0;
-    if (SLICE_TYPE_P == sp.slice_type || SLICE_TYPE_SP == sp.slice_type ||
-        SLICE_TYPE_B == sp.slice_type)
+    if (sp.slice_type == SLICE_TYPE_P || sp.slice_type == SLICE_TYPE_SP ||
+        sp.slice_type == SLICE_TYPE_B)
     {
         sp.num_ref_idx_l0_active_minus1 = p_num_ref_idx_l0_active_minus1;
-        if (SLICE_TYPE_P != sp.slice_type)
-                sp.num_ref_idx_l1_active_minus1 = p_num_ref_idx_l1_active_minus1;
+        if (sp.slice_type != SLICE_TYPE_P)
+            sp.num_ref_idx_l1_active_minus1 = p_num_ref_idx_l1_active_minus1;
 
         sp.num_ref_idx_active_override_flag = rbsp_get_u(st, 1);
         if (sp.num_ref_idx_active_override_flag) {
             sp.num_ref_idx_l0_active_minus1 = rbsp_get_uev(st);
-            if (SLICE_TYPE_B == sp.slice_type)
+            if (sp.slice_type == SLICE_TYPE_B)
                 sp.num_ref_idx_l1_active_minus1 = rbsp_get_uev(st);
         }
     }
 
-    if (20 == sp.nal_unit_type) {
+    if (sp.nal_unit_type == 20) {
         NOT_IMPLEMENTED("nal unit type 20");
     } else {
         parse_ref_pic_list_modification(st, vapp, &sp);
@@ -376,8 +401,8 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
     sp.chroma_weight_l0_flag = 0;
     sp.chroma_weight_l1_flag = 0;
     if ((vapp->pic_fields.bits.weighted_pred_flag &&
-        (SLICE_TYPE_P == sp.slice_type || SLICE_TYPE_SP == sp.slice_type)) ||
-        (1 == vapp->pic_fields.bits.weighted_bipred_idc && SLICE_TYPE_B == sp.slice_type))
+        (sp.slice_type == SLICE_TYPE_P || sp.slice_type == SLICE_TYPE_SP)) ||
+        (vapp->pic_fields.bits.weighted_bipred_idc == 1 && sp.slice_type == SLICE_TYPE_B))
     {
         parse_pred_weight_table(st, ChromaArrayType, &sp);
     }
@@ -388,15 +413,17 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
 
     sp.cabac_init_idc = 0;
     if (vapp->pic_fields.bits.entropy_coding_mode_flag &&
-        SLICE_TYPE_I != sp.slice_type && SLICE_TYPE_SI != sp.slice_type)
+        sp.slice_type != SLICE_TYPE_I && sp.slice_type != SLICE_TYPE_SI)
+    {
             sp.cabac_init_idc = rbsp_get_uev(st);
+    }
 
     sp.slice_qp_delta = rbsp_get_sev(st);
 
     sp.sp_for_switch_flag = 0;
     sp.slice_qs_delta = 0;
-    if (SLICE_TYPE_SP == sp.slice_type || SLICE_TYPE_SI == sp.slice_type) {
-        if (SLICE_TYPE_SP == sp.slice_type)
+    if (sp.slice_type == SLICE_TYPE_SP || sp.slice_type == SLICE_TYPE_SI) {
+        if (sp.slice_type == SLICE_TYPE_SP)
             sp.sp_for_switch_flag = rbsp_get_u(st, 1);
         sp.slice_qs_delta = rbsp_get_sev(st);
     }
@@ -406,7 +433,7 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
     sp.slice_beta_offset_div2 = 0;
     if (vapp->pic_fields.bits.deblocking_filter_control_present_flag) {
         sp.disable_deblocking_filter_idc = rbsp_get_uev(st);
-        if (1 != sp.disable_deblocking_filter_idc) {
+        if (sp.disable_deblocking_filter_idc != 1) {
             sp.slice_alpha_c0_offset_div2 = rbsp_get_sev(st);
             sp.slice_beta_offset_div2 = rbsp_get_sev(st);
         }
@@ -421,7 +448,6 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
     do_fill_va_slice_parameter_buffer(&sp, vasp, st->bits_eaten);
 }
 
-
 static
 void
 parse_ref_pic_list_modification(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
@@ -430,7 +456,7 @@ parse_ref_pic_list_modification(rbsp_state_t *st, const VAPictureParameterBuffer
     const int MaxFrameNum = 1 << (vapp->seq_fields.bits.log2_max_frame_num_minus4 + 4);
     const int MaxPicNum = (vapp->pic_fields.bits.field_pic_flag) ? 2*MaxFrameNum : MaxFrameNum;
 
-    if (2 != sp->slice_type && 4 != sp->slice_type) {
+    if (sp->slice_type != SLICE_TYPE_I && sp->slice_type != SLICE_TYPE_SI) {
         int ref_pic_list_modification_flag_l0 = rbsp_get_u(st, 1);
         if (ref_pic_list_modification_flag_l0) {
             int modification_of_pic_nums_idc;
@@ -440,9 +466,9 @@ parse_ref_pic_list_modification(rbsp_state_t *st, const VAPictureParameterBuffer
                 modification_of_pic_nums_idc = rbsp_get_uev(st);
                 if (modification_of_pic_nums_idc < 2) {
                     int abs_diff_pic_num_minus1 = rbsp_get_uev(st);
-                    if (0 == modification_of_pic_nums_idc) {
+                    if (modification_of_pic_nums_idc == 0) {
                         picNumL0 -= (abs_diff_pic_num_minus1 + 1);
-                    } else { // 1 == modification_of_pic_nums_idc
+                    } else { // modification_of_pic_nums_idc == 1
                         picNumL0 += (abs_diff_pic_num_minus1 + 1);
                     }
 
@@ -469,10 +495,12 @@ parse_ref_pic_list_modification(rbsp_state_t *st, const VAPictureParameterBuffer
                     for (int k = refIdxL0; k <= sp->num_ref_idx_l0_active_minus1 + 1; k ++) {
                         if (sp->RefPicList0[k].frame_idx != picNumL0 &&
                             (sp->RefPicList0[k].flags & VA_PICTURE_H264_SHORT_TERM_REFERENCE))
-                                sp->RefPicList0[j++] = sp->RefPicList0[k];
+                        {
+                            sp->RefPicList0[j++] = sp->RefPicList0[k];
+                        }
                     }
 
-                } else if (2 == modification_of_pic_nums_idc) {
+                } else if (modification_of_pic_nums_idc == 2) {
                     NOT_IMPLEMENTED("long");
                     fprintf(stderr, "long_term_pic_num = %d\n", rbsp_get_uev(st));
                 }
@@ -482,18 +510,18 @@ parse_ref_pic_list_modification(rbsp_state_t *st, const VAPictureParameterBuffer
         }
     }
 
-    if (1 == sp->slice_type) {
+    if (sp->slice_type == SLICE_TYPE_B) {
         int ref_pic_list_modification_flag_l1 = rbsp_get_u(st, 1);
         if (ref_pic_list_modification_flag_l1) {
             NOT_IMPLEMENTED("ref pic list modification 1"); // TODO: implement this
             int modification_of_pic_nums_idc;
             do {
                 modification_of_pic_nums_idc = rbsp_get_uev(st);
-                if (0 == modification_of_pic_nums_idc ||
-                    1 == modification_of_pic_nums_idc)
+                if (modification_of_pic_nums_idc == 0 ||
+                    modification_of_pic_nums_idc == 1)
                 {
                     fprintf(stderr, "abs_diff_pic_num_minus1 = %d\n", rbsp_get_uev(st));
-                } else if (2 == modification_of_pic_nums_idc) {
+                } else if (modification_of_pic_nums_idc == 2) {
                     fprintf(stderr, "long_term_pic_num = %d\n", rbsp_get_uev(st));
                 }
             } while (modification_of_pic_nums_idc != 3);
@@ -527,7 +555,7 @@ parse_pred_weight_table(rbsp_state_t *st, const int ChromaArrayType, struct slic
 {
     sp->luma_log2_weight_denom = rbsp_get_uev(st);
     sp->chroma_log2_weight_denom = 0;
-    if (0 != ChromaArrayType)
+    if (ChromaArrayType != 0)
         sp->chroma_log2_weight_denom = rbsp_get_uev(st);
 
     fill_default_pred_weight_table(sp);
@@ -543,7 +571,7 @@ parse_pred_weight_table(rbsp_state_t *st, const int ChromaArrayType, struct slic
             if (default_luma_weight != sp->luma_weight_l0[k])
                 sp->luma_weight_l0_flag = 1;
         }
-        if (0 != ChromaArrayType) {
+        if (ChromaArrayType != 0) {
             int chroma_weight_l0_flag = rbsp_get_u(st, 1);
             if (chroma_weight_l0_flag) {
                 for (int j = 0; j < 2; j ++) {
@@ -556,7 +584,7 @@ parse_pred_weight_table(rbsp_state_t *st, const int ChromaArrayType, struct slic
         }
     }
 
-    if (1 == sp->slice_type) {
+    if (sp->slice_type == SLICE_TYPE_B) {
         for (int k = 0; k <= sp->num_ref_idx_l1_active_minus1; k ++) {
             int luma_weight_l1_flag = rbsp_get_u(st, 1);
             if (luma_weight_l1_flag) {
@@ -565,7 +593,7 @@ parse_pred_weight_table(rbsp_state_t *st, const int ChromaArrayType, struct slic
                 if (default_luma_weight != sp->luma_weight_l1[k])
                     sp->luma_weight_l1_flag = 1;
             }
-            if (0 != ChromaArrayType) {
+            if (ChromaArrayType != 0) {
                 int chroma_weight_l1_flag = rbsp_get_u(st, 1);
                 if (chroma_weight_l1_flag) {
                     for (int j = 0; j < 2; j ++) {
@@ -584,7 +612,7 @@ static
 void
 parse_dec_ref_pic_marking(rbsp_state_t *st, struct slice_parameters *sp)
 {
-    if (NAL_IDR_SLICE == sp->nal_unit_type) {
+    if (sp->nal_unit_type == NAL_IDR_SLICE) {
         sp->no_output_of_prior_pics_flag = rbsp_get_u(st, 1);
         sp->long_term_reference_flag = rbsp_get_u(st, 1);
     } else {
@@ -595,20 +623,20 @@ parse_dec_ref_pic_marking(rbsp_state_t *st, struct slice_parameters *sp)
             int memory_management_control_operation;
             do {
                 memory_management_control_operation = rbsp_get_uev(st);
-                if (1 == memory_management_control_operation ||
-                    3 == memory_management_control_operation)
+                if (memory_management_control_operation == 1 ||
+                    memory_management_control_operation == 3)
                 {
                     rbsp_get_uev(st);   // difference_of_pic_nums_minus1
                 }
-                if (2 == memory_management_control_operation) {
+                if (memory_management_control_operation == 2) {
                     rbsp_get_uev(st);   // long_term_pic_num
                 }
-                if (3 == memory_management_control_operation ||
-                    6 == memory_management_control_operation)
+                if (memory_management_control_operation == 3 ||
+                    memory_management_control_operation == 6)
                 {
                     rbsp_get_uev(st);   // long_term_frame_idx
                 }
-                if (4 == memory_management_control_operation) {
+                if (memory_management_control_operation == 4) {
                     rbsp_get_uev(st);   // max_long_term_frame_idx_plus1
                 }
             } while (memory_management_control_operation != 0);
