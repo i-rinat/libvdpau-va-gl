@@ -415,7 +415,7 @@ parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
     if (vapp->pic_fields.bits.entropy_coding_mode_flag &&
         sp.slice_type != SLICE_TYPE_I && sp.slice_type != SLICE_TYPE_SI)
     {
-            sp.cabac_init_idc = rbsp_get_uev(st);
+        sp.cabac_init_idc = rbsp_get_uev(st);
     }
 
     sp.slice_qp_delta = rbsp_get_sev(st);
