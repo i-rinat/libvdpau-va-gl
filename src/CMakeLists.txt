@@ -49,9 +49,6 @@ set(LINK_LIBRARIES
 target_link_libraries(${DRIVER_NAME} ${LINK_LIBRARIES})
 target_link_libraries(${DRIVER_NAME}_static ${LINK_LIBRARIES})
 
-# add_library (xinitthreads SHARED xinitthreads.c)
-# target_link_libraries (xinitthreads -lpthread -lX11)
-
 set_target_properties(${DRIVER_NAME}
 	PROPERTIES
 	VERSION 1
