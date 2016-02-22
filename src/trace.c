@@ -125,8 +125,8 @@ traceVdpDecoderQueryCapabilities(VdpDevice device,
     if (!trace_enabled)
         goto skip;
     traceCallHook(VDP_FUNC_ID_DECODER_QUERY_CAPABILITIES, 0, NULL);
-    fprintf(tlog, "%s%s VdpDecoderQueryCapabilities device=%d, profile=%s\n",
-        trace_header, impl_state, device, reverse_decoder_profile(profile));
+    fprintf(tlog, "%s%s VdpDecoderQueryCapabilities device=%d, profile=%s(%d)\n",
+            trace_header, impl_state, device, reverse_decoder_profile(profile), profile);
 skip:;
     VdpStatus ret = vdpDecoderQueryCapabilities(device, profile, is_supported, max_level,
         max_macroblocks, max_width, max_height);
