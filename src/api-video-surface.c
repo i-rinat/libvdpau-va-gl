@@ -134,12 +134,11 @@ vdpVideoSurfaceDestroy(VdpVideoSurface surface)
 
     glx_ctx_push_thread_local(deviceData);
     glDeleteTextures(1, &videoSurfData->tex_id);
-
     GLenum gl_error = glGetError();
+    glx_ctx_pop();
 
     if (GL_NO_ERROR != gl_error) {
         traceError("error (%s): gl error %d\n", __func__, gl_error);
-        glx_ctx_pop();
         handle_release(surface);
         return VDP_STATUS_ERROR;
     }
@@ -162,7 +161,6 @@ vdpVideoSurfaceDestroy(VdpVideoSurface surface)
         free(videoSurfData->u_plane);
     // do not free videoSurfData->v_plane, it's just pointer into the middle of u_plane
 
-    glx_ctx_pop();
     unref_device(deviceData);
     handle_expunge(surface);
     free(videoSurfData);
