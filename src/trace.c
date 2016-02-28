@@ -458,7 +458,7 @@ traceVdpVideoMixerQueryParameterValueRange(VdpDevice device,
                                            VdpVideoMixerParameter parameter,
                                            void *min_value, void *max_value)
 {
-    const char *impl_state = "{zilch}";
+    const char *impl_state = "{part}";
     if (!trace_enabled)
         goto skip;
     traceCallHook(VDP_FUNC_ID_VIDEO_MIXER_QUERY_PARAMETER_VALUE_RANGE, 0, NULL);

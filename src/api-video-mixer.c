@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <va/va_x11.h>
 #include <vdpau/vdpau.h>
+#include <string.h>
 #include "api.h"
 #include "trace.h"
 
@@ -269,8 +270,28 @@ VdpStatus
 vdpVideoMixerQueryParameterValueRange(VdpDevice device, VdpVideoMixerParameter parameter,
                                       void *min_value, void *max_value)
 {
-    (void)device; (void)parameter; (void)min_value; (void)max_value;
-    return VDP_STATUS_NO_IMPLEMENTATION;
+    uint32_t uint32_value;
+
+    switch (parameter) {
+    case VDP_VIDEO_MIXER_PARAMETER_VIDEO_SURFACE_WIDTH: // TODO: get actual limits
+        uint32_value = 16;
+        memcpy(min_value, &uint32_value, sizeof(uint32_value));
+        uint32_value = 4096;
+        memcpy(max_value, &uint32_value, sizeof(uint32_value));
+        return VDP_STATUS_OK;
+
+    case VDP_VIDEO_MIXER_PARAMETER_VIDEO_SURFACE_HEIGHT: // TODO: get actual limits
+        uint32_value = 16;
+        memcpy(min_value, &uint32_value, sizeof(uint32_value));
+        uint32_value = 4096;
+        memcpy(max_value, &uint32_value, sizeof(uint32_value));
+        return VDP_STATUS_OK;
+
+    case VDP_VIDEO_MIXER_PARAMETER_CHROMA_TYPE: // TODO
+    case VDP_VIDEO_MIXER_PARAMETER_LAYERS:      // TODO
+    default:
+        return VDP_STATUS_NO_IMPLEMENTATION;
+    }
 }
 
 VdpStatus
