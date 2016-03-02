@@ -1,3 +1,9 @@
+2016-03-02  Rinat Ibragimov  <ibragimovrinat@mail.ru>
+
+	* tag v0.3.6
+	* core: handle Constrained Baseline profile for H.264
+	* misc: bugfixes
+
 2016-02-21  Rinat Ibragimov  <ibragimovrinat@mail.ru>
 
 	* tag: v0.3.5
