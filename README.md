@@ -58,8 +58,8 @@ Parameters of VDPAU_QUIRKS are case-insensetive.
 
 Copying
 =======
-libvdpau-va-gl is distributed under the terms of the LGPLv3. See files
-COPYING, COPYING.GPLv3, and COPYING.LGPLv3 for details.
+libvdpau-va-gl is distributed under the terms of the MIT license. See
+LICENSE file for details.
 
 Contact
 =======
