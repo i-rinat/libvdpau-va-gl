@@ -20,10 +20,8 @@ thread_1(void *param)
 
 int main(void)
 {
-    Display *dpy = get_dpy();
-
-    ASSERT_OK(vdpDeviceCreateX11(dpy, 0, &device1, NULL));
-    ASSERT_OK(vdpDeviceCreateX11(dpy, 0, &device2, NULL));
+    device1 = create_vdp_device();
+    device2 = create_vdp_device();
 
     pthread_t thread_id_1;
     pthread_create(&thread_id_1, NULL, thread_1, NULL);

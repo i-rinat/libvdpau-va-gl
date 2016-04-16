@@ -15,10 +15,8 @@
 
 int main(void)
 {
-    Display *dpy = get_dpy();
     int err_code = 0;
-    VdpDevice device;
-    ASSERT_OK(vdpDeviceCreateX11(dpy, 0, &device, NULL));
+    VdpDevice device = create_vdp_device();
 
     VdpOutputSurface out_surface_in;
     VdpOutputSurface out_surface_out;
@@ -77,6 +75,7 @@ int main(void)
 
     printf("pass\n");
 free_resources_and_exit:
+    ASSERT_OK(vdpDeviceDestroy(device));
     free(src);
     free(dst);
     return err_code;

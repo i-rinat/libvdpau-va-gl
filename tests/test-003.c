@@ -16,8 +16,7 @@
 
 int main(void)
 {
-    Display *dpy = get_dpy();
-    VdpDevice device;
+    VdpDevice device = create_vdp_device();
     VdpBitmapSurface bmp_surface;
     VdpOutputSurface out_surface;
 
@@ -39,7 +38,6 @@ int main(void)
     const void * const source_data_black[] = { black_4x4 };
     uint32_t source_pitches_black[] = { 4 * 4 };
 
-    ASSERT_OK(vdpDeviceCreateX11(dpy, 0, &device, NULL));
     // create surfaces
     ASSERT_OK(vdpBitmapSurfaceCreate(device, VDP_RGBA_FORMAT_A8, 4, 4, 1, &bmp_surface));
     ASSERT_OK(vdpOutputSurfaceCreate(device, VDP_RGBA_FORMAT_B8G8R8A8, 4, 4, &out_surface));
@@ -88,6 +86,8 @@ int main(void)
         printf("fail\n");
         return 1;
     }
+
+    ASSERT_OK(vdpDeviceDestroy(device));
 
     printf("pass\n");
     return 0;

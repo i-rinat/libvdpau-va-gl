@@ -8,11 +8,8 @@
 
 int main(void)
 {
-    VdpDevice device;
-    Display *dpy = get_dpy();
-
-    for (int k = 0; k < 300; k ++) {
-        ASSERT_OK(vdpDeviceCreateX11(dpy, 0, &device, NULL));
+    for (int k = 0; k < 30; k ++) {
+        VdpDevice device = create_vdp_device();
         ASSERT_OK(vdpDeviceDestroy(device));
     }
 

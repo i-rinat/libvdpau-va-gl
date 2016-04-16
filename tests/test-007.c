@@ -10,15 +10,13 @@
 
 int main(void)
 {
-    Display *dpy = get_dpy();
-    VdpDevice device;
+    VdpDevice device = create_vdp_device();
     VdpBitmapSurface bmp_surf1;
     VdpBitmapSurface bmp_surf2;
-    ASSERT_OK(vdpDeviceCreateX11(dpy, 0, &device, NULL));
 
     // invalid device handle
     assert(VDP_STATUS_INVALID_HANDLE ==
-            vdpBitmapSurfaceCreate(device+1, VDP_RGBA_FORMAT_A8, 13, 13, 1, &bmp_surf1));
+            vdpBitmapSurfaceCreate(device + 1, VDP_RGBA_FORMAT_A8, 13, 13, 1, &bmp_surf1));
 
     // invalid rgba format
     assert(VDP_STATUS_INVALID_RGBA_FORMAT ==
@@ -35,16 +33,16 @@ int main(void)
     // test that getParameters get actual supplied parameters
     ASSERT_OK(vdpBitmapSurfaceGetParameters(bmp_surf1, &rgba_f, &width, &height, &fa));
     assert(VDP_RGBA_FORMAT_B8G8R8A8 == rgba_f);
-    assert(123 == width);
-    assert(234 == height);
-    assert(1 == fa);
+    assert(width == 123);
+    assert(height == 234);
+    assert(fa == 1);
 
     // test with other surface
     ASSERT_OK(vdpBitmapSurfaceGetParameters(bmp_surf2, &rgba_f, &width, &height, &fa));
     assert(VDP_RGBA_FORMAT_R8G8B8A8 == rgba_f);
-    assert(345 == width);
-    assert(456 == height);
-    assert(0 == fa);
+    assert(width == 345);
+    assert(height == 456);
+    assert(fa == 0);
 
     // test getParameters with NULLs
     assert(VDP_STATUS_INVALID_POINTER ==

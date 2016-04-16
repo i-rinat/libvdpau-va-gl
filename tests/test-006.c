@@ -3,7 +3,7 @@
 // initializing/finalizing number of times a row with some drawing between.
 // This test is to reveal thread-safety failure inside VDPAU library.
 //
-// Initialization function executed once, but then 30 threads try to do the same work
+// Initialization function executed once, but then THREAD_COUNT threads try to do the same work
 // with rendering simultaneously.
 
 #include "tests-common.h"
@@ -67,11 +67,10 @@ void *thread_1_func(void *p)
 
 int main(void)
 {
-    Display *dpy = get_dpy();
     window = get_wnd();
     pthread_t pt[THREAD_COUNT];
 
-    ASSERT_OK(vdpDeviceCreateX11(dpy, 0, &device, NULL));
+    device = create_vdp_device();
 
     for (int k = 0; k < THREAD_COUNT; k ++)
         pthread_create(&pt[k], NULL, thread_1_func, NULL);

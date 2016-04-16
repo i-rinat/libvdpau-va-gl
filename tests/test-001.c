@@ -11,10 +11,7 @@
 
 int main(void)
 {
-    VdpDevice device;
-    Display *dpy = get_dpy();
-
-    ASSERT_OK(vdpDeviceCreateX11(dpy, 0, &device, NULL));
+    VdpDevice device = create_vdp_device();
 
     VdpOutputSurface out_surface_1;
     VdpOutputSurface out_surface_2;
@@ -114,6 +111,8 @@ int main(void)
         printf("fail\n");
         return 2;
     }
+
+    ASSERT_OK(vdpDeviceDestroy(device));
 
     printf("pass\n");
     return 0;

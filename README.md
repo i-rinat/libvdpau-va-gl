@@ -26,7 +26,7 @@ OpenGL is available, you know, on systems with OpenGL available.
 
 Install
 =======
-   1. `sudo apt-get install cmake libvdpau-dev libva-dev libglib2.0-dev libswscale-dev libgl1-mesa-dev libglu1-mesa-dev`
+   1. `sudo apt-get install cmake libvdpau-dev libva-dev libglib2.0-dev libgl1-mesa-dev libglu1-mesa-dev`
    2. `mkdir build; cd build`
    3. `cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ..`
    4. `sudo make install`
@@ -42,16 +42,11 @@ Run time configuration
 Besides `VDPAU_DRIVER` variable which selects which driver to use there are other
 variables that control runtime behavior of va_gl driver.
 
-`VDPAU_LOG` enables or disables tracing. `0` disables, `1` enables.
-
 `VDPAU_QUIRKS` contains comma-separated list of enabled quirks. Here is the list:
 
    * `XCloseDisplay`	Disables calling of XCloseDisplay which may segfault on systems with some AMD cards
    * `ShowWatermark`	Enables displaying string "va_gl" in bottom-right corner of window
-   * `LogThreadId`	Adds thread id to trace output
    * `LogCallDuration`	Adds call duration to trace output
-   * `LogPqDelay`	Adds presentation queue introduced delay to trace output
-   * `LogTimestamp`	Displays timestamps
    * `AvoidVA`          Makes libvdpau-va-gl NOT use VA-API
 
 Parameters of VDPAU_QUIRKS are case-insensetive.

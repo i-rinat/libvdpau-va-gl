@@ -53,10 +53,7 @@ test_bitmaps_of_format(VdpDevice device, int fmt, const char *fmt_name,
 
 int main(void)
 {
-    Display *dpy = get_dpy();
-    VdpDevice device;
-
-    ASSERT_OK(vdpDeviceCreateX11(dpy, 0, &device, NULL));
+    VdpDevice device = create_vdp_device();
 
     uint32_t max_width, max_height;
     VdpBool is_supported;

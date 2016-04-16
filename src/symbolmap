@@ -1,0 +1,6 @@
+{
+    global:
+        vdp_imp_device_create_x11;
+    local:
+        *;
+};

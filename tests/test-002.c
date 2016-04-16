@@ -14,8 +14,7 @@
 
 int main(void)
 {
-    Display *dpy = get_dpy();
-    VdpDevice device;
+    VdpDevice device = create_vdp_device();
     VdpOutputSurface out_surface;
     VdpBitmapSurface bmp_surface;
     uint8_t twenty_five[] = {
@@ -31,7 +30,6 @@ int main(void)
     uint32_t source_pitches[] = { 5 };
     uint32_t destination_pitches[] = { 5 };
 
-    ASSERT_OK(vdpDeviceCreateX11(dpy, 0, &device, NULL));
     ASSERT_OK(vdpOutputSurfaceCreate(device, VDP_RGBA_FORMAT_A8, 5, 5, &out_surface));
 
     // upload image to surface, download image from surface
@@ -90,6 +88,8 @@ int main(void)
         printf("failure\n");
         return 2;
     }
+
+    ASSERT_OK(vdpDeviceDestroy(device));
 
     printf("pass\n");
     return 0;

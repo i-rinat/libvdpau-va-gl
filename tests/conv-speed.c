@@ -21,16 +21,11 @@ main(int argc, char *argv[])
     const int           width = 720;
     const int           height = 480;
     VdpGetProcAddress  *get_proc_address;
-    VdpDevice           vdp_device;
+    VdpDevice           vdp_device = create_vdp_device();
     VdpVideoSurface     vdp_video_surface;
     VdpVideoMixer       vdp_video_mixer;
     VdpOutputSurface    vdp_output_surface;
-    Display            *dpy;
 
-    dpy = XOpenDisplay(NULL);
-    assert(dpy);
-
-    CHECK(vdpDeviceCreateX11(dpy, 0, &vdp_device, &get_proc_address));
     CHECK(vdpVideoSurfaceCreate(vdp_device, VDP_CHROMA_TYPE_420, width, height,
                                 &vdp_video_surface));
     CHECK(vdpOutputSurfaceCreate(vdp_device, VDP_RGBA_FORMAT_B8G8R8A8, width, height,

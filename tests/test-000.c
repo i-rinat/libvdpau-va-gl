@@ -1,14 +1,12 @@
-#ifdef NDEBUG
 #undef NDEBUG
-#endif
-
-#include "bitstream.h"
 #include <stdio.h>
 #include <assert.h>
+#include "bitstream.cc"
+
 
 int main(void)
 {
-	unsigned char buf[] = {0xa6, 0x42, 0x98, 0xe2, 0x3f};
+    unsigned char buf[] = {0xa6, 0x42, 0x98, 0xe2, 0x3f};
     rbsp_state_t st;
     rbsp_attach_buffer(&st, buf, 5);
     assert (0 == rbsp_get_uev(&st));
