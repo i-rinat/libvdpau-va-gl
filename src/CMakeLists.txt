@@ -10,7 +10,7 @@ link_directories (
     ${GL_LIBRARY_DIRS}
 )
 
-add_library (${DRIVER_NAME}_obj OBJECT
+add_library(${DRIVER_NAME} SHARED
     api-bitmap-surface.cc
     api-csc-matrix.cc
     api-decoder.cc
@@ -31,9 +31,7 @@ add_library (${DRIVER_NAME}_obj OBJECT
     x-display-ref.cc
 )
 
-add_dependencies(${DRIVER_NAME}_obj shader-bundle)
-
-add_library(${DRIVER_NAME} SHARED $<TARGET_OBJECTS:${DRIVER_NAME}_obj>)
+add_dependencies(${DRIVER_NAME} shader-bundle)
 
 set(LINK_LIBRARIES
     -lX11
