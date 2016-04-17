@@ -25,6 +25,7 @@
 #define GL_GLEXT_PROTOTYPES
 #include "api-output-surface.hh"
 #include "api-presentation-queue.hh"
+#include "compat-vdpau.hh"
 #include "globals.hh"
 #include "glx-context.hh"
 #include "handle-storage.hh"
@@ -40,7 +41,6 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include <vdpau/vdpau.h>
 
 
 using std::chrono::microseconds;

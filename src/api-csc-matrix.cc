@@ -23,7 +23,7 @@
  */
 
 #include "api-csc-matrix.hh"
-#include <vdpau/vdpau.h>
+#include "compat-vdpau.hh"
 
 
 namespace vdp {

@@ -23,7 +23,6 @@
  */
 
 #include "reverse-constant.hh"
-#include <vdpau/vdpau.h>
 
 
 #define CASE(q) case q: return #q

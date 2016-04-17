@@ -25,9 +25,9 @@
 #pragma once
 
 #include "api.hh"
+#include "compat-vdpau.hh"
 #include <GL/gl.h>
 #include <memory>
-#include <vdpau/vdpau.h>
 
 
 namespace vdp { namespace OutputSurface {

@@ -25,6 +25,7 @@
 #define GL_GLEXT_PROTOTYPES
 #include "api-video-surface.hh"
 #include "api.hh"
+#include "compat-vdpau.hh"
 #include "compat.hh"
 #include "glx-context.hh"
 #include "handle-storage.hh"
@@ -36,7 +37,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <va/va.h>
-#include <vdpau/vdpau.h>
 
 
 using std::make_shared;

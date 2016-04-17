@@ -26,6 +26,7 @@
 #include "api-bitmap-surface.hh"
 #include "api-device.hh"
 #include "api-output-surface.hh"
+#include "compat-vdpau.hh"
 #include "glx-context.hh"
 #include "handle-storage.hh"
 #include "reverse-constant.hh"
@@ -33,7 +34,6 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <stdlib.h>
-#include <vdpau/vdpau.h>
 #include <vector>
 
 

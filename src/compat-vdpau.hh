@@ -24,11 +24,23 @@
 
 #pragma once
 
-#include "compat-vdpau.hh"
+#include <vdpau/vdpau_x11.h>
+#include <vdpau/vdpau.h>
 
 
-namespace vdp {
+// emulate constants introduced in a later version of libvdpau
+#ifndef VDP_DECODER_PROFILE_H264_CONSTRAINED_BASELINE
+#define VDP_DECODER_PROFILE_H264_CONSTRAINED_BASELINE   ((VdpDecoderProfile)22)
+#endif
 
-VdpGenerateCSCMatrix GenerateCSCMatrix;
+#ifndef VDP_DECODER_PROFILE_H264_EXTENDED
+#define VDP_DECODER_PROFILE_H264_EXTENDED               ((VdpDecoderProfile)23)
+#endif
 
-} // namespace vdp
+#ifndef VDP_DECODER_PROFILE_H264_PROGRESSIVE_HIGH
+#define VDP_DECODER_PROFILE_H264_PROGRESSIVE_HIGH       ((VdpDecoderProfile)24)
+#endif
+
+#ifndef VDP_DECODER_PROFILE_H264_CONSTRAINED_HIGH
+#define VDP_DECODER_PROFILE_H264_CONSTRAINED_HIGH       ((VdpDecoderProfile)25)
+#endif
