@@ -58,7 +58,7 @@ class shader_compilation_failed: public std::exception
 {
 };
 
-const string kImplemetationDescriptionString{"OpenGL/VAAPI/libswscale backend for VDPAU"};
+const string kImplemetationDescriptionString{"OpenGL/VAAPI backend for VDPAU"};
 
 } // namespace vdp
 
