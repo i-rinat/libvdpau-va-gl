@@ -133,7 +133,8 @@ Resource::~Resource()
 
         if (device->va_available) {
             // return VA surface to the free list, decoder owns them
-            decoder->free_list.push_back(rt_idx);
+            if (decoder)
+                decoder->free_list.push_back(rt_idx);
         }
 
     } catch (...) {
