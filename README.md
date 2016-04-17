@@ -34,8 +34,7 @@ Install
 
 Commands above should work for any Debian-based distro. Fedora names packages in a
 different way, so package installation step will look like:
-`sudo yum install cmake libvdpau-devel libva-devel glib2-devel ffmpeg-devel mesa-libGL-devel mesa-libGLU-devel`.
-Note you need to add rpmfusion repo to get `ffmpeg-devel`.
+`sudo yum install cmake libvdpau-devel libva-devel glib2-devel mesa-libGL-devel mesa-libGLU-devel`.
 
 Run time configuration
 ======================
@@ -46,7 +45,6 @@ variables that control runtime behavior of va_gl driver.
 
    * `XCloseDisplay`	Disables calling of XCloseDisplay which may segfault on systems with some AMD cards
    * `ShowWatermark`	Enables displaying string "va_gl" in bottom-right corner of window
-   * `LogCallDuration`	Adds call duration to trace output
    * `AvoidVA`          Makes libvdpau-va-gl NOT use VA-API
 
 Parameters of VDPAU_QUIRKS are case-insensetive.
