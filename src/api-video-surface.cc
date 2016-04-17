@@ -507,8 +507,9 @@ VdpStatus
 QueryCapabilitiesImpl(VdpDevice device, VdpChromaType surface_chroma_type, VdpBool *is_supported,
                       uint32_t *max_width, uint32_t *max_height)
 {
-    (void)device;
-    (void)surface_chroma_type;
+    // TODO: don't ignore
+    std::ignore = device;
+    std::ignore = surface_chroma_type;
 
     // TODO: implement
     if (is_supported)
@@ -535,7 +536,10 @@ VdpStatus
 QueryGetPutBitsYCbCrCapabilitiesImpl(VdpDevice device, VdpChromaType surface_chroma_type,
                                      VdpYCbCrFormat bits_ycbcr_format, VdpBool *is_supported)
 {
-    (void)device; (void)surface_chroma_type; (void)bits_ycbcr_format;
+    // TODO: don't ignore
+    std::ignore = device;
+    std::ignore = surface_chroma_type;
+    std::ignore = bits_ycbcr_format;
 
     // TODO: implement
     if (is_supported)

@@ -118,7 +118,7 @@ private:
 } // namespace vdp
 
 void
-x11_push_eh(void);
+x11_push_eh();
 
 int
-x11_pop_eh(void);
+x11_pop_eh();

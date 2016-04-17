@@ -364,7 +364,10 @@ GetProcAddress(VdpDevice, VdpFuncId function_id, void **function_pointer)
 VdpStatus
 PreemptionCallbackRegister(VdpDevice device, VdpPreemptionCallback callback, void *context)
 {
-    (void)device; (void)callback; (void)context;
+    std::ignore = device;
+    std::ignore = callback;
+    std::ignore = context;
+
     return VDP_STATUS_OK;
 }
 

@@ -38,7 +38,7 @@
 
 static
 void
-initialize_quirks(void)
+initialize_quirks()
 {
     global.quirks.buggy_XCloseDisplay = 0;
     global.quirks.show_watermark = 0;
@@ -86,7 +86,7 @@ initialize_quirks(void)
 
 __attribute__((constructor))
 void
-va_gl_library_constructor(void)
+va_gl_library_constructor()
 {
     // Initialize global data
     initialize_quirks();

@@ -579,8 +579,13 @@ PutBitsYCbCrImpl(VdpOutputSurface surface, VdpYCbCrFormat source_ycbcr_format,
                  void const *const *source_data, uint32_t const *source_pitches,
                  VdpRect const *destination_rect, VdpCSCMatrix const *csc_matrix)
 {
-    (void)surface; (void)source_ycbcr_format; (void)source_data; (void)source_pitches;
-    (void)destination_rect; (void)csc_matrix;
+    std::ignore = surface;
+    std::ignore = source_ycbcr_format;
+    std::ignore = source_data;
+    std::ignore = source_pitches;
+    std::ignore = destination_rect;
+    std::ignore = csc_matrix;
+
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -644,7 +649,10 @@ VdpStatus
 QueryGetPutBitsNativeCapabilitiesImpl(VdpDevice device, VdpRGBAFormat surface_rgba_format,
                                       VdpBool *is_supported)
 {
-    (void)device; (void)surface_rgba_format; (void)is_supported;
+    std::ignore = device;
+    std::ignore = surface_rgba_format;
+    std::ignore = is_supported;
+
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -661,8 +669,12 @@ QueryPutBitsIndexedCapabilitiesImpl(VdpDevice device, VdpRGBAFormat surface_rgba
                                     VdpIndexedFormat bits_indexed_format,
                                     VdpColorTableFormat color_table_format, VdpBool *is_supported)
 {
-    (void)device; (void)surface_rgba_format; (void)bits_indexed_format; (void)color_table_format;
-    (void)is_supported;
+    std::ignore = device;
+    std::ignore = surface_rgba_format;
+    std::ignore = bits_indexed_format;
+    std::ignore = color_table_format;
+    std::ignore = is_supported;
+
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -679,7 +691,11 @@ VdpStatus
 QueryPutBitsYCbCrCapabilitiesImpl(VdpDevice device, VdpRGBAFormat surface_rgba_format,
                                   VdpYCbCrFormat bits_ycbcr_format, VdpBool *is_supported)
 {
-    (void)device; (void)surface_rgba_format; (void)bits_ycbcr_format; (void)is_supported;
+    std::ignore = device;
+    std::ignore = surface_rgba_format;
+    std::ignore = bits_ycbcr_format;
+    std::ignore = is_supported;
+
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 

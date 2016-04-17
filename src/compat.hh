@@ -34,31 +34,39 @@
 
 
 #if defined(__linux__)
+
 typedef int thread_id_t;
-#elif defined(__FreeBSD__)
-typedef long thread_id_t;
-#else
-#error Unknown OS
-#endif
 
 static inline thread_id_t
-get_current_thread_id(void)
+get_current_thread_id()
 {
-#if defined(__linux__)
     return syscall(__NR_gettid);
-#elif defined(__FreeBSD__)
-    long thread_id;
-    thr_self(&thread_id);
-    return thread_id;
-#endif
 }
 
 static inline size_t
 thread_is_alive(thread_id_t tid)
 {
-#if defined(__linux__)
     return kill(tid, 0) == 0;
-#elif defined(__FreeBSD__)
-    return thr_kill(tid, 0) == 0;
-#endif
 }
+
+#elif defined(__FreeBSD__)
+
+typedef long thread_id_t;
+
+static inline thread_id_t
+get_current_thread_id()
+{
+    long thread_id;
+    thr_self(&thread_id);
+    return thread_id;
+}
+
+static inline size_t
+thread_is_alive(thread_id_t tid)
+{
+    return thr_kill(tid, 0) == 0;
+}
+
+#else
+#error Unknown OS
+#endif

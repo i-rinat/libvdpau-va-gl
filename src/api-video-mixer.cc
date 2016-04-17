@@ -140,11 +140,11 @@ Resource::Resource(shared_ptr<vdp::Device::Resource> a_device, uint32_t a_featur
                    VdpVideoMixerParameter const *a_parameters,
                    void const *const *a_parameter_values)
 {
-    (void)a_feature_count;
-    (void)a_features;             // TODO: mixer features
-    (void)a_parameter_count;
-    (void)a_parameters;
-    (void)a_parameter_values;     // TODO: mixer parameters
+    std::ignore = a_feature_count;
+    std::ignore = a_features;             // TODO: mixer features
+    std::ignore = a_parameter_count;
+    std::ignore = a_parameters;
+    std::ignore = a_parameter_values;     // TODO: mixer parameters
 
     device =        a_device;
     pixmap =        None;
@@ -238,7 +238,11 @@ VdpStatus
 GetAttributeValuesImpl(VdpVideoMixer mixer, uint32_t attribute_count,
                        VdpVideoMixerAttribute const *attributes, void *const *attribute_values)
 {
-    (void)mixer; (void)attribute_count; (void)attributes; (void)attribute_values;
+    std::ignore = mixer;
+    std::ignore = attribute_count;
+    std::ignore = attributes;
+    std::ignore = attribute_values;
+
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -254,7 +258,11 @@ VdpStatus
 GetFeatureEnablesImpl(VdpVideoMixer mixer, uint32_t feature_count,
                       VdpVideoMixerFeature const *features, VdpBool *feature_enables)
 {
-    (void)mixer; (void)feature_count; (void)features; (void)feature_enables;
+    std::ignore = mixer;
+    std::ignore = feature_count;
+    std::ignore = features;
+    std::ignore = feature_enables;
+
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -270,7 +278,11 @@ VdpStatus
 GetFeatureSupportImpl(VdpVideoMixer mixer, uint32_t feature_count,
                       VdpVideoMixerFeature const *features, VdpBool *feature_supports)
 {
-    (void)mixer; (void)feature_count; (void)features; (void)feature_supports;
+    std::ignore = mixer;
+    std::ignore = feature_count;
+    std::ignore = features;
+    std::ignore = feature_supports;
+
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -286,7 +298,11 @@ VdpStatus
 GetParameterValuesImpl(VdpVideoMixer mixer, uint32_t parameter_count,
                        VdpVideoMixerParameter const *parameters, void *const *parameter_values)
 {
-    (void)mixer; (void)parameter_count; (void)parameters; (void)parameter_values;
+    std::ignore = mixer;
+    std::ignore = parameter_count;
+    std::ignore = parameters;
+    std::ignore = parameter_values;
+
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -301,7 +317,10 @@ GetParameterValues(VdpVideoMixer mixer, uint32_t parameter_count,
 VdpStatus
 QueryAttributeSupportImpl(VdpDevice device, VdpVideoMixerAttribute attribute, VdpBool *is_supported)
 {
-    (void)device; (void)attribute; (void)is_supported;
+    std::ignore = device;
+    std::ignore = attribute;
+    std::ignore = is_supported;
+
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -315,7 +334,11 @@ VdpStatus
 QueryAttributeValueRangeImpl(VdpDevice device, VdpVideoMixerAttribute attribute, void *min_value,
                              void *max_value)
 {
-    (void)device; (void)attribute; (void)min_value; (void)max_value;
+    std::ignore = device;
+    std::ignore = attribute;
+    std::ignore = min_value;
+    std::ignore = max_value;
+
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -330,7 +353,10 @@ QueryAttributeValueRange(VdpDevice device, VdpVideoMixerAttribute attribute, voi
 VdpStatus
 QueryFeatureSupportImpl(VdpDevice device, VdpVideoMixerFeature feature, VdpBool *is_supported)
 {
-    (void)device; (void)feature; (void)is_supported;
+    std::ignore = device;
+    std::ignore = feature;
+    std::ignore = is_supported;
+
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -343,7 +369,10 @@ QueryFeatureSupport(VdpDevice device, VdpVideoMixerFeature feature, VdpBool *is_
 VdpStatus
 QueryParameterSupportImpl(VdpDevice device, VdpVideoMixerParameter parameter, VdpBool *is_supported)
 {
-    (void)device; (void)parameter; (void)is_supported;
+    std::ignore = device;
+    std::ignore = parameter;
+    std::ignore = is_supported;
+
     return VDP_STATUS_NO_IMPLEMENTATION;
 }
 
@@ -399,16 +428,19 @@ RenderImpl(VdpVideoMixer mixer_id, VdpOutputSurface background_surface,
            VdpOutputSurface destination_surface, VdpRect const *destination_rect,
            VdpRect const *destination_video_rect, uint32_t layer_count, VdpLayer const *layers)
 {
-    (void)mixer_id;    // TODO: mixer should be used to get mixing parameters
+    std::ignore = mixer_id;    // TODO: mixer should be used to get mixing parameters
     // TODO: current implementation ignores previous and future surfaces, using only current.
     // Is that acceptable for interlaced video? Will VAAPI handle deinterlacing?
 
-    (void)background_surface;   // TODO: background_surface. Is it safe to just ignore it?
-    (void)background_source_rect;
-    (void)current_picture_structure;
-    (void)video_surface_past_count; (void)video_surface_past;
-    (void)video_surface_future_count; (void)video_surface_future;
-    (void)layer_count; (void)layers;
+    std::ignore = background_surface;   // TODO: background_surface. Is it safe to just ignore it?
+    std::ignore = background_source_rect;
+    std::ignore = current_picture_structure;
+    std::ignore = video_surface_past_count;
+    std::ignore = video_surface_past;
+    std::ignore = video_surface_future_count;
+    std::ignore = video_surface_future;
+    std::ignore = layer_count;
+    std::ignore = layers;
 
     ResourceRef<Resource> mixer{mixer_id};
     ResourceRef<vdp::VideoSurface::Resource> src_surf{video_surface_current};
@@ -516,7 +548,11 @@ SetAttributeValuesImpl(VdpVideoMixer mixer, uint32_t attribute_count,
                        VdpVideoMixerAttribute const *attributes,
                        void const *const *attribute_values)
 {
-    (void)mixer; (void)attribute_count; (void)attributes; (void)attribute_values;
+    std::ignore = mixer;
+    std::ignore = attribute_count;
+    std::ignore = attributes;
+    std::ignore = attribute_values;
+
     return VDP_STATUS_OK;
 }
 
@@ -532,7 +568,11 @@ VdpStatus
 SetFeatureEnablesImpl(VdpVideoMixer mixer, uint32_t feature_count,
                       VdpVideoMixerFeature const *features, VdpBool const *feature_enables)
 {
-    (void)mixer; (void)feature_count; (void)features; (void)feature_enables;
+    std::ignore = mixer;
+    std::ignore = feature_count;
+    std::ignore = features;
+    std::ignore = feature_enables;
+
     return VDP_STATUS_OK;
 }
 

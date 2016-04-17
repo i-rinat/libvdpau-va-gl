@@ -222,14 +222,14 @@ x11_error_handler(Display *, XErrorEvent *ee)
 }
 
 void
-x11_push_eh(void)
+x11_push_eh()
 {
     x11_error_code = 0;
     XSetErrorHandler(&x11_error_handler);
 }
 
 int
-x11_pop_eh(void)
+x11_pop_eh()
 {
     // restoring error handler is too risky, leave it as is
     return x11_error_code;
