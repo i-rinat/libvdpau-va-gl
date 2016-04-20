@@ -30,7 +30,7 @@
 #include <memory>
 #include <mutex>
 #include <unistd.h>
-#include <vdpau/vdpau_x11.h>
+#include <vdpau/vdpau.h>
 #include <vector>
 
 

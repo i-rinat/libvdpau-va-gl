@@ -27,7 +27,6 @@
 #include "api-output-surface.hh"
 #include "api-video-mixer.hh"
 #include "api-video-surface.hh"
-#include "compat-vdpau.hh"
 #include "glx-context.hh"
 #include "handle-storage.hh"
 #include "trace.hh"
@@ -36,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <va/va_x11.h>
+#include <vdpau/vdpau.h>
 
 
 using std::make_shared;

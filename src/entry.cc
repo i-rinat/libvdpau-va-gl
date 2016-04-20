@@ -24,7 +24,6 @@
 
 #define _XOPEN_SOURCE   500
 #include "api.hh"
-#include "compat-vdpau.hh"
 #include "compat.hh"
 #include "globals.hh"
 #include "handle-storage.hh"
@@ -34,6 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include <vdpau/vdpau.h>
 
 
 static

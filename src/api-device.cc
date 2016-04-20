@@ -31,7 +31,6 @@
 #include "api-presentation-queue.hh"
 #include "api-video-mixer.hh"
 #include "api-video-surface.hh"
-#include "compat-vdpau.hh"
 #include "globals.hh"
 #include "glx-context.hh"
 #include "handle-storage.hh"
@@ -44,6 +43,7 @@
 #include <mutex>
 #include <stdlib.h>
 #include <va/va_x11.h>
+#include <vdpau/vdpau_x11.h>
 #include <vector>
 
 

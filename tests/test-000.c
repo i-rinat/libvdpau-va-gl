@@ -1,7 +1,7 @@
 #undef NDEBUG
 #include <stdio.h>
 #include <assert.h>
-#include "bitstream.cc"
+#include "../src/bitstream.cc"
 
 
 int main(void)

@@ -26,8 +26,8 @@
 
 #include "api-device.hh"
 #include "api.hh"
-#include "compat-vdpau.hh"
 #include <GL/gl.h>
+#include <vdpau/vdpau.h>
 #include <vector>
 
 

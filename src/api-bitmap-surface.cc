@@ -24,7 +24,6 @@
 
 #include "api-bitmap-surface.hh"
 #include "api-device.hh"
-#include "compat-vdpau.hh"
 #include "glx-context.hh"
 #include "handle-storage.hh"
 #include "reverse-constant.hh"
@@ -33,6 +32,7 @@
 #include <GL/glu.h>
 #include <stdlib.h>
 #include <string.h>
+#include <vdpau/vdpau.h>
 
 
 using std::shared_ptr;

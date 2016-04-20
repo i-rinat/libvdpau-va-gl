@@ -25,7 +25,6 @@
 #pragma once
 
 #include "api.hh"
-#include "compat-vdpau.hh"
 #include "glx-context.hh"
 #include "shaders.h"
 #include "x-display-ref.hh"
@@ -33,6 +32,7 @@
 #include <map>
 #include <mutex>
 #include <va/va_x11.h>
+#include <vdpau/vdpau.h>
 
 
 namespace vdp { namespace Device {

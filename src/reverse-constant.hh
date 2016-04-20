@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "compat-vdpau.hh"
+#include <vdpau/vdpau.h>
 
 
 const char *

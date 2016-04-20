@@ -25,10 +25,10 @@
 #pragma once
 
 #include "api.hh"
-#include "compat-vdpau.hh"
 #include <memory>
 #include <stdint.h>
 #include <va/va.h>
+#include <vdpau/vdpau.h>
 #include <vector>
 
 
