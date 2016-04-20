@@ -26,7 +26,7 @@ OpenGL is available, you know, on systems with OpenGL available.
 
 Install
 =======
-   1. `sudo apt-get install cmake libvdpau-dev libva-dev libglib2.0-dev libgl1-mesa-dev libglu1-mesa-dev`
+   1. `sudo apt-get install cmake libva-dev libglib2.0-dev libgl1-mesa-dev libglu1-mesa-dev`
    2. `mkdir build; cd build`
    3. `cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ..`
    4. `sudo make install`
@@ -34,7 +34,7 @@ Install
 
 Commands above should work for any Debian-based distro. Fedora names packages in a
 different way, so package installation step will look like:
-`sudo yum install cmake libvdpau-devel libva-devel glib2-devel mesa-libGL-devel mesa-libGLU-devel`.
+`sudo yum install cmake libva-devel glib2-devel mesa-libGL-devel mesa-libGLU-devel`.
 
 Run time configuration
 ======================
