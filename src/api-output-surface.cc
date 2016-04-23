@@ -31,7 +31,6 @@
 #include "reverse-constant.hh"
 #include "trace.hh"
 #include <GL/gl.h>
-#include <GL/glu.h>
 #include <stdlib.h>
 #include <vdpau/vdpau.h>
 #include <vector>
@@ -305,8 +304,7 @@ Resource::Resource(shared_ptr<vdp::Device::Resource> a_device, VdpRGBAFormat a_r
 
     const auto gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (gl_status != GL_FRAMEBUFFER_COMPLETE) {
-        traceError("OutputSurface::Resource::Resource(): framebuffer not ready, %d, %s\n",
-                   gl_status, gluErrorString(gl_status));
+        traceError("OutputSurface::Resource::Resource(): framebuffer not ready, %d\n", gl_status);
         throw vdp::generic_error();
     }
 

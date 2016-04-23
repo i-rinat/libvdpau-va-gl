@@ -38,7 +38,6 @@
 #include "trace.hh"
 #include "watermark.hh"
 #include <GL/gl.h>
-#include <GL/glu.h>
 #include <map>
 #include <mutex>
 #include <stdlib.h>

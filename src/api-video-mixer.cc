@@ -31,7 +31,6 @@
 #include "handle-storage.hh"
 #include "trace.hh"
 #include <GL/gl.h>
-#include <GL/glu.h>
 #include <stdlib.h>
 #include <string.h>
 #include <va/va_x11.h>

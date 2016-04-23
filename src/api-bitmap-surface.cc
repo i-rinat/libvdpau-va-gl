@@ -29,7 +29,6 @@
 #include "reverse-constant.hh"
 #include "trace.hh"
 #include <GL/gl.h>
-#include <GL/glu.h>
 #include <stdlib.h>
 #include <string.h>
 #include <vdpau/vdpau.h>
@@ -110,9 +109,8 @@ Resource::Resource(shared_ptr<vdp::Device::Resource> a_device, VdpRGBAFormat a_r
     const auto gl_error = glGetError();
     if (gl_error != GL_NO_ERROR) {
         // Requested RGBA format was wrong
-        traceError("BitmapSurface::Resource::Resource(): texture failure, gl error (%d, %s)\n",
-                   gl_error, gluErrorString(gl_error));
-        throw generic_error();
+        traceError("BitmapSurface::Resource::Resource(): texture failure, %d\n", gl_error);
+        throw vdp::generic_error();
     }
 }
 

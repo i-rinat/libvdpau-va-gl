@@ -32,7 +32,6 @@
 #include "shaders.h"
 #include "trace.hh"
 #include <GL/gl.h>
-#include <GL/glu.h>
 #include <stdlib.h>
 #include <string.h>
 #include <va/va.h>
@@ -102,8 +101,7 @@ Resource::Resource(std::shared_ptr<vdp::Device::Resource> a_device, VdpChromaTyp
 
     const auto gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (gl_status != GL_FRAMEBUFFER_COMPLETE) {
-        traceError("VideoSurface::Resource::Resource(): framebuffer not ready, %d, %s\n",
-                   gl_status, gluErrorString(gl_status));
+        traceError("VideoSurface::Resource::Resource(): framebuffer not ready, %d\n", gl_status);
         throw vdp::generic_error();
     }
 
