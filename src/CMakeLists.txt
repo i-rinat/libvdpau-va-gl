@@ -4,7 +4,6 @@ include_directories(
 
 link_directories (
     ${X11_LIBRARY_DIRS}
-    ${GLIB20_LIBRARY_DIRS}
     ${LIBVA_LIBRARY_DIRS}
     ${LIBGL_LIBRARY_DIRS}
 )
@@ -34,7 +33,6 @@ add_dependencies(${DRIVER_NAME} shader-bundle)
 
 set(LINK_LIBRARIES
     ${X11_LIBRARIES}
-    ${GLIB20_LIBRARIES}
     ${LIBVA_LIBRARIES}
     ${LIBGL_LIBRARIES}
     -lrt

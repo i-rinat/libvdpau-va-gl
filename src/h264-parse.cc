@@ -23,8 +23,8 @@
  */
 
 #include "h264-parse.hh"
+#include <algorithm>
 #include <assert.h>
-#include <glib.h>   // TODO: drop glib
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -183,62 +183,14 @@ reset_va_picture_h264(VAPictureH264 *p)
     p->BottomFieldOrderCnt  = 0;
 }
 
-struct comparison_fcn1_context {
-    int                  descending;
-    int                  what;
-    const VAPictureH264 *ReferenceFrames;
-};
-
-static
-gint
-comparison_fcn_1(gconstpointer p1, gconstpointer p2, gpointer context)
-{
-    const int idx_1 = *static_cast<const int *>(p1);
-    const int idx_2 = *static_cast<const int *>(p2);
-
-    auto *ctx = static_cast<comparison_fcn1_context *>(context);
-
-    int value1 = 0, value2 = 0;
-    switch (ctx->what) {
-    case 1:         // top field
-        value1 = ctx->ReferenceFrames[idx_1].TopFieldOrderCnt;
-        value2 = ctx->ReferenceFrames[idx_2].TopFieldOrderCnt;
-        break;
-    case 2:         // bottom field
-        value1 = ctx->ReferenceFrames[idx_1].BottomFieldOrderCnt;
-        value2 = ctx->ReferenceFrames[idx_2].BottomFieldOrderCnt;
-        break;
-    case 3:         // frame_idx
-        value1 = ctx->ReferenceFrames[idx_1].frame_idx;
-        value2 = ctx->ReferenceFrames[idx_2].frame_idx;
-        break;
-    default:
-        assert(0 && "wrong what field");
-    }
-
-    int result;
-    if (value1 < value2)
-        result = -1;
-    else if (value1 > value2)
-        result = 1;
-    else
-        result = 0;
-
-    if (ctx->descending) return -result;
-    return result;
-}
-
 static
 void
 fill_ref_pic_list(struct slice_parameters *sp, const VAPictureParameterBufferH264 *vapp)
 {
     int idcs_asc[32], idcs_desc[32];
-    struct comparison_fcn1_context ctx;
 
     if (sp->slice_type == SLICE_TYPE_I || sp->slice_type == SLICE_TYPE_SI)
         return;
-
-    ctx.ReferenceFrames = vapp->ReferenceFrames;
 
     int frame_count = 0;
     for (int k = 0; k < vapp->num_ref_frames; k ++) {
@@ -251,11 +203,19 @@ fill_ref_pic_list(struct slice_parameters *sp, const VAPictureParameterBufferH26
 
     if (sp->slice_type == SLICE_TYPE_P || sp->slice_type == SLICE_TYPE_SP) {
         // TODO: implement interlaced P slices
-        ctx.what = 1;
-        ctx.descending = 0;
-        g_qsort_with_data(idcs_asc, frame_count, sizeof(idcs_asc[0]), &comparison_fcn_1, &ctx);
-        ctx.descending = 1;
-        g_qsort_with_data(idcs_desc, frame_count, sizeof(idcs_desc[0]), &comparison_fcn_1, &ctx);
+        std::stable_sort(idcs_asc, idcs_asc + frame_count,
+            [vapp](int idx_1, int idx_2) {
+                auto value1 = vapp->ReferenceFrames[idx_1].TopFieldOrderCnt;
+                auto value2 = vapp->ReferenceFrames[idx_2].TopFieldOrderCnt;
+                return value1 < value2;
+            });
+
+        std::stable_sort(idcs_desc, idcs_desc + frame_count,
+            [vapp](int idx_1, int idx_2) {
+                auto value1 = vapp->ReferenceFrames[idx_1].TopFieldOrderCnt;
+                auto value2 = vapp->ReferenceFrames[idx_2].TopFieldOrderCnt;
+                return value1 > value2;
+            });
 
         int ptr = 0;
         for (int k = 0; k < frame_count; k ++)
@@ -267,11 +227,20 @@ fill_ref_pic_list(struct slice_parameters *sp, const VAPictureParameterBufferH26
                 sp->RefPicList0[ptr++] = vapp->ReferenceFrames[idcs_asc[k]];
 
     } else if (sp->slice_type == SLICE_TYPE_B && !vapp->pic_fields.bits.field_pic_flag) {
-        ctx.what = 1;
-        ctx.descending = 0;
-        g_qsort_with_data(idcs_asc, frame_count, sizeof(idcs_asc[0]), &comparison_fcn_1, &ctx);
-        ctx.descending = 1;
-        g_qsort_with_data(idcs_desc, frame_count, sizeof(idcs_desc[0]), &comparison_fcn_1, &ctx);
+
+        std::stable_sort(idcs_asc, idcs_asc + frame_count,
+            [vapp](int idx_1, int idx_2) {
+                auto value1 = vapp->ReferenceFrames[idx_1].TopFieldOrderCnt;
+                auto value2 = vapp->ReferenceFrames[idx_2].TopFieldOrderCnt;
+                return value1 < value2;
+            });
+
+        std::stable_sort(idcs_desc, idcs_desc + frame_count,
+            [vapp](int idx_1, int idx_2) {
+                auto value1 = vapp->ReferenceFrames[idx_1].TopFieldOrderCnt;
+                auto value2 = vapp->ReferenceFrames[idx_2].TopFieldOrderCnt;
+                return value1 > value2;
+            });
 
         int ptr0 = 0;
         int ptr1 = 0;

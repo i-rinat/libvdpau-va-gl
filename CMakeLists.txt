@@ -7,7 +7,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -std=c++11")
 
 find_package(PkgConfig REQUIRED)
 find_package(X11 REQUIRED)
-pkg_check_modules(GLIB20     glib-2.0   REQUIRED)
 pkg_check_modules(LIBVA      libva-x11  REQUIRED)
 pkg_check_modules(LIBGL      gl         REQUIRED)
 
@@ -18,7 +17,6 @@ set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/vdpau" CACHE PATH 
 include_directories (
     3rdparty
     ${X11_INCLUDE_DIRS}
-    ${GLIB20_INCLUDE_DIRS}
     ${LIBVA_INCLUDE_DIRS}
     ${LIBGL_INCLUDE_DIRS}
     ${GENERATED_INCLUDE_DIRS}
