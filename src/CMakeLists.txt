@@ -33,11 +33,10 @@ add_library(${DRIVER_NAME} SHARED
 add_dependencies(${DRIVER_NAME} shader-bundle)
 
 set(LINK_LIBRARIES
-    -lX11
+    ${X11_LIBRARIES}
     ${GLIB20_LIBRARIES}
     ${LIBVA_LIBRARIES}
     ${LIBGL_LIBRARIES}
-    -lpthread
     -lrt
     shader-bundle
 )

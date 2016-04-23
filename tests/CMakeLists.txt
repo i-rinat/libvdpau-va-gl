@@ -1,12 +1,10 @@
 include_directories(..)
 include_directories(${GENERATED_INCLUDE_DIRS})
-find_package(X11 REQUIRED)
-pkg_check_modules(VDPAU vdpau REQUIRED)
 
 add_definitions(-DDRIVER_NAME="${CMAKE_BINARY_DIR}/lib${DRIVER_NAME}.so.1")
 
-link_libraries(${X11_LIBRARIES} ${VDPAU_LIBRARIES} -lpthread)
-link_directories(${X11_LIBRARY_DIRS} ${VDPAU_LIBRARY_DIRS})
+link_libraries(${X11_LIBRARIES})
+link_directories(${X11_LIBRARY_DIRS})
 
 list(APPEND _vdpau_tests
     test-001 test-002 test-003 test-004 test-005 test-006
