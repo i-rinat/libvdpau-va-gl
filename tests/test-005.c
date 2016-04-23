@@ -14,6 +14,24 @@
 #include <string.h>
 #include <stdlib.h>
 
+static uint32_t
+max_u32(uint32_t a, uint32_t b)
+{
+    return a > b ? a : b;
+}
+
+static uint32_t
+min_u32(uint32_t a, uint32_t b)
+{
+    return a < b ? a : b;
+}
+
+static
+uint32_t
+absdiff(int a, int b)
+{
+    return abs(a - b);
+}
 
 int main(void)
 {
@@ -38,9 +56,9 @@ int main(void)
     uint32_t green_screen[7 * 7];
     const void * const source_data[] = { green_screen };
     uint32_t source_pitches[] = { 7 * 4 };
-    for (int k = 0; k < 7 * 7; k ++) {
+
+    for (int k = 0; k < 7 * 7; k ++)
         green_screen[k] = 0xff00ff00;
-    }
 
     ASSERT_OK(vdpOutputSurfacePutBitsNative(out_surface, source_data, source_pitches, NULL));
     ASSERT_OK(vdpBitmapSurfacePutBitsNative(bmp_surface, source_data_bmp, source_pitches_bmp, NULL));
@@ -58,7 +76,7 @@ int main(void)
 
     VdpRect dest_rect = {1, 1, 6, 6};
     ASSERT_OK(vdpOutputSurfaceRenderBitmapSurface(out_surface, &dest_rect, bmp_surface, NULL,
-                color, &blend_state, VDP_OUTPUT_SURFACE_RENDER_ROTATE_0));
+              color, &blend_state, VDP_OUTPUT_SURFACE_RENDER_ROTATE_0));
 
     uint32_t result_buf[7 * 7];
     void * const dest_data[] = { result_buf };
@@ -67,7 +85,8 @@ int main(void)
     printf("--- actual ---\n");
     for (int k = 0; k < 7 * 7; k ++) {
         printf(" %08x", result_buf[k]);
-        if (k % 7 == 7 - 1) printf("\n");
+        if (k % 7 == 7 - 1)
+            printf("\n");
     }
 
     uint32_t expected[7 * 7];
@@ -76,56 +95,54 @@ int main(void)
     for (int x = 0; x < 7 * 7; x ++) expected[x] = green_screen[x];
     for (int y = 0; y < 5; y ++) {
         for (int x = 0; x < 5; x ++) {
-            float src_r = 1.0 * color[0].red;
-            float src_g = 1.0 * color[0].green;
-            float src_b = 1.0 * color[0].blue;
-            float src_a = bmp_data[y*5+x]/255.0 * color[0].alpha;
+            const float src_r = 1.0 * color[0].red;
+            const float src_g = 1.0 * color[0].green;
+            const float src_b = 1.0 * color[0].blue;
+            const float src_a = bmp_data[y*5+x]/255.0 * color[0].alpha;
 
-            uint32_t dst_bgra = expected[(y+1)*7 + (x+1)];
-            float dst_a = ((dst_bgra >> 24) & 0xff) / 255.0;
-            float dst_r = ((dst_bgra >> 16) & 0xff) / 255.0;
-            float dst_g = ((dst_bgra >>  8) & 0xff) / 255.0;
-            float dst_b = ((dst_bgra >>  0) & 0xff) / 255.0;
+            const uint32_t dst_bgra = expected[(y+1)*7 + (x+1)];
+            const float dst_a = ((dst_bgra >> 24) & 0xff) / 255.0;
+            const float dst_r = ((dst_bgra >> 16) & 0xff) / 255.0;
+            const float dst_g = ((dst_bgra >>  8) & 0xff) / 255.0;
+            const float dst_b = ((dst_bgra >>  0) & 0xff) / 255.0;
 
-            float res_r = src_r * src_a + dst_r * (1.0 - src_a);
-            float res_g = src_g * src_a + dst_g * (1.0 - src_a);
-            float res_b = src_b * src_a + dst_b * (1.0 - src_a);
-            float res_a = src_a * 1.0 + dst_a * src_a;
+            const float res_r = src_r * src_a + dst_r * (1.0 - src_a);
+            const float res_g = src_g * src_a + dst_g * (1.0 - src_a);
+            const float res_b = src_b * src_a + dst_b * (1.0 - src_a);
+            const float res_a = src_a * 1.0 + dst_a * src_a;
 
-            uint32_t r = (res_r * 255.0);
-            uint32_t g = (res_g * 255.0);
-            uint32_t b = (res_b * 255.0);
-            uint32_t a = (res_a * 255.0);
-            if (r > 255) r = 255;
-            if (g > 255) g = 255;
-            if (b > 255) b = 255;
-            if (a > 255) a = 255;
+            const uint32_t r = min_u32(255, res_r * 255.0);
+            const uint32_t g = min_u32(255, res_g * 255.0);
+            const uint32_t b = min_u32(255, res_b * 255.0);
+            const uint32_t a = min_u32(255, res_a * 255.0);
 
-            expected[(y+1)*7 + (x+1)] = (a << 24) | (r << 16) | (g << 8) | (b);
+            expected[(y + 1) * 7 + (x + 1)] = (a << 24) | (r << 16) | (g << 8) | (b);
         }
     }
 
     printf("--- expected ---\n");
     for (int k = 0; k < 7 * 7; k ++) {
         printf(" %08x", expected[k]);
-        if (k % 7 == 7 - 1) printf("\n");
+        if (k % 7 == 7 - 1)
+            printf("\n");
     }
     printf("=================\n");
     printf("--- difference --- \n");
     uint32_t max_diff = 0;
     for (int k = 0; k < 7 * 7; k ++) {
-        uint32_t diff_a = abs(((expected[k] >> 24) & 0xff) - ((result_buf[k] >> 24) & 0xff));
-        uint32_t diff_r = abs(((expected[k] >> 16) & 0xff) - ((result_buf[k] >> 16) & 0xff));
-        uint32_t diff_g = abs(((expected[k] >>  8) & 0xff) - ((result_buf[k] >>  8) & 0xff));
-        uint32_t diff_b = abs(((expected[k] >>  0) & 0xff) - ((result_buf[k] >>  0) & 0xff));
+        uint32_t diff_a = absdiff((expected[k] >> 24) & 0xff, (result_buf[k] >> 24) & 0xff);
+        uint32_t diff_r = absdiff((expected[k] >> 16) & 0xff, (result_buf[k] >> 16) & 0xff);
+        uint32_t diff_g = absdiff((expected[k] >>  8) & 0xff, (result_buf[k] >>  8) & 0xff);
+        uint32_t diff_b = absdiff((expected[k] >>  0) & 0xff, (result_buf[k] >>  0) & 0xff);
 
         printf(" %08x", (diff_a << 24) + (diff_r << 16) + (diff_g << 8) + (diff_b));
-        if (k % 7 == 7 - 1) printf("\n");
+        if (k % 7 == 7 - 1)
+            printf("\n");
 
-        if (diff_a > max_diff) max_diff = diff_a;
-        if (diff_r > max_diff) max_diff = diff_r;
-        if (diff_g > max_diff) max_diff = diff_g;
-        if (diff_b > max_diff) max_diff = diff_b;
+        max_diff = max_u32(max_diff, diff_a);
+        max_diff = max_u32(max_diff, diff_r);
+        max_diff = max_u32(max_diff, diff_g);
+        max_diff = max_u32(max_diff, diff_b);
     }
     printf("=================\n");
 
