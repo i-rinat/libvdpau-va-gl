@@ -6,8 +6,7 @@ link_directories (
     ${X11_LIBRARY_DIRS}
     ${GLIB20_LIBRARY_DIRS}
     ${LIBVA_LIBRARY_DIRS}
-    ${LIBSWSCALE_LIBRARY_DIRS}
-    ${GL_LIBRARY_DIRS}
+    ${LIBGL_LIBRARY_DIRS}
 )
 
 add_library(${DRIVER_NAME} SHARED
@@ -37,8 +36,7 @@ set(LINK_LIBRARIES
     -lX11
     ${GLIB20_LIBRARIES}
     ${LIBVA_LIBRARIES}
-    ${LIBSWSCALE_LIBRARIES}
-    ${GL_LIBRARIES}
+    ${LIBGL_LIBRARIES}
     -lpthread
     -lrt
     shader-bundle

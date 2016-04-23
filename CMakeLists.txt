@@ -9,7 +9,7 @@ find_package(PkgConfig REQUIRED)
 find_package(X11 REQUIRED)
 pkg_check_modules(GLIB20     glib-2.0   REQUIRED)
 pkg_check_modules(LIBVA      libva-x11  REQUIRED)
-pkg_check_modules(GL         gl glu     REQUIRED)
+pkg_check_modules(LIBGL      gl         REQUIRED)
 
 set(DRIVER_NAME "vdpau_va_gl" CACHE STRING "driver name")
 set(LIB_SUFFIX "" CACHE STRING "library path suffix (if needed)")
@@ -20,7 +20,7 @@ include_directories (
     ${X11_INCLUDE_DIRS}
     ${GLIB20_INCLUDE_DIRS}
     ${LIBVA_INCLUDE_DIRS}
-    ${GL_INCLUDE_DIRS}
+    ${LIBGL_INCLUDE_DIRS}
     ${GENERATED_INCLUDE_DIRS}
     ${CMAKE_BINARY_DIR}
 )
