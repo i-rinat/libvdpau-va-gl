@@ -601,10 +601,13 @@ Render_h264(shared_ptr<Resource> decoder, shared_ptr<vdp::VideoSurface::Resource
     // requires bitstream buffers to include slice start code (0x00 0x00 0x01). Those
     // will be used to calculate offsets and sizes of slice data in code below.
 
-    rbsp_state_t st_g;      // reference, global state
-    rbsp_attach_buffer(&st_g, merged_bitstream.data(), merged_bitstream.size());
-    int nal_offset = rbsp_navigate_to_nal_unit(&st_g);
-    if (nal_offset < 0) {
+    RBSPState st_g{merged_bitstream};      // reference, global state
+    int64_t nal_offset;
+
+    try {
+        nal_offset = st_g.navigate_to_nal_unit();
+
+    } catch (const RBSPState::error &) {
         traceError("Decoder::Render_h264(): no NAL header\n");
         return VDP_STATUS_ERROR;
     }
@@ -613,9 +616,17 @@ Render_h264(shared_ptr<Resource> decoder, shared_ptr<vdp::VideoSurface::Resource
         VASliceParameterBufferH264 sp_h264 = {};
 
         // make a copy of global rbsp state for using in slice header parser
-        rbsp_state_t st = rbsp_copy_state(&st_g);
-        rbsp_reset_bit_counter(&st);
-        int nal_offset_next = rbsp_navigate_to_nal_unit(&st_g);
+        RBSPState st{st_g};
+        int64_t nal_offset_next;
+
+        st.reset_bit_counter();
+
+        try {
+            nal_offset_next = st_g.navigate_to_nal_unit();
+
+        } catch (const RBSPState::error &) {
+            nal_offset_next = -1;
+        }
 
         // calculate end of current slice. Note (-3). It's slice start code length.
         const unsigned int end_pos = (nal_offset_next > 0) ? (nal_offset_next - 3)
@@ -629,7 +640,7 @@ Render_h264(shared_ptr<Resource> decoder, shared_ptr<vdp::VideoSurface::Resource
         int ChromaArrayType = pic_param.seq_fields.bits.chroma_format_idc;
 
         // parse slice header and use its data to fill slice parameter buffer
-        parse_slice_header(&st, &pic_param, ChromaArrayType, vdppi->num_ref_idx_l0_active_minus1,
+        parse_slice_header(st, &pic_param, ChromaArrayType, vdppi->num_ref_idx_l0_active_minus1,
                            vdppi->num_ref_idx_l1_active_minus1, &sp_h264);
 
         VABufferID slice_parameters_buf;

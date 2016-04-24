@@ -26,56 +26,214 @@
 
 #include <stdint.h>
 #include <unistd.h>
+#include <vector>
+#include <stdexcept>
 
 
-/** @brief State of raw byte stream payload comsumer */
-typedef struct _rbsp_state_struct {
-    const uint8_t  *buf_ptr;        ///< pointer to beginning of the buffer
-    size_t          byte_count;     ///< size of buffer
-    const uint8_t  *cur_ptr;        ///< pointer to currently processed byte
-    int             bit_ptr;        ///< pointer to currently processed bit
-    int             zeros_in_row;   ///< number of consequetive zero bytes so far
-    int             bits_eaten;     ///< bit offset of current position not including EPB
-} rbsp_state_t;
+namespace vdp {
+
+/// Raw byte sequence payload state
+///
+/// throws ByteReader::error()
+
+class RBSPState
+{
+public:
+    class error: public std::logic_error
+    {
+    public:
+        error(const char *descr)
+            : std::logic_error(descr)
+        {}
+    };
+
+private:
+    class ByteReader
+    {
+    public:
 
 
-/** @brief Initialize rbsp state
- *
- *  @param [out]    state
- *  @param [in]     buf         pointer to byte string
- *  @param [in]     byte_count  number of bytes in @param buf
- *
- *  @retval void
- */
-void
-rbsp_attach_buffer(rbsp_state_t *state, const uint8_t *buf, size_t byte_count);
+        ByteReader(const std::vector<uint8_t> &buffer)
+            : data_{buffer}
+            , byte_ofs_{0}
+            , zeros_in_row_{0}
+        {}
 
-/** @brief Consumes and returns one byte from rbsp
- *
- *  This function handles emulation prevention bytes internally, without their
- *  exposure to caller. Returns value of successfully consumed byte.
+        ByteReader(const ByteReader &other)
+            : data_{other.data_}
+            , byte_ofs_{other.byte_ofs_}
+            , zeros_in_row_{other.zeros_in_row_}
+        {}
 
- */
-int
-rbsp_consume_byte(rbsp_state_t *state);
+        uint8_t
+        get_byte()
+        {
+            if (byte_ofs_ >= data_.size())
+                throw error("ByteReader: trying to read beyond bounds");
 
-rbsp_state_t
-rbsp_copy_state(rbsp_state_t *state);
+            const uint8_t current_byte = data_[byte_ofs_ ++];
 
-int
-rbsp_navigate_to_nal_unit(rbsp_state_t *state);
+            if (zeros_in_row_ >= 2 && current_byte == 3) {
+                if (byte_ofs_ >= data_.size())
+                    throw error("ByteReader: trying to read beyond bounds");
 
-void
-rbsp_reset_bit_counter(rbsp_state_t *state);
+                const uint8_t another_byte = data_[byte_ofs_ ++];
+                zeros_in_row_ = (another_byte == 0) ? 1 : 0;
 
-int
-rbsp_consume_bit(rbsp_state_t *state);
+                return another_byte;
+            }
 
-unsigned int
-rbsp_get_u(rbsp_state_t *state, int bitcount);
+            if (current_byte == 0) {
+                zeros_in_row_ += 1;
+            } else {
+                zeros_in_row_ = 0;
+            }
 
-unsigned int
-rbsp_get_uev(rbsp_state_t *state);
+            return current_byte;
+        }
 
-int
-rbsp_get_sev(rbsp_state_t *state);
+        size_t
+        get_ofs() const
+        {
+            return byte_ofs_;
+        }
+
+        int64_t
+        navigate_to_nal_unit()
+        {
+            const size_t prev_ofs = byte_ofs_;
+
+            uint32_t window = ~0u;
+            do {
+                if (byte_ofs_ >= data_.size())
+                    throw error("ByteReader: no more bytes");
+
+                const uint32_t c = data_[byte_ofs_++];
+                window = (window << 8) | c;
+
+            } while ((window & 0xffffff) != 0x000001);
+
+            return byte_ofs_ - prev_ofs;
+        }
+
+    private:
+        ByteReader &
+        operator=(const ByteReader &) = delete;
+
+        const std::vector<uint8_t>  &data_;
+        size_t byte_ofs_;
+        size_t zeros_in_row_;
+    };
+
+public:
+    RBSPState(const std::vector<uint8_t> &buffer)
+        : byte_reader_{buffer}
+        , bits_eaten_{0}
+        , current_byte_{0}
+        , bit_ofs_{7}
+    {}
+
+    ~RBSPState() = default;
+
+    RBSPState(const RBSPState &other)
+        : byte_reader_{other.byte_reader_}
+        , bits_eaten_{other.bits_eaten_}
+        , current_byte_{other.current_byte_}
+        , bit_ofs_{other.bit_ofs_}
+    {}
+
+    int64_t
+    navigate_to_nal_unit()
+    {
+        // reset bit position to ensure next read will fetch a fresh byte from byte_reader_
+        bit_ofs_ = 7;
+
+        return byte_reader_.navigate_to_nal_unit();
+    }
+
+    void
+    reset_bit_counter()
+    {
+        bits_eaten_ = 0;
+    }
+
+    size_t
+    bits_eaten() const
+    {
+        return bits_eaten_;
+    }
+
+    uint32_t
+    get_u(size_t bitcount)
+    {
+        uint32_t res = 0;
+
+        for (size_t k = 0; k < bitcount; k ++)
+            res = (res << 1) + get_bit();
+
+        return res;
+    }
+
+    uint32_t
+    get_uev()
+    {
+        size_t zeros = 0;
+
+        while (get_bit() == 0)
+            zeros ++;
+
+        if (zeros == 0)
+            return 0;
+
+        return (1 << zeros) - 1 + get_u(zeros);
+    }
+
+    int32_t
+    get_sev()
+    {
+        size_t zeros = 0;
+
+        while (get_bit() == 0)
+            zeros ++;
+
+        if (zeros == 0)
+            return 0;
+
+        const int32_t val = (1 << zeros) + get_u(zeros);
+
+        if (val & 1)
+            return -(val / 2);
+
+        return val / 2;
+    }
+
+private:
+    RBSPState &
+    operator=(const RBSPState &) = delete;
+
+    uint32_t
+    get_bit()
+    {
+        if (bit_ofs_ == 7)
+            current_byte_ = byte_reader_.get_byte();
+
+        const uint32_t val = (current_byte_ >> bit_ofs_) & 1;
+
+        if (bit_ofs_ > 0) {
+            bit_ofs_ -= 1;
+        } else {
+            bit_ofs_ = 7; // most significant bit in a 8-bit byte
+        }
+
+        bits_eaten_ += 1;
+
+        return val;
+    }
+
+    ByteReader  byte_reader_;
+    size_t      bits_eaten_;
+    uint8_t     current_byte_;
+    uint8_t     bit_ofs_;
+};
+
+} // namespace vdp

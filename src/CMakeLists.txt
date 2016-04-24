@@ -17,7 +17,6 @@ add_library(${DRIVER_NAME} SHARED
     api-presentation-queue.cc
     api-video-mixer.cc
     api-video-surface.cc
-    bitstream.cc
     entry.cc
     globals.cc
     glx-context.cc

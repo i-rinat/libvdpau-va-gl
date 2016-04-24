@@ -28,10 +28,14 @@
 #include <va/va.h>
 
 
+namespace vdp {
+
 void
-parse_slice_header(rbsp_state_t *st, const VAPictureParameterBufferH264 *vapp,
+parse_slice_header(RBSPState &st, const VAPictureParameterBufferH264 *vapp,
                    const int ChromaArrayType,  unsigned int p_num_ref_idx_l0_active_minus1,
                    unsigned int p_num_ref_idx_l1_active_minus1, VASliceParameterBufferH264 *vasp);
 
 void
 reset_va_picture_h264(VAPictureH264 *p);
+
+} // namespace vdp
