@@ -48,11 +48,10 @@ public:
     };
 
 private:
+    /// encapsulates handling of emulation prevention bytes (EPB)
     class ByteReader
     {
     public:
-
-
         ByteReader(const std::vector<uint8_t> &buffer)
             : data_{buffer}
             , byte_ofs_{0}
@@ -98,6 +97,7 @@ private:
             return byte_ofs_;
         }
 
+        /// rewind to the next NAL unit begin marker (0x00 0x00 0x01)
         int64_t
         navigate_to_nal_unit()
         {
