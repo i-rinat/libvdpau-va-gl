@@ -26,7 +26,4 @@
 
 
 void
-traceInfo(const char *buf, ...);
-
-void
 traceError(const char *buf, ...);

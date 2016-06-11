@@ -40,7 +40,6 @@ struct Resource: public vdp::GenericResource
     ~Resource();
 
     VdpChromaType   chroma_type;    ///< video chroma type
-    VdpYCbCrFormat  format;         ///< current data format
     uint32_t        width;
     uint32_t        height;
     uint32_t        stride;

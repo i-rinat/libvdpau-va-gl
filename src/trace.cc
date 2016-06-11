@@ -29,15 +29,6 @@
 
 static const char *trace_header =       "[VS] ";
 
-void
-traceInfo(const char *fmt, ...)
-{
-    va_list args;
-    fprintf(stdout, "%s", trace_header);
-    va_start(args, fmt);
-    vfprintf(stdout, fmt, args);
-    va_end(args);
-}
 
 void
 traceError(const char *fmt, ...)

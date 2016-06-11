@@ -307,36 +307,6 @@ GetParameters(VdpVideoSurface surface_id, VdpChromaType *chroma_type, uint32_t *
 }
 
 VdpStatus
-video_surface_ensure_allocated(shared_ptr<Resource> surf)
-{
-    const uint32_t chroma_plane_size =
-        (surf->chroma_stride * surf->chroma_height + 0xfu) & (~0xfu);
-
-    if (surf->y_plane.size() > 0)
-        return VDP_STATUS_OK;
-
-    switch (surf->chroma_type) {
-    case VDP_CHROMA_TYPE_420:
-        surf->y_plane.resize(surf->stride * surf->height);
-        surf->u_plane.resize(chroma_plane_size);
-        surf->v_plane.resize(chroma_plane_size);
-        return VDP_STATUS_OK;
-
-    case VDP_CHROMA_TYPE_422:
-        surf->y_plane.resize(surf->stride * surf->height);
-        // TODO: why there are no u and v?
-        return VDP_STATUS_OK;
-
-    case VDP_CHROMA_TYPE_444:
-        surf->y_plane.resize(surf->stride * surf->height);
-        return VDP_STATUS_OK;
-
-    default:
-        return VDP_STATUS_INVALID_CHROMA_TYPE;
-    }
-}
-
-VdpStatus
 PutBitsYCbCr_swscale(VdpVideoSurface surface_id, VdpYCbCrFormat source_ycbcr_format,
                      void const *const *source_data, uint32_t const *source_pitches)
 {
