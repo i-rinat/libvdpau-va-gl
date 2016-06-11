@@ -17,6 +17,6 @@ add_custom_command(
 )
 add_custom_target(shader-bundle-src DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/shaders.c ${CMAKE_CURRENT_BINARY_DIR}/shaders.h)
 
-add_executable(shader-bundle-tool shader-bundle-tool.c)
+add_executable(shader-bundle-tool shader-bundle-tool.cc)
 add_library(shader-bundle STATIC ${CMAKE_CURRENT_BINARY_DIR}/shaders.c)
 add_dependencies(shader-bundle shader-bundle-src)
