@@ -32,9 +32,12 @@ void *thread_1_func(void *p)
     ASSERT_OK(vdpBitmapSurfaceCreate(device, VDP_RGBA_FORMAT_B8G8R8A8, 300, 150, 1, &bmp_surface));
 
     uint32_t buf[300*150];
+    for (uint32_t k = 0; k < 300*150; k ++)
+        buf[k] = 0xff000000u + (k & 0xffffffu);
+
     const void * const source_data[] = { buf };
     uint32_t source_pitches[] = { 4 * 300 };
-    for (int k = 0; k < 300*150; k ++) { buf[k] = 0xff000000 + (k & 0xffffff); }
+
     ASSERT_OK(vdpBitmapSurfacePutBitsNative(bmp_surface, source_data, source_pitches, NULL));
     VdpTime vdpTime = 0;
     ASSERT_OK(vdpPresentationQueueBlockUntilSurfaceIdle(pq, out_surface, &vdpTime));

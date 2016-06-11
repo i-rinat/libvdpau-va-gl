@@ -20,7 +20,6 @@ main(int argc, char *argv[])
 
     const int           width = 720;
     const int           height = 480;
-    VdpGetProcAddress  *get_proc_address;
     VdpDevice           vdp_device = create_vdp_device();
     VdpVideoSurface     vdp_video_surface;
     VdpVideoMixer       vdp_video_mixer;
