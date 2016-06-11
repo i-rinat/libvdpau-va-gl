@@ -49,6 +49,7 @@ Resource::Resource(std::shared_ptr<vdp::Device::Resource> a_device, VdpChromaTyp
     : chroma_type{a_chroma_type}
     , width{a_width}
     , height{a_height}
+    , rt_idx{0}
 {
     device = a_device;
 
