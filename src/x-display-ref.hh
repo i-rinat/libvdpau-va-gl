@@ -32,6 +32,7 @@ namespace vdp {
 
 class XDisplayRef {
 public:
+    explicit
     XDisplayRef(bool one_more_ref = false)
     {
         std::unique_lock<decltype(mtx_)> lock(mtx_);

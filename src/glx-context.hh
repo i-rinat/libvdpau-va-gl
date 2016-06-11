@@ -41,6 +41,7 @@ struct Resource;
 class GLXManagedContext
 {
 public:
+    explicit
     GLXManagedContext(GLXContext glc)
         : dpy_{}
         , glc_{glc}

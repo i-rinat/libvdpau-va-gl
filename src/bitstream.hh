@@ -42,6 +42,7 @@ public:
     class error: public std::logic_error
     {
     public:
+        explicit
         error(const char *descr)
             : std::logic_error(descr)
         {}
@@ -52,6 +53,7 @@ private:
     class ByteReader
     {
     public:
+        explicit
         ByteReader(const std::vector<uint8_t> &buffer)
             : data_{buffer}
             , byte_ofs_{0}
@@ -126,6 +128,7 @@ private:
     };
 
 public:
+    explicit
     RBSPState(const std::vector<uint8_t> &buffer)
         : byte_reader_{buffer}
         , bits_eaten_{0}
