@@ -27,7 +27,7 @@
 #include <stdio.h>
 
 
-static const char *trace_header =       "[VS] ";
+static const char *trace_header = "libvdpau-va-gl: ";
 
 
 void
