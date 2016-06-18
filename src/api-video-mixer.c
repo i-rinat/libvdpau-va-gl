@@ -342,7 +342,7 @@ vdpVideoMixerRender(VdpVideoMixer mixer, VdpOutputSurface background_surface,
     if (destination_rect)
         dstRect = *destination_rect;
 
-    VdpRect dstVideoRect = srcVideoRect;
+    VdpRect dstVideoRect = {0, 0, dstSurfData->width, dstSurfData->height};
     if (destination_video_rect)
         dstVideoRect = *destination_video_rect;
 
