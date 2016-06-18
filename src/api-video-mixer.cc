@@ -459,7 +459,11 @@ RenderImpl(VdpVideoMixer mixer_id, VdpOutputSurface background_surface,
     if (destination_rect)
         dstRect = *destination_rect;
 
-    VdpRect dstVideoRect = srcVideoRect;
+    // TODO: dstVideoRect once was equal srcVideoRect by default. But there are
+    //       possible subtleness in API documentation, which makes some people
+    //       interpret it in another way. More importantly, origial VDPAU driver
+    //       also does the other way. I hope this will be clarified one day.
+    VdpRect dstVideoRect = {0, 0, dst_surf->width, dst_surf->height};
     if (destination_video_rect)
         dstVideoRect = *destination_video_rect;
 
