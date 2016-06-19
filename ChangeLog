@@ -1,3 +1,12 @@
+2016-06-19  Rinat Ibragimov  <ibragimovrinat@mail.ru>
+
+	* tag: v0.4.0
+	* deps: convert code to use C++11
+	* deps: drop libswscale and GLib dependencies
+	* core: include copy of VDPAU headers
+	* core: drop own tracing code in favor of libvdpau's
+	* core: fix VLC video scaling
+
 2016-03-19  Rinat Ibragimov  <ibragimovrinat@mail.ru>
 
 	* license: change to the MIT license
