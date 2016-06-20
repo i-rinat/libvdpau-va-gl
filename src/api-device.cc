@@ -41,6 +41,7 @@
 #include <map>
 #include <mutex>
 #include <stdlib.h>
+#include <string>
 #include <va/va_x11.h>
 #include <vdpau/vdpau_x11.h>
 #include <vector>
