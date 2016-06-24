@@ -43,7 +43,7 @@ variables that control runtime behavior of va_gl driver.
 
 `VDPAU_QUIRKS` contains comma-separated list of enabled quirks. Here is the list:
 
-   * `XCloseDisplay`	Disables calling of XCloseDisplay which may segfault on systems with some AMD cards
+   * `XCloseDisplay`	Disables calling of XCloseDisplay which may segfault on some video drivers
    * `ShowWatermark`	Enables displaying string "va_gl" in bottom-right corner of window
    * `AvoidVA`          Makes libvdpau-va-gl NOT use VA-API
 
