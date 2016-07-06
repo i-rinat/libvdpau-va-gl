@@ -123,7 +123,9 @@ Resource::~Resource()
     try {
         {
             GLXThreadLocalContext guard{device};
+
             glDeleteTextures(1, &tex_id);
+            glDeleteFramebuffers(1, &fbo_id);
 
             const auto gl_error = glGetError();
             if (gl_error != GL_NO_ERROR)
