@@ -488,10 +488,10 @@ QueryCapabilitiesImpl(VdpDevice device, VdpChromaType surface_chroma_type, VdpBo
         *is_supported = 1;
 
     if (max_width)
-        *max_width = 1920;
+        *max_width = 4096;
 
     if (max_height)
-        *max_height = 1080;
+        *max_height = 4096;
 
     return VDP_STATUS_OK;
 }
