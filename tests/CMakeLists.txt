@@ -17,7 +17,7 @@ add_executable(test-000 EXCLUDE_FROM_ALL test-000.cc)
 foreach(_test ${_vdpau_tests})
     add_executable(${_test} EXCLUDE_FROM_ALL "${_test}.c" tests-common.c)
     add_dependencies(${_test} ${DRIVER_NAME})
-    target_link_libraries(${_test} dl)
+    target_link_libraries(${_test} ${CMAKE_DL_LIBS})
 endforeach(_test)
 
 foreach(_test ${_all_tests})
