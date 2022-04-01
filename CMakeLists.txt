@@ -1,5 +1,6 @@
 project (libvdpau-va-gl)
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 2.8.5)
+include(GNUInstallDirs)
 add_definitions(-Wall -fvisibility=hidden -fPIC)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -std=gnu99")
@@ -11,8 +12,6 @@ pkg_check_modules(LIBVA      libva-x11  REQUIRED)
 pkg_check_modules(LIBGL      gl         REQUIRED)
 
 set(DRIVER_NAME "vdpau_va_gl" CACHE STRING "driver name")
-set(LIB_SUFFIX "" CACHE STRING "library path suffix (if needed)")
-set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/vdpau" CACHE PATH "library installation path")
 
 include_directories (
     3rdparty
