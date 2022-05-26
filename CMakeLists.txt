@@ -8,14 +8,19 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -std=c++11")
 
 find_package(PkgConfig REQUIRED)
 find_package(X11 REQUIRED)
-pkg_check_modules(LIBVA      libva-x11  REQUIRED)
-pkg_check_modules(LIBGL      gl         REQUIRED)
+pkg_check_modules(LIBVDPAU vdpau)
+pkg_check_modules(LIBVA REQUIRED libva-x11)
+pkg_check_modules(LIBGL REQUIRED gl)
 
 set(DRIVER_NAME "vdpau_va_gl" CACHE STRING "driver name")
 
+if(NOT LIBVDPAU_FOUND)
+    set(LIBVDPAU_INCLUDE_DIRS 3rdparty)
+endif()
+
 include_directories (
-    3rdparty
     ${X11_INCLUDE_DIRS}
+    ${LIBVDPAU_INCLUDE_DIRS}
     ${LIBVA_INCLUDE_DIRS}
     ${LIBGL_INCLUDE_DIRS}
     ${GENERATED_INCLUDE_DIRS}
