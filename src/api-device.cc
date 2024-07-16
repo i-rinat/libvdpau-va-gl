@@ -462,8 +462,7 @@ Resource::~Resource()
 {
     try {
         // cleaup libva
-        if (va_available)
-            vaTerminate(va_dpy);
+        vaTerminate(va_dpy);
 
         {
             GLXThreadLocalContext guard{root};
