@@ -412,6 +412,7 @@ Resource::Resource(Display *a_display, int a_screen)
     va_available = 0;
     if (global.quirks.avoid_va) {
         // pretend there is no VA-API available
+        va_dpy = nullptr;
     } else {
         va_dpy = vaGetDisplay(dpy.get());
 
