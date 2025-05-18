@@ -1,5 +1,5 @@
+cmake_minimum_required(VERSION 2.8.12...4.0)
 project (libvdpau-va-gl)
-cmake_minimum_required (VERSION 2.8.12)
 include(GNUInstallDirs)
 add_compile_options(-Wall -fvisibility=hidden -fPIC)
 
